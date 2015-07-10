@@ -19,6 +19,10 @@ class business_day_convention (Enum):
 
 class Calendar(object):
     
+    @classmethod
+    def is_leap_year(cls, year):
+        return ((year % 4 == 0) and ((year % 100 != 0) or (year % 400 == 0)))
+    
     month_days = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
     @classmethod
@@ -29,25 +33,23 @@ class Calendar(object):
             return Calendar.month_days[month - 1] 
     
     @classmethod
-    def is_leap_year(cls, year):
-        return ( (year % 4 == 0) and ((year % 100 != 0) or (year % 400 == 0)))
+    def is_weekend(cls, value):
+        return value.weekday() > 4
+
+    @classmethod    
+    def is_end_of_month(cls, value):
+        return value.day == Calendar.days_in_month(value.year, value.month)
     
     def __init__(self, name, holidays = []):
         self.name = name
         self.holidays = list(holidays)
         self.holidays.sort()
+    
+    def is_holiday(self, value):
+        return value in self.holidays
         
-    def is_business_day(self, d):
-        return not (self.is_weekend(d) or self.is_holiday(d))
-    
-    def is_holiday(self, d):
-        return d in self.holidays
-    
-    def is_weekend(self, d):
-        return d.weekday() > 4
-    
-    def is_end_of_month(self, d):
-        pass
+    def is_business_day(self, value):
+        return not (Calendar.is_weekend(value) or self.is_holiday(value))
     
     def add_holiday(self, d):
         self.holidays.append(d)

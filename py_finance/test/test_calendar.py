@@ -17,7 +17,6 @@ class TestCalendar(unittest.TestCase):
         self.assertFalse(Calendar.is_leap_year(2100))
 
     def test_days_in_month(self):
-        
         self.assertEqual(31, Calendar.days_in_month(2009, 1), "There are 28 days in January")
         self.assertEqual(28, Calendar.days_in_month(2009, 2), "There are 28 days in February in a non leap year")
         self.assertEqual(31, Calendar.days_in_month(2009, 3), "There are 28 days in March")
@@ -32,5 +31,12 @@ class TestCalendar(unittest.TestCase):
         self.assertEqual(31, Calendar.days_in_month(2009, 12), "There are 28 days in December")
         self.assertEqual(29, Calendar.days_in_month(2008, 2), "There are 29 days in February in a leap year")
 
+    def test_is_weekend(self):
+        self.assertFalse(Calendar.is_weekend(date(2014, 12, 19)), "19 December 2014 was a Friday")
+        self.assertTrue(Calendar.is_weekend(date(2014, 12, 20)), "20 December 2014 was a Saturday")
+        self.assertTrue(Calendar.is_weekend(date(2014, 12, 21)), "21 December 2014 was a Sunday")
+        self.assertFalse(Calendar.is_weekend(date(2014, 12, 22)), "22 December 2014 was a Monday")
+        
+        
 if __name__ == "__main__":
     unittest.main()
