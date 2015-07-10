@@ -1,7 +1,6 @@
 # pip install enum34
 from enum import Enum
 from datetime import date, timedelta
-import math
 
 class time_unit(Enum):
     days = 0
@@ -16,7 +15,6 @@ class business_day_convention (Enum):
     following = 3
     modified_preceding = 4
     modified_following = 5
-    half_month_modified_following = 6
 
 class Calendar(object):
     
@@ -28,10 +26,7 @@ class Calendar(object):
 
     @classmethod
     def days_in_month(cls, year, month):
-        if Calendar.is_leap_year(year) and month == 2:
-            return 29
-        elif month >= 1 and month <= 12:
-            return Calendar.month_days[month - 1] 
+        return 29 if Calendar.is_leap_year(year) and month == 2 else Calendar.month_days[month - 1] 
     
     @classmethod
     def is_weekend(cls, value):
@@ -98,39 +93,28 @@ class Calendar(object):
         with respect to the given convention.
         """
         
-        if convention == business_day_convention.none:
+        if convention == business_day_convention.none or self.is_business_day(target_date):
             return target_date
-        
-        d1 = date(target_date.year, target_date.month, target_date.day)
-        one_day = timedelta(1)
-        
-        if convention == business_day_convention.following or convention == business_day_convention.modified_following or convention == business_day_convention.half_month_modified_following:
-            while self.is_holiday(d1):
-                d1 += one_day;
-            if convention == business_day_convention.modified_following or convention == business_day_convention.half_month_modified_following:
-                if d1.month != target_date.month:
-                    return self.adjust(target_date, business_day_convention.preceding)
-                if convention == business_day_convention.half_month_modified_following:
-                    if target_date.day <= 15 and d1.day > 15:
-                        return self.adjust(target_date, business_day_convention.preceding)
-        elif convention == business_day_convention.preceding or convention == business_day_convention.modified_preceding:
-            while self.is_holiday(d1):
-                d1 -= one_day;
-            if convention == business_day_convention.modified_preceding and d1.month != target_date.month:
-                return self.adjust(target_date, business_day_convention.following)
-        elif convention == business_day_convention.nearest:
-            d2 = target_date.date()
-            while self.is_holiday(d1) and self.is_holiday(d2):
-                d1 += one_day
-                d2 += one_day
-            if self.is_holiday(d1):
-                return d2
+        elif convention == business_day_convention.following:
+            return self.add_business_days(target_date, 1)
+        elif convention == business_day_convention.preceding:
+            return self.add_business_days(target_date, -1)
+        elif convention == business_day_convention.modified_following:
+            adjusted_date = self.add_business_days(target_date, 1)
+            
+            if adjusted_date.month == target_date.month:
+                return adjusted_date
             else:
-                return d1
+                return self.add_business_days(target_date, -1)
+        elif convention == business_day_convention.modified_preceding:
+            adjusted_date = self.add_business_days(target_date, -1)
+            
+            if adjusted_date.month == target_date.month:
+                return adjusted_date
+            else:
+                return self.add_business_days(target_date, 1)
         else:
             raise ValueError("Invalid business day convention")
-        
-        return d1
     
     def add_business_days(self, target_date, count):
         
