@@ -82,6 +82,29 @@ class TestCalendar(unittest.TestCase):
         self.assertEqual(date(2013, 4, 30), Calendar.add_months(date(2013, 5, 31), -1, True), "Should not stay in May.")
         self.assertEqual(date(2013, 4, 30), Calendar.add_months(date(2013, 5, 31), -1, False), "Should not stay in May.")
     
+    def test_easter(self):
+        self.assertEquals(date(2001, 4, 15), Calendar.easter(2001), "Easter 2001")
+        self.assertEquals(date(2002, 3, 31), Calendar.easter(2002), "Easter 2002")
+        self.assertEquals(date(2003, 4, 20), Calendar.easter(2003), "Easter 2003")
+        self.assertEquals(date(2004, 4, 11), Calendar.easter(2004), "Easter 2004")
+        self.assertEquals(date(2005, 3, 27), Calendar.easter(2005), "Easter 2005")
+        self.assertEquals(date(2006, 4, 16), Calendar.easter(2006), "Easter 2006")
+        self.assertEquals(date(2007, 4, 8), Calendar.easter(2007), "Easter 2007")
+        self.assertEquals(date(2008, 3, 23), Calendar.easter(2008), "Easter 2008")
+        self.assertEquals(date(2009, 4, 12), Calendar.easter(2009), "Easter 2009")
+        self.assertEquals(date(2010, 4, 4), Calendar.easter(2010), "Easter 2010")
+        self.assertEquals(date(2011, 4, 24), Calendar.easter(2011), "Easter 2011")
+        self.assertEquals(date(2012, 4, 8), Calendar.easter(2012), "Easter 2012")
+        self.assertEquals(date(2013, 3, 31), Calendar.easter(2013), "Easter 2013")
+        self.assertEquals(date(2014, 4, 20), Calendar.easter(2014), "Easter 2014")
+        self.assertEquals(date(2015, 4, 5), Calendar.easter(2015), "Easter 2015")
+        self.assertEquals(date(2016, 3, 27), Calendar.easter(2016), "Easter 2016")
+        self.assertEquals(date(2017, 4, 16), Calendar.easter(2017), "Easter 2017")
+        self.assertEquals(date(2018, 4, 1), Calendar.easter(2018), "Easter 2018")
+        self.assertEquals(date(2019, 4, 21), Calendar.easter(2019), "Easter 2019")
+        self.assertEquals(date(2020, 4, 12), Calendar.easter(2020), "Easter 2020")
+        self.assertEquals(date(2021, 4, 4), Calendar.easter(2021), "Easter 2021")
+
     def test_add_business_days(self):
         cal = Calendar("TARGET", (date(2015, 1, 1), date(2015, 4, 3), date(2015, 4, 6), date(2015, 5, 1), date(2015, 12, 25), date(2015, 12, 16)))
         # Forward

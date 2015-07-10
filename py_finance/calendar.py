@@ -1,8 +1,6 @@
 # pip install enum34
 from enum import Enum
 from datetime import date, timedelta
-from test.test_sax import start
-from cookielib import DAYS
 
 class time_unit(Enum):
     days = 0
@@ -65,6 +63,48 @@ class Calendar(object):
     @classmethod
     def end_of_month(cls, target_date):
         return date(target_date.year, target_date.month, Calendar.days_in_month(target_date.year, target_date.month))
+    
+    @classmethod
+    def easter(cls, year):
+        # Note: Only true for Gregorian dates
+
+        y = year
+        g = (y - ((y // 19) * 19)) + 1
+        c = (y // 100) + 1
+        x = ((3 * c) // 4) - 12
+        z = (((8 * c) + 5) // 25) - 5
+        d = ((5 * y) // 4) - x - 10
+        e1 = (11 * g) + 20 + z - x
+        e = e1 - ((e1 // 30) * 30)
+
+        # The value of 'e' may be negative. The case of year = 14250, e.g.,
+        # produces values of g = 1, z = 40 and x = 95. The value of e1 is thus
+        # -24, and the 'mod' code fails to return the proper positive result.
+        # The following correction produces a positive value, mod 30, for 'e'.
+          
+        while e < 0:
+            e += 30
+       
+        if ((e == 25) and (g > 11)) or (e == 24L):
+            e += 1;
+
+        n = 44 - e;
+
+        if n < 21:
+            n += 30
+      
+        dpn = d + n
+        n1 = dpn - ((dpn // 7) * 7)   
+        n = n + 7 - n1;
+
+        if n > 31:
+            month = 4;
+            day = n - 31;
+        else:
+            month = 3;
+            day = n;
+       
+        return date(year, month, day)
     
     def __init__(self, name, holidays = []):
         self.name = name
