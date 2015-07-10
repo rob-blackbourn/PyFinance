@@ -1,6 +1,7 @@
 # pip install enum34
 from enum import Enum
 from datetime import date, timedelta
+import math
 
 class time_unit(Enum):
     days = 0
@@ -39,6 +40,30 @@ class Calendar(object):
     @classmethod    
     def is_end_of_month(cls, value):
         return value.day == Calendar.days_in_month(value.year, value.month)
+
+    @classmethod
+    def add_months(cls, target_date, months, end_of_month = False):
+        
+        if months == 0:
+            return target_date
+        
+        month = target_date.month + months;
+        year = target_date.year
+
+        if months > 0:
+            year += month // 12
+            month = month % 12
+        else:
+            if month <= 0:
+                year += -month // 12 - 1
+                month %= 12
+
+        days_in_month = Calendar.days_in_month(year, month)
+    
+        if end_of_month and Calendar.is_end_of_month(target_date):
+            return date(year, month, days_in_month)
+        else:
+            return date(year, month, min(target_date.day, days_in_month))
     
     def __init__(self, name, holidays = []):
         self.name = name
@@ -66,41 +91,35 @@ class Calendar(object):
             elif d > start:
                 yield d
     
-    def adjust(self, d, convention = business_day_convention.following):
+    def adjust(self, target_date, convention = business_day_convention.following):
         
         """
         Adjusts a non-business day to the appropriate near business day
         with respect to the given convention.
         """
         
-        if d is not date:
-            raise TypeError("expected a date")
-
-        if convention is not business_day_convention:
-            raise TypeError("expected a business_day_conventions")
-        
         if convention == business_day_convention.none:
-            return d
+            return target_date
         
-        d1 = date(d.year, d.month, d.day)
+        d1 = date(target_date.year, target_date.month, target_date.day)
         one_day = timedelta(1)
         
         if convention == business_day_convention.following or convention == business_day_convention.modified_following or convention == business_day_convention.half_month_modified_following:
             while self.is_holiday(d1):
                 d1 += one_day;
             if convention == business_day_convention.modified_following or convention == business_day_convention.half_month_modified_following:
-                if d1.month != d.month:
-                    return self.adjust(d, business_day_convention.preceding)
+                if d1.month != target_date.month:
+                    return self.adjust(target_date, business_day_convention.preceding)
                 if convention == business_day_convention.half_month_modified_following:
-                    if d.day <= 15 and d1.day > 15:
-                        return self.adjust(d, business_day_convention.preceding)
+                    if target_date.day <= 15 and d1.day > 15:
+                        return self.adjust(target_date, business_day_convention.preceding)
         elif convention == business_day_convention.preceding or convention == business_day_convention.modified_preceding:
             while self.is_holiday(d1):
                 d1 -= one_day;
-            if convention == business_day_convention.modified_preceding and d1.month != d.month:
-                return self.adjust(d, business_day_convention.following)
+            if convention == business_day_convention.modified_preceding and d1.month != target_date.month:
+                return self.adjust(target_date, business_day_convention.following)
         elif convention == business_day_convention.nearest:
-            d2 = d.date()
+            d2 = target_date.date()
             while self.is_holiday(d1) and self.is_holiday(d2):
                 d1 += one_day
                 d2 += one_day
@@ -110,71 +129,48 @@ class Calendar(object):
                 return d1
         else:
             raise ValueError("Invalid business day convention")
+        
+        return d1
     
-    def advance(self, d, count, unit, convention = business_day_convention.following, is_end_of_month = False):
+    def add_business_days(self, target_date, count):
+        
+        sign = 1 if count > 0 else -1
+        signed_day = timedelta(sign)
+        
+        while count != 0:
+            target_date += signed_day;
+            count -= sign
+            
+            while not self.is_business_day(target_date):
+                target_date += signed_day
+        
+        return target_date
+
+    def add_weeks(self, target_date, count, convention = business_day_convention.following):
+            d1 = target_date + timedelta(count * 7)
+            return self.adjust(d1, convention)
+                
+    def advance(self, target_date, count, unit, convention = business_day_convention.following, end_of_month = False):
         
         """
         Advances the given date of the given number of business days and
         returns the result.
         Note: The input date is not modified.
         """
-        
-        if d is not date:
-            raise TypeError("expected 'd' to be a datetime.date")
-        
-        if not isinstance(count, (int, long)):
-            raise TypeError("expected 'count' to be an int or a long")
-        
-        if unit is not time_unit:
-            raise TypeError("expected 'unit' to be a time_unit")
-        
-        if convention is not business_day_convention:
-            raise TypeError("expected 'convention' to be a business_day_convention")
-        
-        if not isinstance(is_end_of_month, bool):
-            raise TypeError("expected 'end_of_month' to be a bool")
             
         if count == 0:
-            return self.adjust(d, convention)
+            return self.adjust(target_date, convention)
         elif unit == time_unit.days:
-            one_day = timedelta(1)
-            d1 = date(d.year, d.month, d.day)
-            if count > 0:
-                while count > 0:
-                    d1 += one_day
-                    while self.is_holiday(d1):
-                        d1 += one_day
-                    count -= 1
-            else:
-                while count < 0:
-                    d1 -= one_day
-                    while self.is_holiday(d1):
-                        d1 -= one_day;
-                    count += 1
-            return d1
+            return self.add_business_days(target_date, count)
         elif unit == time_unit.weeks:
-            d1 = d + timedelta(count * 7)
-            return self.adjust(d1, convention)
-        elif unit == time_unit.months or unit == time_unit.years:
-            
-            months = d.month
-            
-            if unit == time_unit.months:
-                months += count
-            else:
-                months += 12 * count
-            
-            year = d.year + months // 12
-            month = months % 12
-            days_in_month = Calendar.days_in_month(year, month)
-            
-            if is_end_of_month:
-                return date(year, month, days_in_month)
-            elif d.day <= days_in_month:
-                return date(year, month, d.day)
-            else:
-                return date(year, month + 1, d.day - days_in_month)
-    
+            return self.add_weeks(target_date, count, convention)
+        elif unit == time_unit.months:
+            return self.adjust(Calendar.add_months(target_date, count, end_of_month), convention)
+        elif unit == time_unit.years:
+            return self.adjust(Calendar.add_months(target_date, 12 * count, end_of_month), convention)
+        else:
+            raise ValueError("Unhandled time_unit")
+        
     def business_days_between(self, start, end, include_start = True, include_end = False):
 
         if start is not date:
