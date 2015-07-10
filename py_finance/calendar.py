@@ -74,8 +74,8 @@ class Calendar(object):
             return date(year, month, min(target_date.day, days_in_month))
     
     @classmethod
-    def end_of_month(cls, target_date):
-        return date(target_date.year, target_date.month, Calendar.days_in_month(target_date.year, target_date.month))
+    def end_of_month(cls, year, month):
+        return date(year, month, Calendar.days_in_month(year, month))
     
     @classmethod
     def add_nth_day_of_week(cls, target_date, nth, dow, strictly_different):
@@ -268,4 +268,19 @@ class Calendar(object):
                 days += 1
             return days
     
+class YearlyCalendar(Calendar):
+    
+    def __init__(self, name):
+        Calendar.__init__(self, name, [])
+        self.__years_fetched = set()
+        
+    def is_holiday(self, target_date):
+        if target_date.year not in self.__years_fetched:
+            self.holidays += self.fetch_holidays(target_date.year)
+            self.holidays.sort()
+            self.__years_fetched.add(target_date.year)
+        return Calendar.is_holiday(self, target_date)
+
+    def fetch_holidays(self, year):
+        return []
     
