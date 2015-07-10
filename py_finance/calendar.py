@@ -1,6 +1,8 @@
 # pip install enum34
 from enum import Enum
 from datetime import date, timedelta
+from test.test_sax import start
+from cookielib import DAYS
 
 class time_unit(Enum):
     days = 0
@@ -159,44 +161,19 @@ class Calendar(object):
         else:
             raise ValueError("Unhandled time_unit")
         
-    def business_days_between(self, start, end, include_start = True, include_end = False):
+    def business_day_count(self, start, end):
 
-        if start is not date:
-            raise TypeError("expected 'start' to be a datetime.date")
-
-        if end is not date:
-            raise TypeError("expected 'start' to be a datetime.date")
-    
-        days = 0
-        one_day = timedelta(1)
-        
-        if start != end:
-            if start < end:
-                d1 = date(start.year, start.month, start.day)
-                while d1 < end:
-                    if self.is_business_day(d1):
-                        days += 1
-                    d1 += one_day
-                if self.is_business_day(end):
-                    days += 1
-            elif end > start:
-                d1 = date(end.year, end.month, end.day)
-                while d1 < start:
-                    if self.is_business_day(d1):
-                        days += 1
-                    d1 += one_day
-                if self.is_business_day(start):
-                    days += 1
-            
-            if self.is_business_day(start) and include_start:
+        if start > end:
+            return self.business_days_between(end, start)
+        else:
+            days = 0
+            one_day = timedelta(1)
+            target_date = date(start.year, start.month, start.day)
+            while start < end:
+                while not self.is_business_day(target_date):
+                    target_date += one_day
+                target_date += one_day
                 days += 1
-
-            if self.is_business_day(end) and include_end:
-                days += 1
-            
-            if start > end:
-                days = - days;
-                
-        return days
+            return days
     
     
