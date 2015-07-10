@@ -37,6 +37,12 @@ class TestCalendar(unittest.TestCase):
         self.assertTrue(Calendar.is_weekend(date(2014, 12, 21)), "21 December 2014 was a Sunday")
         self.assertFalse(Calendar.is_weekend(date(2014, 12, 22)), "22 December 2014 was a Monday")
         
+    def test_is_end_of_month(self):
+        self.assertFalse(Calendar.is_end_of_month(date(2008, 1, 30)), "30 January is not the end of the month")
+        self.assertTrue(Calendar.is_end_of_month(date(2008, 1, 31)), "31 January is the end of the month")
+        self.assertFalse(Calendar.is_end_of_month(date(2008, 2, 28)), "28 February 2008 is not the end of the month because it's a leap year")
+        self.assertTrue(Calendar.is_end_of_month(date(2008, 2, 29)), "28 February 2008 is the end of the month because it's a leap year")
+        self.assertTrue(Calendar.is_end_of_month(date(2009, 2, 28)), "28 February 2009 is the end of the month because it's a not leap year")
         
 if __name__ == "__main__":
     unittest.main()
