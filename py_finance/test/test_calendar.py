@@ -43,6 +43,14 @@ class TestCalendar(unittest.TestCase):
         self.assertFalse(Calendar.is_end_of_month(date(2008, 2, 28)), "28 February 2008 is not the end of the month because it's a leap year")
         self.assertTrue(Calendar.is_end_of_month(date(2008, 2, 29)), "28 February 2008 is the end of the month because it's a leap year")
         self.assertTrue(Calendar.is_end_of_month(date(2009, 2, 28)), "28 February 2009 is the end of the month because it's a not leap year")
+    
+    def test_constructor(self):
+        c1 = Calendar("empty")
+        self.assertTrue(isinstance(c1.holidays, list), "Should have a holiday list")
+        self.assertEqual(0, len(c1.holidays), "Should have an empty holiday list")
+        c2 = Calendar("Christmas", (date(2014, 12, 25), date(2014, 12, 26)))
+        self.assertTrue(isinstance(c2.holidays, list), "Should have an empty holiday list")
+        self.assertEqual(2, len(c2.holidays), "Should have an empty holiday list")
         
 if __name__ == "__main__":
     unittest.main()
