@@ -29,7 +29,7 @@ class Calendar(object):
         return 29 if Calendar.is_leap_year(year) and month == 2 else Calendar.month_days[month - 1] 
     
     @classmethod
-    def daysInYear(cls, year):
+    def days_in_year(cls, year):
         return 366 if Calendar.isLeapYear(year) else 365
 
     @classmethod
