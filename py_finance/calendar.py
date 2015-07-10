@@ -60,6 +60,10 @@ class Calendar(object):
         else:
             return date(year, month, min(target_date.day, days_in_month))
     
+    @classmethod
+    def end_of_month(cls, target_date):
+        return date(target_date.year, target_date.month, Calendar.days_in_month(target_date.year, target_date.month))
+    
     def __init__(self, name, holidays = []):
         self.name = name
         self.holidays = list(holidays)
