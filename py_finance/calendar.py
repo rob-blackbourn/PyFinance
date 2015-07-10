@@ -16,6 +16,15 @@ class business_day_convention (Enum):
     modified_preceding = 4
     modified_following = 5
 
+class day_of_week(Enum):
+    monday = 0
+    tuesday = 1
+    wednesday = 2
+    thursday = 3
+    friday = 4
+    saturday = 5
+    sunday = 6
+    
 class Calendar(object):
     
     @classmethod
@@ -68,6 +77,45 @@ class Calendar(object):
     def end_of_month(cls, target_date):
         return date(target_date.year, target_date.month, Calendar.days_in_month(target_date.year, target_date.month))
     
+    @classmethod
+    def add_nth_day_of_week(cls, target_date, nth, dow, strictly_different):
+
+        if nth == 0:
+            return target_date
+
+        if dow < day_of_week.monday or dow > day_of_week.friday:
+            return target_date
+
+        diff = dow - target_date.weekday()
+
+        if diff == 0 and strictly_different:
+            nth += 1 if nth >= 0 else -1
+
+        # forwards
+        if nth > 0:
+            # If diff = 0 below, the input date is the 1st DOW already, no adjustment 
+            # is required. The 'diff' is the adjustment from the input date 
+            # required to get to the first DOW matching the 'dow_index' given.
+
+            if diff < 0:
+                diff += 7
+    
+            adjusted_start_date = target_date + timedelta(diff)
+            end_date = adjusted_start_date + timedelta((nth - 1) * 7)
+            return end_date
+        # backwards
+        else:
+            # If diff = 0 below, the input date is the 1st DOW already, no adjustment 
+            # is required. The 'diff' is the adjustment from the input date 
+            # required to get to the first DOW matching the 'dow_index' given.
+
+            if diff > 0:
+                diff -= 7
+
+            adjusted_start_date = target_date + timedelta(diff)
+            end_date = adjusted_start_date + timedelta((nth + 1) * 7)
+            return end_date
+        
     @classmethod
     def easter(cls, year):
         # Note: Only true for Gregorian dates
