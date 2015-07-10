@@ -17,20 +17,20 @@ class business_day_convention (Enum):
     modified_following = 5
     half_month_modified_following = 6
 
-class calendar(object):
+class Calendar(object):
     
-    __days_in_month = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    month_days = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
     @classmethod
-    def days_in_month(year, month):
-        if calendar.is_leap_year(year) and month == 2:
+    def days_in_month(cls, year, month):
+        if Calendar.is_leap_year(year) and month == 2:
             return 29
         elif month >= 1 and month <= 12:
-            return calendar.__days_in_month[month] 
+            return Calendar.month_days[month - 1] 
     
     @classmethod
-    def is_leap_year(year):
-        return ( (year % 4 == 0) and (year % 100 != 0) or (year % 400 -- 0))
+    def is_leap_year(cls, year):
+        return ( (year % 4 == 0) and ((year % 100 != 0) or (year % 400 == 0)))
     
     def __init__(self, name, holidays = []):
         self.name = name
@@ -164,7 +164,7 @@ class calendar(object):
             
             year = d.year + months // 12
             month = months % 12
-            days_in_month = calendar.days_in_month(year, month)
+            days_in_month = Calendar.days_in_month(year, month)
             
             if is_end_of_month:
                 return date(year, month, days_in_month)
