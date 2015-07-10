@@ -52,5 +52,20 @@ class TestCalendar(unittest.TestCase):
         self.assertTrue(isinstance(c2.holidays, list), "Should have an empty holiday list")
         self.assertEqual(2, len(c2.holidays), "Should have an empty holiday list")
         
+    def test_is_holiday(self):
+        c2 = Calendar("Christmas", (date(2014, 12, 25), date(2014, 12, 26)))
+        self.assertTrue(c2.is_holiday(date(2014, 12, 25)), "Thursday 25 December 2014 is a holiday")
+        self.assertTrue(c2.is_holiday(date(2014, 12, 26)), "Friday 26 December 2014 is a holiday")
+        self.assertFalse(c2.is_holiday(date(2014, 12, 27)), "Saturday 27 December 2014 is not a holiday")
+    
+    def test_is_business_day(self):
+        c2 = Calendar("Christmas", (date(2014, 12, 25), date(2014, 12, 26)))
+        self.assertTrue(c2.is_business_day(date(2014, 12, 24)), "Wednesday 24 December 2014 is a business day")
+        self.assertFalse(c2.is_business_day(date(2014, 12, 25)), "Thursday 25 December 2014 is not a business day")
+        self.assertFalse(c2.is_business_day(date(2014, 12, 26)), "Friday 26 December 2014 is not a business day")
+        self.assertFalse(c2.is_business_day(date(2014, 12, 27)), "Saturday 27 December 2014 is not a business day")
+        self.assertFalse(c2.is_business_day(date(2014, 12, 28)), "Sunday 28 December 2014 is not a business day")
+        self.assertTrue(c2.is_business_day(date(2014, 12, 29)), "Monday 29 December 2014 is a business day")
+        
 if __name__ == "__main__":
     unittest.main()
