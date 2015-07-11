@@ -1,6 +1,7 @@
 from datetime import timedelta, date
 from py_finance.dates.business_day_convention import BusinessDayConvention
 from py_finance.dates.yearly_calendar import YearlyCalendar
+from py_finance.dates.calendar import Calendar
 
 class Target(YearlyCalendar):
 
@@ -8,32 +9,32 @@ class Target(YearlyCalendar):
         YearlyCalendar.__init__(self, "TARGET")
 
     def fetch_holidays(self, year):
-        holidays = []
+        self.__generate_holidays(year)
+    
+    @classmethod
+    def __generate_holidays(cls, year):
+        
+        empty = Calendar()
         
         # New Year's Day
-        holidays.append(self.adjust(date(year, 1, 1), BusinessDayConvention.following))
+        yield empty.adjust(date(year, 1, 1), BusinessDayConvention.following)
         
         if year >= 2000:
             # Good Friday and Easter Monday
-            easter_monday = self.easter(year);
-            holidays.append(easter_monday + timedelta(-3))
-            holidays.append(easter_monday)
+            easter_monday = empty.easter(year);
+            yield easter_monday + timedelta(-3)
+            yield easter_monday
             
         if year >= 2000:
             # Labour Day
-            holidays.append(date(year, 5, 1))
+            yield date(year, 5, 1)
 
         # Christmas
-        holidays.append(date(year, 12, 25))
+        yield date(year, 12, 25)
 
         if year >= 2000:
             # Day of Goodwill
-            holidays.append(date(year, 12, 26))
+            yield date(year, 12, 26)
 
         if year == 1998 or year == 1999 or year == 2001:
-            holidays.append(date(year, 12, 31))
-
-        holidays.sort()
-
-        return holidays
-        
+            yield date(year, 12, 31)
