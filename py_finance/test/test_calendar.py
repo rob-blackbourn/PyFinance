@@ -116,6 +116,20 @@ class TestCalendar(unittest.TestCase):
         self.assertEqual(date(2015, 1, 2), cal.add_business_days(date(2015, 1, 8), -4), "Nothing to skip.")
         self.assertEqual(date(2014, 12, 29), cal.add_business_days(date(2015, 1, 2), -3), "Nothing to skip.")
     
+    def test_nearest_business_day(self):
+        #              July 2015
+        # Su Mo Tu We Th Fr Sa
+        #           1  2  3  4
+        #  5  6  7  8  9 10 11
+        # 12 13 14 15 16 17 18
+        # 19 20 21 22 23 24 25
+        # 26 27 28 29 30 31
+        cal = Calendar("test", [date(2015, 7, 13)])
+        self.assertEquals(date(2015, 7, 3), cal.nearest_business_day(date(2015, 7, 4)), "Saturday should roll to Friday")
+        self.assertEquals(date(2015, 7, 6), cal.nearest_business_day(date(2015, 7, 5)), "Sunday should roll to Monday")
+        self.assertEquals(date(2015, 7, 14), cal.nearest_business_day(date(2015, 7, 12), True), "Sunday should prefer to roll to Tuesday")
+        self.assertEquals(date(2015, 7, 10), cal.nearest_business_day(date(2015, 7, 12), False), "Sunday should prefer to roll to Friday")
+        
     def test_adjust(self):
         cal = Calendar("TARGET", (date(2015, 1, 1), date(2015, 4, 3), date(2015, 4, 6), date(2015, 5, 1), date(2015, 12, 25), date(2015, 12, 16)))
 

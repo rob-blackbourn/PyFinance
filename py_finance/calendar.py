@@ -24,6 +24,20 @@ class day_of_week(Enum):
     friday = 4
     saturday = 5
     sunday = 6
+
+class calendar_month(Enum):
+    january = 1
+    february = 2
+    march = 3
+    april = 4
+    may = 5
+    june = 6
+    july = 7
+    august = 8
+    september = 9
+    october = 10
+    november = 11
+    december = 12
     
 class Calendar(object):
     
@@ -168,22 +182,25 @@ class Calendar(object):
         
     def is_business_day(self, value):
         return not (Calendar.is_weekend(value) or self.is_holiday(value))
-    
-    def add_holiday(self, d):
-        self.holidays.append(d)
-        self.holidays.sort()
-    
-    def remove_holiday(self, d):
-        self.holidays.remove(d)
-        self.holidays.sort()
-    
-    def holidays(self, start, end):
-        for d in self.holidays:
-            if d > end:
-                break
-            elif d > start:
-                yield d
-    
+
+    def nearest_business_day(self, target_date, prefer_forward = True):
+        if self.is_business_day(target_date):
+            return target_date
+        
+        one_day = timedelta(1)
+        forward_date = target_date + one_day
+        backward_date = target_date - one_day
+        
+        while True:
+            is_forward_ok = self.is_business_day(forward_date)
+            is_backward_ok = self.is_business_day(backward_date)
+            if is_forward_ok and (prefer_forward or not is_backward_ok):
+                return forward_date
+            elif is_backward_ok:
+                return backward_date
+            forward_date += one_day
+            backward_date -= one_day
+        
     def adjust(self, target_date, convention = business_day_convention.following):
         
         """
