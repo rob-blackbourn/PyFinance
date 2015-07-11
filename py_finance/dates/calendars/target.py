@@ -1,5 +1,6 @@
-from py_finance.dates.calendar import YearlyCalendar, business_day_convention
 from datetime import timedelta, date
+from py_finance.dates.business_day_convention import BusinessDayConvention
+from py_finance.dates.yearly_calendar import YearlyCalendar
 
 class Target(YearlyCalendar):
 
@@ -10,7 +11,7 @@ class Target(YearlyCalendar):
         holidays = []
         
         # New Year's Day
-        holidays.append(self.adjust(date(year, 1, 1), business_day_convention.following))
+        holidays.append(self.adjust(date(year, 1, 1), BusinessDayConvention.following))
         
         if year >= 2000:
             # Good Friday and Easter Monday

@@ -1,7 +1,8 @@
 import unittest
 from datetime import date
-from py_finance.dates.calendar import Calendar, business_day_convention,\
-    SimpleCalendar
+from py_finance.dates.calendar import Calendar
+from py_finance.dates.simple_calendar import SimpleCalendar
+from py_finance.dates.business_day_convention import BusinessDayConvention
 
 class TestCalendar(unittest.TestCase):
 
@@ -129,11 +130,11 @@ class TestCalendar(unittest.TestCase):
         jan_first = date(2015, 1, 1)
         jan_second = date(2015, 1, 2)
         
-        # business_day_convention.none
-        self.assertEqual(jan_first, cal.adjust(jan_first, business_day_convention.none), "No adjustment.")
+        # BusinessDayConvention.none
+        self.assertEqual(jan_first, cal.adjust(jan_first, BusinessDayConvention.none), "No adjustment.")
         
-        # business_day_convention.following
-        self.assertEqual(jan_second, cal.adjust(jan_first, business_day_convention.following), "Adjusted to January 2.")
+        # BusinessDayConvention.following
+        self.assertEqual(jan_second, cal.adjust(jan_first, BusinessDayConvention.following), "Adjusted to January 2.")
     
 if __name__ == "__main__":
     unittest.main()
