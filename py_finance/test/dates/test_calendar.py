@@ -1,6 +1,6 @@
 import unittest
 from datetime import date
-from py_finance.calendar import Calendar, business_day_convention,\
+from py_finance.dates.calendar import Calendar, business_day_convention,\
     SimpleCalendar
 
 class TestCalendar(unittest.TestCase):

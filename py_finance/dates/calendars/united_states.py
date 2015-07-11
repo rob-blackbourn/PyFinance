@@ -1,4 +1,4 @@
-from py_finance.calendar import YearlyCalendar, calendar_month, day_of_week,\
+from py_finance.dates.calendar import YearlyCalendar, calendar_month, day_of_week,\
     Calendar
 from datetime import date
 

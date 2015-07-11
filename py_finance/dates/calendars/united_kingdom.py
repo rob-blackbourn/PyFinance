@@ -1,4 +1,4 @@
-from py_finance.calendar import YearlyCalendar, business_day_convention,\
+from py_finance.dates.calendar import YearlyCalendar, business_day_convention,\
     day_of_week
 from datetime import date, timedelta
 
