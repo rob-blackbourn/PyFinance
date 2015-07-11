@@ -1,6 +1,7 @@
 import unittest
 from datetime import date
-from py_finance.calendar import Calendar, business_day_convention
+from py_finance.calendar import Calendar, business_day_convention,\
+    SimpleCalendar
 
 class TestCalendar(unittest.TestCase):
 
@@ -43,23 +44,15 @@ class TestCalendar(unittest.TestCase):
         self.assertFalse(Calendar.is_end_of_month(date(2008, 2, 28)), "28 February 2008 is not the end of the month because it's a leap year.")
         self.assertTrue(Calendar.is_end_of_month(date(2008, 2, 29)), "28 February 2008 is the end of the month because it's a leap year.")
         self.assertTrue(Calendar.is_end_of_month(date(2009, 2, 28)), "28 February 2009 is the end of the month because it's a not leap year.")
-    
-    def test_constructor(self):
-        c1 = Calendar("empty")
-        self.assertTrue(isinstance(c1.holidays, list), "Should have a holiday list.")
-        self.assertEqual(0, len(c1.holidays), "Should have an empty holiday list.")
-        c2 = Calendar("Christmas", (date(2014, 12, 25), date(2014, 12, 26)))
-        self.assertTrue(isinstance(c2.holidays, list), "Should have an empty holiday list.")
-        self.assertEqual(2, len(c2.holidays), "Should have an empty holiday list.")
         
     def test_is_holiday(self):
-        c2 = Calendar("Christmas", (date(2014, 12, 25), date(2014, 12, 26)))
+        c2 = SimpleCalendar((date(2014, 12, 25), date(2014, 12, 26)))
         self.assertTrue(c2.is_holiday(date(2014, 12, 25)), "Thursday 25 December 2014 is a holiday.")
         self.assertTrue(c2.is_holiday(date(2014, 12, 26)), "Friday 26 December 2014 is a holiday.")
         self.assertFalse(c2.is_holiday(date(2014, 12, 27)), "Saturday 27 December 2014 is not a holiday.")
     
     def test_is_business_day(self):
-        c2 = Calendar("Christmas", (date(2014, 12, 25), date(2014, 12, 26)))
+        c2 = SimpleCalendar((date(2014, 12, 25), date(2014, 12, 26)))
         self.assertTrue(c2.is_business_day(date(2014, 12, 24)), "Wednesday 24 December 2014 is a business day.")
         self.assertFalse(c2.is_business_day(date(2014, 12, 25)), "Thursday 25 December 2014 is not a business day.")
         self.assertFalse(c2.is_business_day(date(2014, 12, 26)), "Friday 26 December 2014 is not a business day.")
@@ -106,7 +99,7 @@ class TestCalendar(unittest.TestCase):
         self.assertEquals(date(2021, 4, 4), Calendar.easter(2021), "Easter 2021")
 
     def test_add_business_days(self):
-        cal = Calendar("TARGET", (date(2015, 1, 1), date(2015, 4, 3), date(2015, 4, 6), date(2015, 5, 1), date(2015, 12, 25), date(2015, 12, 16)))
+        cal = SimpleCalendar((date(2015, 1, 1), date(2015, 4, 3), date(2015, 4, 6), date(2015, 5, 1), date(2015, 12, 25), date(2015, 12, 16)))
         # Forward
         self.assertEqual(date(2015, 1, 8), cal.add_business_days(date(2015, 1, 1), 5), "Should skip New Years Day.")
         self.assertEqual(date(2015, 1, 8), cal.add_business_days(date(2015, 1, 2), 4), "Nothing to skip.")
@@ -124,14 +117,14 @@ class TestCalendar(unittest.TestCase):
         # 12 13 14 15 16 17 18
         # 19 20 21 22 23 24 25
         # 26 27 28 29 30 31
-        cal = Calendar("test", [date(2015, 7, 13)])
+        cal = SimpleCalendar([date(2015, 7, 13)])
         self.assertEquals(date(2015, 7, 3), cal.nearest_business_day(date(2015, 7, 4)), "Saturday should roll to Friday")
         self.assertEquals(date(2015, 7, 6), cal.nearest_business_day(date(2015, 7, 5)), "Sunday should roll to Monday")
         self.assertEquals(date(2015, 7, 14), cal.nearest_business_day(date(2015, 7, 12), True), "Sunday should prefer to roll to Tuesday")
         self.assertEquals(date(2015, 7, 10), cal.nearest_business_day(date(2015, 7, 12), False), "Sunday should prefer to roll to Friday")
         
     def test_adjust(self):
-        cal = Calendar("TARGET", (date(2015, 1, 1), date(2015, 4, 3), date(2015, 4, 6), date(2015, 5, 1), date(2015, 12, 25), date(2015, 12, 16)))
+        cal = SimpleCalendar((date(2015, 1, 1), date(2015, 4, 3), date(2015, 4, 6), date(2015, 5, 1), date(2015, 12, 25), date(2015, 12, 16)))
 
         jan_first = date(2015, 1, 1)
         jan_second = date(2015, 1, 2)
