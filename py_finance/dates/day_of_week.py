@@ -1,7 +1,7 @@
 # pip install enum34
-from enum import Enum
+from enum import IntEnum
 
-class DayOfWeek(Enum):
+class DayOfWeek(IntEnum):
     monday = 0
     tuesday = 1
     wednesday = 2

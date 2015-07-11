@@ -65,7 +65,7 @@ class Calendar(object):
         signed_day = timedelta(sign)
         
         while count != 0:
-            target_date += signed_day;
+            target_date += signed_day
             count -= sign
             
             while not self.is_business_day(target_date):

@@ -1,7 +1,7 @@
 # pip install enum34
-from enum import Enum
+from enum import IntEnum
 
-class CalendarMonth(Enum):
+class CalendarMonth(IntEnum):
     january = 1
     february = 2
     march = 3
