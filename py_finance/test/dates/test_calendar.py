@@ -3,6 +3,8 @@ from datetime import date
 from py_finance.dates.calendar import Calendar
 from py_finance.dates.simple_calendar import SimpleCalendar
 from py_finance.dates.business_day_convention import BusinessDayConvention
+from py_finance.dates.calendar_month import CalendarMonth
+from py_finance.dates.day_of_week import DayOfWeek
 
 class TestCalendar(unittest.TestCase):
 
@@ -124,6 +126,23 @@ class TestCalendar(unittest.TestCase):
         self.assertEquals(date(2015, 7, 14), cal.nearest_business_day(date(2015, 7, 12), True), "Sunday should prefer to roll to Tuesday")
         self.assertEquals(date(2015, 7, 10), cal.nearest_business_day(date(2015, 7, 12), False), "Sunday should prefer to roll to Friday")
         
+    def test_add_nth_day_of_week(self):
+        #      June 2015
+        # Su Mo Tu We Th Fr Sa
+        #     1  2  3  4  5  6
+        #  7  8  9 10 11 12 13
+        # 14 15 16 17 18 19 20
+        # 21 22 23 24 25 26 27
+        # 28 29 30
+        self.assertEqual(date(2015, 6, 1), Calendar.add_nth_day_of_week(date(2015, 6, 1), 1, DayOfWeek.monday, False), "The first Monday is the same date.")
+        self.assertEqual(date(2015, 6, 8), Calendar.add_nth_day_of_week(date(2015, 6, 1), 1, DayOfWeek.monday, True), "When strictly different go to the next week.")
+        self.assertEqual(date(2015, 6, 2), Calendar.add_nth_day_of_week(date(2015, 6, 1), 1, DayOfWeek.tuesday, False), "The first Tuesday is the next date.")
+        self.assertEqual(date(2015, 6, 2), Calendar.add_nth_day_of_week(date(2015, 6, 1), 1, DayOfWeek.tuesday, True), "Strictly different should make no difference.")
+        self.assertEqual(date(2015, 6, 17), Calendar.add_nth_day_of_week(date(2015, 6, 1), 3, DayOfWeek.wednesday, False), "Third Wednesday.")
+        self.assertEqual(date(2015, 6, 30), Calendar.add_nth_day_of_week(date(2015, 6, 30), -1, DayOfWeek.tuesday, False), "The last Tuesday is the same date.")
+        self.assertEqual(date(2015, 6, 23), Calendar.add_nth_day_of_week(date(2015, 6, 30), -1, DayOfWeek.tuesday, True), "Skip the start date as it's a Tuesday.")
+        self.assertEqual(date(2015, 6, 10), Calendar.add_nth_day_of_week(date(2015, 6, 30), -3, DayOfWeek.wednesday, True), "Third Wednesday from the end of the month..")
+    
     def test_adjust(self):
         cal = SimpleCalendar((date(2015, 1, 1), date(2015, 4, 3), date(2015, 4, 6), date(2015, 5, 1), date(2015, 12, 25), date(2015, 12, 16)))
 
