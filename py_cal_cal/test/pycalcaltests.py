@@ -20,12 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from py_finance.dates.calendrical_calculations.pycalcal import *
-from appendixCUnitTest import AppendixCTable1TestCaseBase
-from appendixCUnitTest import AppendixCTable2TestCaseBase
-from appendixCUnitTest import AppendixCTable3TestCaseBase
-from appendixCUnitTest import AppendixCTable4TestCaseBase
-from appendixCUnitTest import AppendixCTable5TestCaseBase
+from py_cal_cal.pycalcal import *
+from py_cal_cal.test.appendixCUnitTest import AppendixCTable1TestCaseBase
+from py_cal_cal.test.appendixCUnitTest import AppendixCTable2TestCaseBase
+from py_cal_cal.test.appendixCUnitTest import AppendixCTable3TestCaseBase
+from py_cal_cal.test.appendixCUnitTest import AppendixCTable4TestCaseBase
+from py_cal_cal.test.appendixCUnitTest import AppendixCTable5TestCaseBase
 import unittest
 
 class BasicCodeTestCase(unittest.TestCase):

@@ -1,9 +1,9 @@
 # AUTOMATICALLY GENERATED FROM pycalcal.nw: ANY CHANGES WILL BE OVERWRITTEN.
 
-from py_finance.dates.calendrical_calculations.pycalcal import *
+from py_cal_cal.pycalcal import *
 import unittest
 
-from appendixCUnitTest import AppendixCTable1TestCaseBase
+from py_cal_cal.test.appendixCUnitTest import AppendixCTable1TestCaseBase
 class BasicCodeTestCase(unittest.TestCase):
     def testNext(self):
         self.assertEqual(next(0, lambda i: i == 3), 3)

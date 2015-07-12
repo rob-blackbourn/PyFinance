@@ -1,9 +1,9 @@
 # AUTOMATICALLY GENERATED FROM pycalcal.nw: ANY CHANGES WILL BE OVERWRITTEN.
 
-from py_finance.dates.calendrical_calculations.pycalcal import *
+from py_cal_cal.pycalcal import *
 import unittest
 
-from appendixCUnitTest import AppendixCTable5TestCaseBase
+from py_cal_cal.test.appendixCUnitTest import AppendixCTable5TestCaseBase
 class AstronomicalLunarCalendarsTestCase(unittest.TestCase):
     def testUniversalFromDynamical(self):
         # from Meeus Example 10.a, pag 78
