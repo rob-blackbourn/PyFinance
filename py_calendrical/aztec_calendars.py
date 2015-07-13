@@ -1,6 +1,6 @@
 from operator import mod
 from py_cal_cal import quotient, amod
-from py_cal_cal import JulianMonth
+from gregorian_calendars import JulianMonth
 from py_calendrical.julian_calendars import JulianDate
 
 AZTEC_CORRELATION = JulianDate(1521, JulianMonth.August, 13).to_fixed()

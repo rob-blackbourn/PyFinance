@@ -1,4 +1,4 @@
-from py_cal_cal import JulianMonth 
+from gregorian_calendars import JulianMonth 
 from py_calendrical.julian_calendars import JulianDate
 from coptic_calendars import CopticDate
 

@@ -1,5 +1,6 @@
 from py_cal_cal import amod, quotient, rd
-from py_cal_cal import GregorianDate, JulianMonth, DayOfWeek
+from py_cal_cal import DayOfWeek
+from gregorian_calendars import GregorianDate, JulianMonth
 
 class IsoDate(object):
     

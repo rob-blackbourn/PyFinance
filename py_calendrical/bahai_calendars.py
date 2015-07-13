@@ -1,9 +1,10 @@
 from operator import mod
 from mpmath import mpf
-from py_cal_cal import GregorianDate, JulianMonth, Clock
+from py_cal_cal import Clock
 from py_cal_cal import quotient, next_int, ifloor, iround
 from astro import SPRING, estimate_prior_solar_longitude, solar_longitude, MEAN_TROPICAL_YEAR
 from location import Location
+from gregorian_calendars import GregorianDate, JulianMonth
 
 class BahaiDate(object):
 

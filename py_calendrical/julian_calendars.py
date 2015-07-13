@@ -1,6 +1,7 @@
 from operator import mod
 from py_cal_cal import quotient, list_range
-from py_cal_cal import GregorianDate, JulianMonth, DayOfWeek
+from py_cal_cal import DayOfWeek
+from gregorian_calendars import GregorianDate, JulianMonth
 
 class JulianDate(object):
     
