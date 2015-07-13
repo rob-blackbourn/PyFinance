@@ -125,7 +125,7 @@ def orthodox_easter(g_year):
     shifted_epact = mod(14 + 11 * mod(g_year, 19), 30)
     j_year        = g_year if g_year > 0 else g_year - 1
     paschal_moon  = JulianDate(j_year, JulianMonth.April, 19).to_fixed() - shifted_epact
-    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
+    return DayOfWeek.Sunday.after(paschal_moon)
 
 def alt_orthodox_easter(g_year):
     """Return fixed date of Orthodox Easter in Gregorian year g_year.
@@ -136,7 +136,7 @@ def alt_orthodox_easter(g_year):
                     quotient(g_year, 19) -
                     273 +
                     GregorianDate.EPOCH)
-    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
+    return DayOfWeek.Sunday.after(paschal_moon)
 
 # see lines 1401-1426 in calendrica-3.0.cl
 def easter(g_year):
@@ -151,7 +151,7 @@ def easter(g_year):
                                                   (10 < mod(g_year, 19))))
                       else  shifted_epact)
     paschal_moon = GregorianDate(g_year, JulianMonth.April, 19).to_fixed() - adjusted_epact
-    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
+    return DayOfWeek.Sunday.after(paschal_moon)
 
 # see lines 1429-1431 in calendrica-3.0.cl
 def pentecost(g_year):

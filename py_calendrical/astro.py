@@ -283,20 +283,9 @@ def precession(tee):
     Adapted from "Astronomical Algorithms" by Jean Meeus,
     Willmann-Bell, Inc., 1991."""
     c = julian_centuries(tee)
-    eta = mod(poly(c, [0,
-                       secs(mpf(47.0029)),
-                       secs(mpf(-0.03302)),
-                       secs(mpf(0.000060))]),
-              360)
-    cap_P = mod(poly(c, [mpf(174.876384), 
-                         secs(mpf(-869.8089)), 
-                         secs(mpf(0.03536))]),
-                360)
-    p = mod(poly(c, [0,
-                     secs(mpf(5029.0966)),
-                     secs(mpf(1.11113)),
-                     secs(mpf(0.000006))]),
-            360)
+    eta = mod(poly(c, [0, secs(mpf(47.0029)), secs(mpf(-0.03302)), secs(mpf(0.000060))]), 360)
+    cap_P = mod(poly(c, [mpf(174.876384), secs(mpf(-869.8089)), secs(mpf(0.03536))]), 360)
+    p = mod(poly(c, [0, secs(mpf(5029.0966)), secs(mpf(1.11113)), secs(mpf(0.000006))]), 360)
     cap_A = cos_degrees(eta) * sin_degrees(cap_P)
     cap_B = cos_degrees(cap_P)
     arg = arctan_degrees(cap_A, cap_B)

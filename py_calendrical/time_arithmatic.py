@@ -32,11 +32,11 @@ class Clock(object):
         return mod(tee, 1)
 
     @classmethod
-    def days_from_hours(cls, x):
+    def days_from_hours(cls, hours):
         """Return the number of days given x hours."""
-        return x / 24
+        return hours / 24
     
     @classmethod
-    def days_from_seconds(cls, x):
+    def days_from_seconds(cls, seconds):
         """Return the number of days given x seconds."""
-        return x / 24 / 60 / 60
+        return seconds / 24 / 60 / 60

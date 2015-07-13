@@ -253,7 +253,7 @@ class HebrewDate(YearMonthDay):
         iyyar4 = HebrewDate(hebrew_year, HebrewMonth.IYYAR, 4).to_fixed()
         
         if (DayOfWeek.from_fixed(iyyar4) in [DayOfWeek.Thursday, DayOfWeek.Friday]):
-            return DayOfWeek(DayOfWeek.Wednesday).before(iyyar4)
+            return DayOfWeek.Wednesday.before(iyyar4)
         elif (DayOfWeek.Sunday == DayOfWeek.from_fixed(iyyar4)):
             return iyyar4 + 1
         else:

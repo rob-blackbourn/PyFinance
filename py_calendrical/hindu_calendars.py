@@ -710,7 +710,7 @@ def sacred_wednesdays_in_range(range):
     that are day 8 of Hindu lunar months."""
     a      = range[0]
     b      = range[1]
-    wed    = DayOfWeek(DayOfWeek.Wednesday).on_or_after(a)
+    wed    = DayOfWeek.Wednesday.on_or_after(a)
     h_date = HinduLunarDate.from_fixed(wed)
     ell  = [wed] if (h_date.day == 8) else []
     if is_in_range(wed, range):
