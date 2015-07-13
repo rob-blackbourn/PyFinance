@@ -131,22 +131,22 @@ def sin_degrees(theta):
     return sin(radians_from_degrees(theta))
 
 # see lines 2718-2721 in calendrica-3.0.cl
-def cosine_degrees(theta):
+def cos_degrees(theta):
     """Return cosine of theta (given in degrees)."""
     #from math import cos
     return cos(radians_from_degrees(theta))
 
 # from errata20091230.pdf entry 112
-cos_degrees=cosine_degrees
+cos_degrees=cos_degrees
 
 
 # see lines 2723-2726 in calendrica-3.0.cl
-def tangent_degrees(theta):
+def tan_degrees(theta):
     """Return tangent of theta (given in degrees)."""
     return tan(radians_from_degrees(theta))
 
 # from errata20091230.pdf entry 112
-tan_degrees=tangent_degrees
+tan_degrees=tan_degrees
 
 
 def signum(a):
@@ -223,8 +223,8 @@ def direction(location, focus):
     psi = location.longitude
     psi_prime = focus.longitude
     y = sin_degrees(psi_prime - psi)
-    x = ((cosine_degrees(phi) * tangent_degrees(phi_prime)) -
-         (sin_degrees(phi)    * cosine_degrees(psi - psi_prime)))
+    x = ((cos_degrees(phi) * tan_degrees(phi_prime)) -
+         (sin_degrees(phi)    * cos_degrees(psi - psi_prime)))
     if ((x == y == 0) or (phi_prime == deg(90))):
         return deg(0)
     elif (phi_prime == deg(-90)):
@@ -337,8 +337,8 @@ def declination(tee, beta, lam):
     longitude 'lam' and latitude 'beta'."""
     varepsilon = obliquity(tee)
     return arcsin_degrees(
-        (sin_degrees(beta) * cosine_degrees(varepsilon)) +
-        (cosine_degrees(beta) * sin_degrees(varepsilon) * sin_degrees(lam)))
+        (sin_degrees(beta) * cos_degrees(varepsilon)) +
+        (cos_degrees(beta) * sin_degrees(varepsilon) * sin_degrees(lam)))
 
 # see lines 2893-2903 in calendrica-3.0.cl
 def right_ascension(tee, beta, lam):
@@ -346,9 +346,9 @@ def right_ascension(tee, beta, lam):
     latitude 'lam' and longitude 'beta'."""
     varepsilon = obliquity(tee)
     return arctan_degrees(
-        (sin_degrees(lam) * cosine_degrees(varepsilon)) -
-        (tangent_degrees(beta) * sin_degrees(varepsilon)),
-        cosine_degrees(lam))
+        (sin_degrees(lam) * cos_degrees(varepsilon)) -
+        (tan_degrees(beta) * sin_degrees(varepsilon)),
+        cos_degrees(lam))
 
 # see lines 2905-2920 in calendrica-3.0.cl
 def sine_offset(tee, location, alpha):
@@ -358,9 +358,9 @@ def sine_offset(tee, location, alpha):
     phi = location.latitude
     tee_prime = universal_from_local(tee, location)
     delta = declination(tee_prime, deg(mpf(0)), solar_longitude(tee_prime))
-    return ((tangent_degrees(phi) * tangent_degrees(delta)) +
-            (sin_degrees(alpha) / (cosine_degrees(delta) *
-                                   cosine_degrees(phi))))
+    return ((tan_degrees(phi) * tan_degrees(delta)) +
+            (sin_degrees(alpha) / (cos_degrees(delta) *
+                                   cos_degrees(phi))))
 
 # see lines 2922-2947 in calendrica-3.0.cl
 def approx_moment_of_depression(tee, location, alpha, early):
