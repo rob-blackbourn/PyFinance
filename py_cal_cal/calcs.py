@@ -199,6 +199,78 @@ def poly(x, a):
         p = p * x + a[n-i]
     return p
 
+def days_from_hours(x):
+    """Return the number of days given x hours."""
+    return x / 24
+
+def days_from_seconds(x):
+    """Return the number of days given x seconds."""
+    return x / 24 / 60 / 60
+
+def secs(x):
+    """Return the seconds in angle x."""
+    return x / 3600
+
+def angle(d, m, s):
+    """Return an angle data structure
+    from d degrees, m arcminutes and s arcseconds.
+    This assumes that negative angles specifies negative d, m and s."""
+    return d + ((m + (s / 60)) / 60)
+
+def normalized_degrees(theta):
+    """Return a normalize angle theta to range [0,360) degrees."""
+    return mod(theta, 360)
+
+def normalized_degrees_from_radians(theta):
+    """Return normalized degrees from radians, theta.
+    Function 'degrees' comes from mpmath."""
+    return normalized_degrees(degrees(theta))
+
+from mpmath import radians as radians_from_degrees
+
+def sin_degrees(theta):
+    """Return sine of theta (given in degrees)."""
+    return sin(radians_from_degrees(theta))
+
+def cos_degrees(theta):
+    """Return cosine of theta (given in degrees)."""
+    return cos(radians_from_degrees(theta))
+
+def tan_degrees(theta):
+    """Return tangent of theta (given in degrees)."""
+    return tan(radians_from_degrees(theta))
+
+#-----------------------------------------------------------
+# NOTE: arc[tan|sin|cos] casted with degrees given CL code
+#       returns angles [0, 360), see email from Dershowitz
+#       after my request for clarification
+#-----------------------------------------------------------
+
+# see lines 2728-2739 in calendrica-3.0.cl
+# def arctan_degrees(y, x):
+#     """ Arctangent of y/x in degrees."""
+#     from math import atan2
+#     return normalized_degrees_from_radians(atan2(x, y))
+
+def arctan_degrees(y, x):
+    """ Arctangent of y/x in degrees."""
+    if (x == 0) and (y != 0):
+        return mod(signum(y) * mpf(90), 360)
+    else:
+        alpha = normalized_degrees_from_radians(atan(y / x))
+        if x >= 0:
+            return alpha
+        else:
+            return mod(alpha + mpf(180), 360)
+
+def arcsin_degrees(x):
+    """Return arcsine of x in degrees."""
+    return normalized_degrees_from_radians(asin(x))
+
+def arccos_degrees(x):
+    """Return arccosine of x in degrees."""
+    return normalized_degrees_from_radians(acos(x))
+
 # Epoch definition. I took it out explicitly from rd().
 def epoch():
     """Epoch definition. For Rata Diem, R.D., it is 0 (but any other reference
@@ -1872,86 +1944,6 @@ def equatorial_from_horizontal(A, h, phi):
                            cos_degrees(phi) * cos_degrees(h) * cos_degrees(A))
     return [H, delta]
 
-def days_from_hours(x):
-    """Return the number of days given x hours."""
-    return x / 24
-
-def days_from_seconds(x):
-    """Return the number of days given x seconds."""
-    return x / 24 / 60 / 60
-
-def secs(x):
-    """Return the seconds in angle x."""
-    return x / 3600
-
-def angle(d, m, s):
-    """Return an angle data structure
-    from d degrees, m arcminutes and s arcseconds.
-    This assumes that negative angles specifies negative d, m and s."""
-    return d + ((m + (s / 60)) / 60)
-
-def normalized_degrees(theta):
-    """Return a normalize angle theta to range [0,360) degrees."""
-    return mod(theta, 360)
-
-def normalized_degrees_from_radians(theta):
-    """Return normalized degrees from radians, theta.
-    Function 'degrees' comes from mpmath."""
-    return normalized_degrees(degrees(theta))
-
-def radians_from_degrees(theta):
-    pass
-from mpmath import radians as radians_from_degrees
-
-def sin_degrees(theta):
-    """Return sine of theta (given in degrees)."""
-    #from math import sin
-    return sin(radians_from_degrees(theta))
-
-def cosine_degrees(theta):
-    """Return cosine of theta (given in degrees)."""
-    #from math import cos
-    return cos(radians_from_degrees(theta))
-
-cos_degrees=cosine_degrees
-
-def tangent_degrees(theta):
-    """Return tangent of theta (given in degrees)."""
-    return tan(radians_from_degrees(theta))
-
-tan_degrees=tangent_degrees
-
-#-----------------------------------------------------------
-# NOTE: arc[tan|sin|cos] casted with degrees given CL code
-#       returns angles [0, 360), see email from Dershowitz
-#       after my request for clarification
-#-----------------------------------------------------------
-
-# see lines 2728-2739 in calendrica-3.0.cl
-# def arctan_degrees(y, x):
-#     """ Arctangent of y/x in degrees."""
-#     from math import atan2
-#     return normalized_degrees_from_radians(atan2(x, y))
-
-def arctan_degrees(y, x):
-    """ Arctangent of y/x in degrees."""
-    if (x == 0) and (y != 0):
-        return mod(signum(y) * mpf(90), 360)
-    else:
-        alpha = normalized_degrees_from_radians(atan(y / x))
-        if x >= 0:
-            return alpha
-        else:
-            return mod(alpha + mpf(180), 360)
-
-def arcsin_degrees(x):
-    """Return arcsine of x in degrees."""
-    return normalized_degrees_from_radians(asin(x))
-
-def arccos_degrees(x):
-    """Return arccosine of x in degrees."""
-    return normalized_degrees_from_radians(acos(x))
-
 
 
 
@@ -1998,8 +1990,8 @@ def declination(tee, beta, lam):
     longitude 'lam' and latitude 'beta'."""
     varepsilon = obliquity(tee)
     return arcsin_degrees(
-        (sin_degrees(beta) * cosine_degrees(varepsilon)) +
-        (cosine_degrees(beta) * sin_degrees(varepsilon) * sin_degrees(lam)))
+        (sin_degrees(beta) * cos_degrees(varepsilon)) +
+        (cos_degrees(beta) * sin_degrees(varepsilon) * sin_degrees(lam)))
 
 # see lines 2893-2903 in calendrica-3.0.cl
 def right_ascension(tee, beta, lam):
@@ -2007,9 +1999,9 @@ def right_ascension(tee, beta, lam):
     latitude 'lam' and longitude 'beta'."""
     varepsilon = obliquity(tee)
     return arctan_degrees(
-        (sin_degrees(lam) * cosine_degrees(varepsilon)) -
-        (tangent_degrees(beta) * sin_degrees(varepsilon)),
-        cosine_degrees(lam))
+        (sin_degrees(lam) * cos_degrees(varepsilon)) -
+        (tan_degrees(beta) * sin_degrees(varepsilon)),
+        cos_degrees(lam))
 
 class Location(object):
 
@@ -2031,8 +2023,8 @@ class Location(object):
         psi = self.longitude
         psi_prime = focus.longitude
         y = sin_degrees(psi_prime - psi)
-        x = ((cosine_degrees(phi) * tangent_degrees(phi_prime)) -
-             (sin_degrees(phi)    * cosine_degrees(psi - psi_prime)))
+        x = ((cos_degrees(phi) * tan_degrees(phi_prime)) -
+             (sin_degrees(phi)    * cos_degrees(psi - psi_prime)))
         if ((x == y == 0) or (phi_prime == 90)):
             return 0
         elif (phi_prime == -90):
@@ -2100,9 +2092,9 @@ class Location(object):
         phi = self.latitude
         tee_prime = self.universal_from_local(tee)
         delta = declination(tee_prime, mpf(0), solar_longitude(tee_prime))
-        return ((tangent_degrees(phi) * tangent_degrees(delta)) +
-                (sin_degrees(alpha) / (cosine_degrees(delta) *
-                                       cosine_degrees(phi))))
+        return ((tan_degrees(phi) * tan_degrees(delta)) +
+                (sin_degrees(alpha) / (cos_degrees(delta) *
+                                       cos_degrees(phi))))
 
     # see lines 2922-2947 in calendrica-3.0.cl
     def approx_moment_of_depression(self, tee, alpha, early):
@@ -2277,10 +2269,10 @@ def asr(date, location):
     phi = location.latitude
     delta = declination(noon, 0, solar_longitude(noon))
     altitude = delta - phi - 90
-    h = arctan_degrees(tangent_degrees(altitude),
-                       2 * tangent_degrees(altitude) + 1)
+    h = arctan_degrees(tan_degrees(altitude),
+                       2 * tan_degrees(altitude) + 1)
     # For Shafii use instead:
-    # tangent_degrees(altitude) + 1)
+    # tan_degrees(altitude) + 1)
 
     return location.dusk(date, -h)
 
@@ -2363,12 +2355,12 @@ def equation_of_time(tee):
     anomaly = poly(c, [mpf(357.52910), mpf(35999.05030), mpf(-0.0001559), mpf(-0.00000048)])
     eccentricity = poly(c, [mpf(0.016708617), mpf(-0.000042037), mpf(-0.0000001236)])
     varepsilon = obliquity(tee)
-    y = pow(tangent_degrees(varepsilon / 2), 2)
+    y = pow(tan_degrees(varepsilon / 2), 2)
     equation = ((1/2 / pi) *
                 (y * sin_degrees(2 * lamb) +
                  -2 * eccentricity * sin_degrees(anomaly) +
                  (4 * eccentricity * y * sin_degrees(anomaly) *
-                  cosine_degrees(2 * lamb)) +
+                  cos_degrees(2 * lamb)) +
                  -0.5 * y * y * sin_degrees(4 * lamb) +
                  -1.25 * eccentricity * eccentricity * sin_degrees(2 * anomaly)))
     return signum(equation) * min(abs(equation), days_from_hours(mpf(12)))
@@ -2459,7 +2451,7 @@ def aberration(tee):
     """Return the aberration at moment, tee."""
     c = julian_centuries(tee)
     return ((mpf(0.0000974) *
-             cosine_degrees(mpf(177.63) + mpf(35999.01848) * c)) -
+             cos_degrees(mpf(177.63) + mpf(35999.01848) * c)) -
             mpf(0.005575))
 
 # see lines 3283-3295 in calendrica-3.0.cl
@@ -2497,8 +2489,8 @@ def precession(tee):
                      secs(mpf(1.11113)),
                      secs(mpf(0.000006))]),
             360)
-    cap_A = cosine_degrees(eta) * sin_degrees(cap_P)
-    cap_B = cosine_degrees(cap_P)
+    cap_A = cos_degrees(eta) * sin_degrees(cap_P)
+    cap_B = cos_degrees(cap_P)
     arg = arctan_degrees(cap_A, cap_B)
 
     return mod(p + cap_P - arg, 360)
@@ -2887,7 +2879,7 @@ def lunar_altitude(tee, location):
     cap_H = mod(theta0 + psi - alpha, 360)
     altitude = arcsin_degrees(
         (sin_degrees(phi) * sin_degrees(delta)) +
-        (cosine_degrees(phi) * cosine_degrees(delta) * cosine_degrees(cap_H)))
+        (cos_degrees(phi) * cos_degrees(delta) * cos_degrees(cap_H)))
     return mod(altitude + 180, 360) - 180
  
 
@@ -2935,7 +2927,7 @@ def lunar_distance(tee):
                          args_moon_node],
                         lambda v, w, x, y, z: (v *
                                     pow(cap_E, abs(x)) * 
-                                    cosine_degrees((w * cap_D) +
+                                    cos_degrees((w * cap_D) +
                                                    (x * cap_M) +
                                                    (y * cap_M_prime) +
                                                    (z * cap_F))))
@@ -2957,7 +2949,7 @@ def lunar_parallax(tee, location):
     geo = lunar_altitude(tee, location)
     Delta = lunar_distance(tee)
     alt = 6378140 / Delta
-    arg = alt * cosine_degrees(geo)
+    arg = alt * cos_degrees(geo)
     return arcsin_degrees(arg)
 
 
@@ -2988,8 +2980,8 @@ def visible_crescent(date, location):
     tee = location.universal_from_standard(location.dusk(date - 1, mpf(4.5)))
     phase = lunar_phase(tee)
     altitude = lunar_altitude(tee, location)
-    arc_of_light = arccos_degrees(cosine_degrees(lunar_latitude(tee)) *
-                                  cosine_degrees(phase))
+    arc_of_light = arccos_degrees(cos_degrees(lunar_latitude(tee)) *
+                                  cos_degrees(phase))
     return ((NEW < phase < FIRST_QUARTER) and
             (mpf(10.6) <= arc_of_light <= 90) and
             (altitude > mpf(4.1)))
