@@ -6,15 +6,14 @@ from astro import phasis_on_or_before, MEAN_SYNODIC_MONTH
 from julian_calendars import JulianDate
 from location import Location
 from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.year_month_day import YearMonthDay
 
-class IslamicDate(object):
+class IslamicDate(YearMonthDay):
 
     EPOCH = JulianDate(JulianDate.ce(622), JulianMonth.July, 16).to_fixed()
 
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
     
     def to_fixed(self):
         """Return fixed date equivalent to Islamic date i_date."""

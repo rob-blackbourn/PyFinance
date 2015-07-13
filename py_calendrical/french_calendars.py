@@ -5,17 +5,16 @@ from astro import estimate_prior_solar_longitude, AUTUMN, solar_longitude, MEAN_
 from location import Location
 from gregorian_calendars import GregorianDate, JulianMonth 
 from time_arithmatic import Clock
+from py_calendrical.year_month_day import YearMonthDay
 
-class FrenchDate(object):
+class FrenchDate(YearMonthDay):
 
     #"""Fixed date of start of the French Revolutionary calendar."""
     EPOCH = GregorianDate(1792, JulianMonth.September, 22).to_fixed()
     PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), 27, Clock.days_from_hours(1))
     
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
 
     def to_fixed(self):
         """Return fixed date of French Revolutionary date, f_date"""

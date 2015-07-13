@@ -1,15 +1,14 @@
 from gregorian_calendars import JulianMonth 
 from py_calendrical.julian_calendars import JulianDate
 from coptic_calendars import CopticDate
+from py_calendrical.year_month_day import YearMonthDay
 
-class EthiopicDate(object):
+class EthiopicDate(YearMonthDay):
     
     EPOCH = JulianDate(JulianDate.ce(8), JulianMonth.August, 29).to_fixed()
 
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
 
     def to_fixed(self):
         """Return the fixed date corresponding to Ethiopic date 'e_date'."""

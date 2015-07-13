@@ -2,15 +2,14 @@ from operator import mod
 from py_cal_cal import quotient, list_range
 from gregorian_calendars import JulianMonth, GregorianDate
 from py_calendrical.julian_calendars import JulianDate
+from py_calendrical.year_month_day import YearMonthDay
 
-class CopticDate(object):
+class CopticDate(YearMonthDay):
 
     EPOCH = JulianDate(JulianDate.ce(284), JulianMonth.August, 29).to_fixed()
     
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
 
     @classmethod
     def is_leap_year(year):
@@ -19,7 +18,7 @@ class CopticDate(object):
         return mod(year, 4) == 3
     
     def to_fixed(self):
-        """Return the fixed date of Coptic date 'c_date'."""
+        """Return the fixed date of Coptic date."""
         return (self.EPOCH - 1  +
                 365 * (self.year - 1)  +
                 quotient(self.year, 4) +

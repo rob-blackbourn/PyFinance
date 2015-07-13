@@ -6,16 +6,15 @@ from astro import estimate_prior_solar_longitude, SPRING, solar_longitude, MEAN_
 from julian_calendars import JulianDate
 from location import Location
 from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.year_month_day import YearMonthDay
 
-class PersianDate(object):
+class PersianDate(YearMonthDay):
 
     EPOCH = JulianDate(JulianDate.ce(622), JulianMonth.March, 19).to_fixed()
     TEHRAN = Location(mpf(35.68), mpf(51.42), 1100, Clock.days_from_hours(3 + 1/2))
     
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
 
     @classmethod        
     def midday_in_tehran(cls, date):

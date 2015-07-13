@@ -1,15 +1,14 @@
 from operator import mod
+from year_month_day import YearMonthDay
 from py_cal_cal import quotient
 from julian_calendars import JD
 
-class EgyptianDate(object):
+class EgyptianDate(YearMonthDay):
 
     EPOCH = JD(1448638).to_fixed()    
 
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
         
     def to_fixed(self):
         return self.EPOCH + (365*(self.year - 1)) + (30*(self.month - 1)) + (self.day - 1)

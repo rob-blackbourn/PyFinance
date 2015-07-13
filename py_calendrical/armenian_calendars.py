@@ -1,19 +1,16 @@
+from year_month_day import YearMonthDay
 from egyptian_calendars import EgyptianDate
 
-class ArmenianDate(object):
+class ArmenianDate(YearMonthDay):
 
     EPOCH = 201443
     
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
 
     def to_fixed(self):
         """Return the fixed date."""
-        return (self.EPOCH +
-                EgyptianDate(self.year, self.month, self.day).to_fixed() -
-                EgyptianDate.EPOCH)
+        return (self.EPOCH + EgyptianDate(self.year, self.month, self.day).to_fixed() - EgyptianDate.EPOCH)
 
     @classmethod
     def from_fixed(cls, fixed_date):

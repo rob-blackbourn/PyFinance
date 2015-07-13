@@ -3,6 +3,7 @@ from mpmath import mpf
 from py_cal_cal import quotient, list_range, ifloor
 from day_arithmatic import DayOfWeek
 from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.year_month_day import YearMonthDay
 
 class JD(object):
     
@@ -39,14 +40,12 @@ class MJD(object):
     def from_fixed(cls, fixed_date):
         return MJD(fixed_date - cls.EPOCH)
 
-class JulianDate(object):
+class JulianDate(YearMonthDay):
     
     EPOCH = GregorianDate(0, JulianMonth.December, 30).to_fixed()
     
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
 
     def to_fixed(self):
         """Return the fixed date equivalent to the Julian date 'j_date'."""

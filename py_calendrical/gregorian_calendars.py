@@ -2,6 +2,7 @@ from operator import mod
 from enum import IntEnum
 from py_cal_cal import quotient, amod, is_in_range
 from day_arithmatic import DayOfWeek
+from py_calendrical.year_month_day import YearMonthDay
 
 class JulianMonth(IntEnum):
     January = 1
@@ -17,14 +18,12 @@ class JulianMonth(IntEnum):
     November = 11
     December = 12
 
-class GregorianDate(object):    
+class GregorianDate(YearMonthDay):    
 
     EPOCH = 1
 
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
 
     def to_fixed(self):
         """Return the serial date equivalent."""

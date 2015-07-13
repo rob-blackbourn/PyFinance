@@ -10,6 +10,7 @@ from coptic_calendars import CopticDate
 from location import Location
 from gregorian_calendars import GregorianDate, JulianMonth
 from time_arithmatic import Clock
+from py_calendrical.year_month_day import YearMonthDay
 
 class HebrewMonth(IntEnum):
     NISAN = 1
@@ -26,14 +27,12 @@ class HebrewMonth(IntEnum):
     ADAR = 12
     ADARII = 13
     
-class HebrewDate(object):
+class HebrewDate(YearMonthDay):
 
     EPOCH = JulianDate(JulianDate.bce(3761),  JulianMonth.October, 7).to_fixed()
     
     def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
+        YearMonthDay.__init__(self, year, month, day)
     
     def to_fixed(self):
         """Return fixed date of Hebrew date h_date."""
