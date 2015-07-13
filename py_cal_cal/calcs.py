@@ -298,9 +298,9 @@ class DayOfWeek(IntEnum):
     Saturday = 6
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return day of the week from a fixed date 'date'."""
-        return DayOfWeek(mod(date - rd(0) - DayOfWeek.Sunday, 7))
+    def from_fixed(cls, fixed_date):
+        """Return day of the week from a fixed fixed_date 'fixed_date'."""
+        return DayOfWeek(mod(fixed_date - rd(0) - DayOfWeek.Sunday, 7))
 
     def on_or_before(self, fixed_date):
         """Return the fixed date of the k-day on or before fixed date 'fixed_date'.
@@ -910,14 +910,14 @@ class IsoDate(object):
         return GregorianDate(self.year - 1, JulianMonth.December, 28).nth_day_of_week(self.week, DayOfWeek.Sunday) + self.day
     
     @classmethod
-    def from_fixed(cls, date):
-        """Return the ISO date corresponding to the fixed date 'date'."""
-        approx = GregorianDate.to_year(date - 3)
+    def from_fixed(cls, fixed_date):
+        """Return the ISO fixed_date corresponding to the fixed fixed_date 'fixed_date'."""
+        approx = GregorianDate.to_year(fixed_date - 3)
         year   = (approx +
-                  1 if date >= IsoDate(approx + 1, 1, 1).to_fixed()
+                  1 if fixed_date >= IsoDate(approx + 1, 1, 1).to_fixed()
                   else approx)
-        week   = 1 + quotient(date - IsoDate(year, 1, 1).to_fixed(), 7)
-        day    = amod(date - rd(0), 7)
+        week   = 1 + quotient(fixed_date - IsoDate(year, 1, 1).to_fixed(), 7)
+        day    = amod(fixed_date - rd(0), 7)
         return IsoDate(year, week, day)
 
     @classmethod    
@@ -957,7 +957,7 @@ class CopticDate(object):
 
     @classmethod
     def from_fixed(cls, fixed_date):
-        """Return the Coptic date equivalent of fixed date 'fixed_date'."""
+        """Return the Coptic fixed_date equivalent of fixed fixed_date 'fixed_date'."""
         year  = quotient((4 * (fixed_date - cls.EPOCH)) + 1463, 1461)
         month = 1 + quotient(fixed_date - CopticDate(year, 1, 1).to_fixed(), 30)
         day   = fixed_date + 1 - CopticDate(year, month, 1).to_fixed()
@@ -993,9 +993,9 @@ class EthiopicDate(object):
         return (self.EPOCH + CopticDate(self.year, self.month, self.day).to_fixed() - CopticDate.EPOCH)
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return the Ethiopic date equivalent of fixed date 'date'."""
-        ymd = CopticDate.from_fixed(date + (CopticDate.EPOCH - cls.EPOCH))
+    def from_fixed(cls, fixed_date):
+        """Return the Ethiopic fixed_date equivalent of fixed fixed_date 'fixed_date'."""
+        ymd = CopticDate.from_fixed(fixed_date + (CopticDate.EPOCH - cls.EPOCH))
         return EthiopicDate(ymd.year, ymd.month, ymd.day)
 
 
@@ -1070,12 +1070,12 @@ class IslamicDate(object):
                 self.day)
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return Islamic date (year month day) corresponding to fixed date date."""
-        year       = quotient(30 * (date - cls.EPOCH) + 10646, 10631)
-        prior_days = date - IslamicDate(year, 1, 1).to_fixed()
+    def from_fixed(cls, fixed_date):
+        """Return Islamic fixed_date (year month day) corresponding to fixed fixed_date fixed_date."""
+        year       = quotient(30 * (fixed_date - cls.EPOCH) + 10646, 10631)
+        prior_days = fixed_date - IslamicDate(year, 1, 1).to_fixed()
         month      = quotient(11 * prior_days + 330, 325)
-        day        = date - IslamicDate(year, month, 1).to_fixed() + 1
+        day        = fixed_date - IslamicDate(year, month, 1).to_fixed() + 1
         return IslamicDate(year, month, day)
 
     @classmethod
@@ -1452,9 +1452,9 @@ class MayanLongCountDate(object):
                 self.kin)
     
     @classmethod
-    def from_fixed(cls, date):
-        """Return Mayan long count date of fixed date date."""
-        long_count = date - cls.EPOCH
+    def from_fixed(cls, fixed_date):
+        """Return Mayan long count fixed_date of fixed fixed_date fixed_date."""
+        long_count = fixed_date - cls.EPOCH
         baktun, day_of_baktun  = divmod(long_count, 144000)
         katun, day_of_katun    = divmod(day_of_baktun, 7200)
         tun, day_of_tun        = divmod(day_of_katun, 360)
@@ -1479,9 +1479,9 @@ class MayanHaabDate(MayanHaabOrdinal):
         MayanHaabOrdinal.__init__(self, month, day)
     
     @classmethod
-    def from_fixed(cls, date):
-        """Return Mayan haab date of fixed date date."""
-        count = mod(date - cls.EPOCH, 365)
+    def from_fixed(cls, fixed_date):
+        """Return Mayan haab fixed_date of fixed fixed_date fixed_date."""
+        count = mod(fixed_date - cls.EPOCH, 365)
         day   = mod(count, 20)
         month = quotient(count, 20) + 1
         return MayanHaabDate(month, day)
@@ -1509,9 +1509,9 @@ class MayanTzolkinDate(MayanTzolkinOrdinal):
         MayanTzolkinOrdinal.__init__(self, number, name)
     
     @classmethod
-    def from_fixed(cls, date):
-        """Return Mayan tzolkin date of fixed date date."""
-        count  = date - cls.EPOCH + 1
+    def from_fixed(cls, fixed_date):
+        """Return Mayan tzolkin fixed_date of fixed fixed_date fixed_date."""
+        count  = fixed_date - cls.EPOCH + 1
         number = amod(count, 13)
         name   = amod(count, 20)
         return MayanTzolkinDate(number, name)
@@ -1565,9 +1565,9 @@ class AztecXihuitlDate(AztecXihuitlOrdinal):
         AztecXihuitlOrdinal.__init__(self, month, day)
         
     @classmethod
-    def from_fixed(cls, date):
-        """Return Aztec xihuitl date of fixed date date."""
-        count = mod(date - cls.CORRELATION, 365)
+    def from_fixed(cls, fixed_date):
+        """Return Aztec xihuitl fixed_date of fixed fixed_date fixed_date."""
+        count = mod(fixed_date - cls.CORRELATION, 365)
         day   = mod(count, 20) + 1
         month = quotient(count, 20) + 1
         return AztecXihuitlDate(month, day)
@@ -1596,9 +1596,9 @@ class AztecTonalpohualliDate(AztecTonalpohuallOrdinal):
         AztecTonalpohuallOrdinal.__init__(self, number, name)
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return Aztec tonalpohualli date of fixed date date."""
-        count  = date - cls.CORRELATION + 1
+    def from_fixed(cls, fixed_date):
+        """Return Aztec tonalpohualli fixed_date of fixed fixed_date fixed_date."""
+        count  = fixed_date - cls.CORRELATION + 1
         number = amod(count, 13)
         name   = amod(count, 20)
         return AztecTonalpohualliDate(number, name)
@@ -1614,11 +1614,11 @@ class AztecXiuhmolpilliDesignation(AztecTonalpohualliDate):
         AztecTonalpohualliDate.__init__(self, number, name)
 
     @classmethod    
-    def from_fixed(cls, date):
-        """Return designation of year containing fixed date date.
+    def from_fixed(cls, fixed_date):
+        """Return designation of year containing fixed fixed_date fixed_date.
         Raises ValueError for nemontemi."""
-        x = AztecXihuitlDate(18, 20).on_or_before(date + 364)
-        month = AztecXihuitlDate.from_fixed(date).month
+        x = AztecXihuitlDate(18, 20).on_or_before(fixed_date + 364)
+        month = AztecXihuitlDate.from_fixed(fixed_date).month
         if month == 19:
             raise ValueError("nemontemi")
         return AztecTonalpohualliDate.from_fixed(x)
@@ -1701,9 +1701,9 @@ class OldHinduLunarDate(OldHindu):
                    cls.ARYA_LUNAR_MONTH) >= 23902504679/1282400064
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return Old Hindu lunar date equivalent to fixed date date."""
-        sun = cls.hindu_day_count(date) + Clock.days_from_hours(6)
+    def from_fixed(cls, fixed_date):
+        """Return Old Hindu lunar fixed_date equivalent to fixed fixed_date fixed_date."""
+        sun = cls.hindu_day_count(fixed_date) + Clock.days_from_hours(6)
         new_moon = sun - mod(sun, cls.ARYA_LUNAR_MONTH)
         leap = (((cls.ARYA_SOLAR_MONTH - cls.ARYA_LUNAR_MONTH)
                  >=
@@ -1724,9 +1724,9 @@ class OldHinduSolarDate(OldHindu):
         self.day = day
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return Old Hindu solar date equivalent to fixed date date."""
-        sun   = cls.hindu_day_count(date) + Clock.days_from_hours(6)
+    def from_fixed(cls, fixed_date):
+        """Return Old Hindu solar fixed_date equivalent to fixed fixed_date fixed_date."""
+        sun   = cls.hindu_day_count(fixed_date) + Clock.days_from_hours(6)
         year  = quotient(sun, cls.ARYA_SOLAR_YEAR)
         month = mod(quotient(sun, cls.ARYA_SOLAR_MONTH), 12) + 1
         day   = ifloor(mod(sun, cls.ARYA_SOLAR_MONTH)) + 1
@@ -3099,17 +3099,17 @@ class PersianDate(object):
                 self.day)
 
     @classmethod        
-    def from_fixed(cls, date):
-        """Return Astronomical Persian date (year month day)
-        corresponding to fixed date, date."""
-        new_year = cls.new_year_on_or_before(date)
+    def from_fixed(cls, fixed_date):
+        """Return Astronomical Persian fixed_date (year month day)
+        corresponding to fixed fixed_date, fixed_date."""
+        new_year = cls.new_year_on_or_before(fixed_date)
         y = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR) + 1
         year = y if (0 < y) else (y - 1)
-        day_of_year = date - PersianDate(year, 1, 1).to_fixed() + 1
+        day_of_year = fixed_date - PersianDate(year, 1, 1).to_fixed() + 1
         month = (ceiling(day_of_year / 31)
                  if (day_of_year <= 186)
                  else ceiling((day_of_year - 6) / 30))
-        day = date - (PersianDate(year, month, 1).to_fixed() - 1)
+        day = fixed_date - (PersianDate(year, month, 1).to_fixed() - 1)
         return PersianDate(year, month, day)
     
     @classmethod
@@ -3197,35 +3197,35 @@ class BahaiDate(object):
         return GregorianDate(g_year, JulianMonth.March, 20).to_fixed() + elapsed_months + self.day
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return Bahai date [major, cycle, year, month, day] corresponding
-        to fixed date, date."""
-        g_year = GregorianDate.to_year(date)
+    def from_fixed(cls, fixed_date):
+        """Return Bahai fixed_date [major, cycle, year, month, day] corresponding
+        to fixed fixed_date, fixed_date."""
+        g_year = GregorianDate.to_year(fixed_date)
         start  = GregorianDate.to_year(cls.EPOCH)
         years  = (g_year - start -
-                  (1 if (date <= 
+                  (1 if (fixed_date <= 
                       GregorianDate(g_year, JulianMonth.March, 20).to_fixed()) else 0))
         major  = 1 + quotient(years, 361)
         cycle  = 1 + quotient(mod(years, 361), 19)
         year   = 1 + mod(years, 19)
-        days   = date - BahaiDate(major, cycle, year, 1, 1).to_fixed()
+        days   = fixed_date - BahaiDate(major, cycle, year, 1, 1).to_fixed()
 
         # month
-        if (date >= BahaiDate(major, cycle, year, 19, 1).to_fixed()):
+        if (fixed_date >= BahaiDate(major, cycle, year, 19, 1).to_fixed()):
             month = 19
-        elif (date >= BahaiDate(major, cycle, year, cls.AYYAM_I_HA, 1).to_fixed()):
+        elif (fixed_date >= BahaiDate(major, cycle, year, cls.AYYAM_I_HA, 1).to_fixed()):
             month = cls.AYYAM_I_HA
         else:
             month = 1 + quotient(days, 19)
     
-        day = date + 1 - BahaiDate(major, cycle, year, month, 1).to_fixed()
+        day = fixed_date + 1 - BahaiDate(major, cycle, year, month, 1).to_fixed()
     
         return BahaiDate(major, cycle, year, month, day)
 
     @classmethod    
-    def new_year(cls, g_year):
-        """Return fixed date of Bahai New Year in Gregorian year, g_year."""
-        return GregorianDate(g_year, JulianMonth.March, 21).to_fixed()
+    def new_year(cls, gregorian_year):
+        """Return fixed date of Bahai New Year in Gregorian year, gregorian_year."""
+        return GregorianDate(gregorian_year, JulianMonth.March, 21).to_fixed()
     
     HAIFA = Location(mpf(32.82), 35, 0, Clock.days_from_hours(2))
 
@@ -3331,12 +3331,12 @@ class FrenchDate(object):
         return new_year - 1 + 30 * (self.month - 1) + self.day
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return French Revolutionary date of fixed date, date."""
-        new_year = cls.new_year_on_or_before(date)
+    def from_fixed(cls, fixed_date):
+        """Return French Revolutionary fixed_date of fixed fixed_date, fixed_date."""
+        new_year = cls.new_year_on_or_before(fixed_date)
         year  = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR) + 1
-        month = quotient(date - new_year, 30) + 1
-        day   = mod(date - new_year, 30) + 1
+        month = quotient(fixed_date - new_year, 30) + 1
+        day   = mod(fixed_date - new_year, 30) + 1
         return FrenchDate(year, month, day)
     
     @classmethod
@@ -3497,26 +3497,26 @@ class ChineseDate(object):
             return cls.new_year_in_sui(date - 180)
 
     @classmethod    
-    def new_year(cls, g_year):
-        """Return fixed date of Chinese New Year in Gregorian year, g_year."""
-        return cls.new_year_on_or_before(GregorianDate(g_year, JulianMonth.July, 1).to_fixed())
+    def new_year(cls, gregorian_year):
+        """Return fixed date of Chinese New Year in Gregorian year, gregorian_year."""
+        return cls.new_year_on_or_before(GregorianDate(gregorian_year, JulianMonth.July, 1).to_fixed())
 
     @classmethod    
-    def from_fixed(cls, date):
-        """Return Chinese date (cycle year month leap day) of fixed date, date."""
-        s1 = cls.winter_solstice_on_or_before(date)
+    def from_fixed(cls, fixed_date):
+        """Return Chinese fixed_date (cycle year month leap day) of fixed fixed_date, fixed_date."""
+        s1 = cls.winter_solstice_on_or_before(fixed_date)
         s2 = cls.winter_solstice_on_or_before(s1 + 370)
         next_m11 = cls.new_moon_before(1 + s2)
         m12 = cls.new_moon_on_or_after(1 + s1)
         leap_year = iround((next_m11 - m12) / MEAN_SYNODIC_MONTH) == 12
     
-        m = cls.new_moon_before(1 + date)
+        m = cls.new_moon_before(1 + fixed_date)
         month = amod(iround((m - m12) / MEAN_SYNODIC_MONTH) - (1 if (leap_year and cls.is_prior_leap_month(m12, m)) else 0), 12)
         leap_month = (leap_year and cls.is_no_major_solar_term(m) and (not cls.is_prior_leap_month(m12, cls.new_moon_before(m))))
-        elapsed_years = (ifloor(mpf(1.5) - (month / 12) + ((date - cls.EPOCH) / MEAN_TROPICAL_YEAR)))
+        elapsed_years = (ifloor(mpf(1.5) - (month / 12) + ((fixed_date - cls.EPOCH) / MEAN_TROPICAL_YEAR)))
         cycle = 1 + quotient(elapsed_years - 1, 60)
         year = amod(elapsed_years, 60)
-        day = 1 + (date - m)
+        day = 1 + (fixed_date - m)
         return ChineseDate(cycle, year, month, leap_month, day)
     
     def to_fixed(self):
@@ -4475,14 +4475,14 @@ class TibetanDate(object):
         return ifloor(self.EPOCH + mean + sun + moon)
 
     @classmethod
-    def from_fixed(cls, date):
-        """Return the Tibetan lunar date corresponding to fixed date, date."""
+    def from_fixed(cls, fixed_date):
+        """Return the Tibetan lunar fixed_date corresponding to fixed fixed_date, fixed_date."""
         cap_Y = 365 + 4975/18382
-        years = ceiling((date - cls.EPOCH) / cap_Y)
-        year0 = final_int(years, lambda y:(date >= TibetanDate(y, 1, False, 1, False).to_fixed()))
-        month0 = final_int(1, lambda m: (date >= TibetanDate(year0, m, False, 1, False).to_fixed()))
-        est = date - TibetanDate(year0, month0, False, 1, False).to_fixed()
-        day0 = final_int(est -2, lambda d: (date >= TibetanDate(year0, month0, False, d, False).to_fixed()))
+        years = ceiling((fixed_date - cls.EPOCH) / cap_Y)
+        year0 = final_int(years, lambda y:(fixed_date >= TibetanDate(y, 1, False, 1, False).to_fixed()))
+        month0 = final_int(1, lambda m: (fixed_date >= TibetanDate(year0, m, False, 1, False).to_fixed()))
+        est = fixed_date - TibetanDate(year0, month0, False, 1, False).to_fixed()
+        day0 = final_int(est -2, lambda d: (fixed_date >= TibetanDate(year0, month0, False, d, False).to_fixed()))
         leap_month = (day0 > 30)
         day = amod(day0, 30)
         if (day > day0):
@@ -4499,28 +4499,28 @@ class TibetanDate(object):
             year = year0 + 1
         else:
             year = year0
-        leap_day = date == TibetanDate(year, month, leap_month, day, True).to_fixed()
+        leap_day = fixed_date == TibetanDate(year, month, leap_month, day, True).to_fixed()
         return TibetanDate(year, month, leap_month, day, leap_day)
 
     @classmethod
-    def is_leap_month(cls, t_month, t_year):
-        """Return True if t_month is leap in Tibetan year, t_year."""
-        return t_month == TibetanDate.from_fixed(TibetanDate(t_year, t_month, True, 2, False).to_fixed()).month
+    def is_leap_month(cls, month, year):
+        """Return True if month is leap in Tibetan year, year."""
+        return month == TibetanDate.from_fixed(TibetanDate(year, month, True, 2, False).to_fixed()).month
 
     @classmethod
-    def losar(cls, t_year):
+    def losar(cls, year):
         """Return the  fixed date of Tibetan New Year (Losar)
-        in Tibetan year, t_year."""
-        t_leap = cls.is_leap_month(1, t_year)
-        return TibetanDate(t_year, 1, t_leap, 1, False).to_fixed()
+        in Tibetan year, year."""
+        t_leap = cls.is_leap_month(1, year)
+        return TibetanDate(year, 1, t_leap, 1, False).to_fixed()
 
     @classmethod
-    def new_year(cls, g_year):
+    def new_year(cls, gregorian_year):
         """Return the list of fixed dates of Tibetan New Year in
-        Gregorian year, g_year."""
-        dec31  = GregorianDate.year_end(g_year)
+        Gregorian year, gregorian_year."""
+        dec31  = GregorianDate.year_end(gregorian_year)
         t_year = cls.from_fixed(dec31).year
-        return list_range([cls.losar(t_year - 1), cls.losar(t_year)], GregorianDate.year_range(g_year))
+        return list_range([cls.losar(t_year - 1), cls.losar(t_year)], GregorianDate.year_range(gregorian_year))
 
 
 # That's all folks!

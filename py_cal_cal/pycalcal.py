@@ -5327,11 +5327,11 @@ def is_tibetan_leap_month(t_month, t_year):
 
 
 # see lines 5807-5813 in calendrica-3.0.cl
-def losar(t_year):
+def losar(year):
     """Return the  fixed date of Tibetan New Year (Losar)
-    in Tibetan year, t_year."""
-    t_leap = is_tibetan_leap_month(1, t_year)
-    return fixed_from_tibetan(tibetan_date(t_year, 1, t_leap, 1, False))
+    in Tibetan year, year."""
+    t_leap = is_tibetan_leap_month(1, year)
+    return fixed_from_tibetan(tibetan_date(year, 1, t_leap, 1, False))
 
 
 # see lines 5815-5824 in calendrica-3.0.cl
