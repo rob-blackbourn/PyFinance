@@ -44,6 +44,12 @@ from mpmath import *
 from enum import IntEnum, Enum
 mp.prec = 50
 
+def even(i):
+    return mod(i, 2) == 0
+
+def odd(i):
+    return not even(i)
+
 # I (re)define floor: in CL it always returns an integer.
 # I make it explicit the fact it returns an integer by
 # naming it ifloor
@@ -281,6 +287,15 @@ def rd(tee):
     """Return rata diem (number of days since epoch) of moment in time, tee."""
     return tee - epoch()
 
+def is_in_range(tee, pair):
+    """Return True if moment 'tee' falls within range 'range',
+    False otherwise."""
+    return pair[0] <= tee <= pair[1]
+
+def list_range(ell, pair):
+    """Return those moments in list ell that occur in range 'pair'."""
+    return filter(lambda x: is_in_range(x, pair), ell)
+
 class DayOfWeek(IntEnum):
     Sunday = 0
     Monday = 1
@@ -377,17 +392,6 @@ class DegreeMinutesSeconds(object):
         m = ifloor(60 * mod(alpha, 1))
         s = mod(alpha * 60 * 60, 60)
         return DegreeMinutesSeconds(d, m, s)
-
-# see lines 502-510 in calendrica-3.0.cl
-def list_range(ell, range):
-    """Return those moments in list ell that occur in range 'range'."""
-    return filter(lambda x: is_in_range(x, range), ell)
-
-# see lines 497-500 in calendrica-3.0.cl
-def is_in_range(tee, range):
-    """Return True if moment 'tee' falls within range 'range',
-    False otherwise."""
-    return range[0] <= tee <= range[1]
 
 class JD(object):
     
@@ -667,66 +671,71 @@ class GregorianDate(object):
 #         in Gregorian year 'g_year'."""
 #         return JulianDate.julian_in_gregorian(JulianMonth.December, 25, g_year)
 
+    @classmethod
+    def labor_day(cls, g_year):
+        """Return the fixed date of United States Labor Day in Gregorian
+        year 'g_year' (the first Monday in September)."""
+        return GregorianDate(g_year, JulianMonth.September, 1).first_day_of_week(DayOfWeek.Monday)
 
-# see lines 906-910 in calendrica-3.0.cl
-def labor_day(g_year):
-    """Return the fixed date of United States Labor Day in Gregorian
-    year 'g_year' (the first Monday in September)."""
-    return GregorianDate(g_year, JulianMonth.September, 1).first_day_of_week(DayOfWeek.Monday)
+    @classmethod
+    def memorial_day(cls, g_year):
+        """Return the fixed date of United States' Memorial Day in Gregorian
+        year 'g_year' (the last Monday in May)."""
+        return GregorianDate(g_year, JulianMonth.May, 31).last_day_of_week(DayOfWeek.Monday)
+    
+    @classmethod
+    def election_day(cls, g_year):
+        """Return the fixed date of United States' Election Day in Gregorian
+        year 'g_year' (the Tuesday after the first Monday in November)."""
+        return GregorianDate(g_year, JulianMonth.November, 2).first_day_of_week(DayOfWeek.Tuesday)
 
-# see lines 912-916 in calendrica-3.0.cl
-def memorial_day(g_year):
-    """Return the fixed date of United States' Memorial Day in Gregorian
-    year 'g_year' (the last Monday in May)."""
-    return GregorianDate(g_year, JulianMonth.May, 31).last_day_of_week(DayOfWeek.Monday)
+    @classmethod
+    def daylight_saving_start(cls, g_year):
+        """Return the fixed date of the start of United States daylight
+        saving time in Gregorian year 'g_year' (the second Sunday in March)."""
+        return GregorianDate(g_year, JulianMonth.March, 1).nth_day_of_week(2, DayOfWeek.Sunday)
 
-# see lines 918-923 in calendrica-3.0.cl
-def election_day(g_year):
-    """Return the fixed date of United States' Election Day in Gregorian
-    year 'g_year' (the Tuesday after the first Monday in November)."""
-    return GregorianDate(g_year, JulianMonth.November, 2).first_day_of_week(DayOfWeek.Tuesday)
+    @classmethod
+    def daylight_saving_end(cls, g_year):
+        """Return the fixed date of the end of United States daylight saving
+        time in Gregorian year 'g_year' (the first Sunday in November)."""
+        return GregorianDate(g_year, JulianMonth.November, 1).first_day_of_week(DayOfWeek.Sunday)
+    
+    @classmethod
+    def christmas(cls, g_year):
+        """Return the fixed date of Christmas in Gregorian year 'g_year'."""
+        return GregorianDate(g_year, JulianMonth.December, 25).to_fixed()
 
-def daylight_saving_start(g_year):
-    """Return the fixed date of the start of United States daylight
-    saving time in Gregorian year 'g_year' (the second Sunday in March)."""
-    return GregorianDate(g_year, JulianMonth.March, 1).nth_day_of_week(2, DayOfWeek.Sunday)
+    @classmethod    
+    def advent(cls, g_year):
+        """Return the fixed date of Advent in Gregorian year 'g_year'
+        (the Sunday closest to November 30)."""
+        return DayOfWeek(DayOfWeek.Sunday).nearest(GregorianDate(g_year, JulianMonth.November, 30).to_fixed())
+    @classmethod
+    def epiphany(cls, g_year):
+        """Return the fixed date of Epiphany in U.S. in Gregorian year 'g_year'
+        (the first Sunday after January 1)."""
+        return GregorianDate(g_year, JulianMonth.January, 2).first_day_of_week(DayOfWeek.Sunday)
 
-def daylight_saving_end(g_year):
-    """Return the fixed date of the end of United States daylight saving
-    time in Gregorian year 'g_year' (the first Sunday in November)."""
-    return GregorianDate(g_year, JulianMonth.November, 1).first_day_of_week(DayOfWeek.Sunday)
+    @classmethod
+    def epiphany_it(cls, g_year):
+        """Return fixed date of Epiphany in Italy in Gregorian year 'g_year'."""
+        return GregorianDate(g_year, JulianMonth.January, 6)
 
-def christmas(g_year):
-    """Return the fixed date of Christmas in Gregorian year 'g_year'."""
-    return GregorianDate(g_year, JulianMonth.December, 25).to_fixed()
-
-def advent(g_year):
-    """Return the fixed date of Advent in Gregorian year 'g_year'
-    (the Sunday closest to November 30)."""
-    return DayOfWeek(DayOfWeek.Sunday).nearest(GregorianDate(g_year, JulianMonth.November, 30).to_fixed())
-
-def epiphany(g_year):
-    """Return the fixed date of Epiphany in U.S. in Gregorian year 'g_year'
-    (the first Sunday after January 1)."""
-    return GregorianDate(g_year, JulianMonth.January, 2).first_day_of_week(DayOfWeek.Sunday)
-
-def epiphany_it(g_year):
-    """Return fixed date of Epiphany in Italy in Gregorian year 'g_year'."""
-    return GregorianDate(g_year, JulianMonth.January, 6)
-
-def unlucky_fridays_in_range(range):
-    """Return the list of Fridays within range 'range' of fixed dates that
-    are day 13 of the relevant Gregorian months."""
-    a    = range[0]
-    b    = range[1]
-    fri  = DayOfWeek(DayOfWeek.Friday).on_or_after(a)
-    date = GregorianDate.from_fixed(fri)
-    ell  = [fri] if (standard_day(date) == 13) else []
-    if is_in_range(fri, range):
-        ell[:0] = unlucky_fridays_in_range([fri + 1, b])
-        return ell
-    else:
-        return []
+    @classmethod
+    def unlucky_fridays_in_range(cls, range):
+        """Return the list of Fridays within range 'range' of fixed dates that
+        are day 13 of the relevant Gregorian months."""
+        a    = range[0]
+        b    = range[1]
+        fri  = DayOfWeek(DayOfWeek.Friday).on_or_after(a)
+        date = GregorianDate.from_fixed(fri)
+        ell  = [fri] if (standard_day(date) == 13) else []
+        if is_in_range(fri, range):
+            ell[:0] = cls.unlucky_fridays_in_range([fri + 1, b])
+            return ell
+        else:
+            return []
 
 class JulianDate(object):
     
@@ -800,6 +809,12 @@ class JulianDate(object):
         date1 = JulianDate(y, j_month, j_day).to_fixed()
         date2 = JulianDate(y_prime, j_month, j_day).to_fixed()
         return list_range([date1, date2], GregorianDate.year_range(g_year))
+
+    @classmethod
+    def eastern_orthodox_christmas(cls, g_year):
+        """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
+        in Gregorian year 'g_year'."""
+        return cls.julian_in_gregorian(JulianMonth.December, 25, g_year)
 
 class Event(Enum):
     Kalends = 1
@@ -876,12 +891,6 @@ class RomanDate(object):
             return RomanDate(julian_date.year, JulianMonth.March, Event.Kalends, 31 - julian_date.day, julian_date.day == 25)
 
     
-
-# see lines 1268-1272 in calendrica-3.0.cl
-def eastern_orthodox_christmas(g_year):
-    """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
-    in Gregorian year 'g_year'."""
-    return JulianDate.julian_in_gregorian(JulianMonth.December, 25, g_year)
 
 ###########################
 # ISO calendar algorithms #
@@ -1519,17 +1528,18 @@ class MayanTzolkinDate(MayanTzolkinOrdinal):
             raise ValueError("Invalid date")
         return cls.from_fixed(x).name
 
-def mayan_calendar_round_on_or_before(haab, tzolkin, date):
-    """Return fixed date of latest date on or before date, that is
-    Mayan haab date haab and tzolkin date tzolkin.
-    Raises ValueError for impossible combinations."""
-    haab_count = haab.to_ordinal() + MayanHaabDate.EPOCH
-    tzolkin_count = tzolkin.to_ordinal() + MayanTzolkinDate.EPOCH
-    diff = tzolkin_count - haab_count
-    if mod(diff, 5) == 0:
-        return date - mod(date - haab_count(365 * diff), 18980)
-    else:
-        raise ValueError("impossible combinination")
+    @classmethod    
+    def mayan_calendar_round_on_or_before(cls, haab, tzolkin, date):
+        """Return fixed date of latest date on or before date, that is
+        Mayan haab date haab and tzolkin date tzolkin.
+        Raises ValueError for impossible combinations."""
+        haab_count = haab.to_ordinal() + MayanHaabDate.EPOCH
+        tzolkin_count = tzolkin.to_ordinal() + MayanTzolkinDate.EPOCH
+        diff = tzolkin_count - haab_count
+        if mod(diff, 5) == 0:
+            return date - mod(date - haab_count(365 * diff), 18980)
+        else:
+            raise ValueError("impossible combinination")
 
 
 AZTEC_CORRELATION = JulianDate(1521, JulianMonth.August, 13).to_fixed()
@@ -1611,20 +1621,20 @@ class AztecXiuhmolpilliDesignation(AztecTonalpohualliDate):
             raise ValueError("nemontemi")
         return AztecTonalpohualliDate.from_fixed(x)
 
-# see lines 2282-2303 in calendrica-3.0.cl
-def aztec_xihuitl_tonalpohualli_on_or_before(xihuitl, tonalpohualli, date):
-    """Return fixed date of latest xihuitl_tonalpohualli combination
-    on or before date date.  That is the date on or before
-    date date that is Aztec xihuitl date xihuitl and
-    tonalpohualli date tonalpohualli.
-    Raises ValueError for impossible combinations."""
-    xihuitl_count = xihuitl.to_ordinal() + AztecXihuitlDate.CORRELATION
-    tonalpohualli_count = (tonalpohualli.to_ordinal() + AztecTonalpohualliDate.CORRELATION)
-    diff = tonalpohualli_count - xihuitl_count
-    if mod(diff, 5) == 0:
-        return date - mod(date - xihuitl_count - (365 * diff), 18980)
-    else:
-        raise ValueError("impossible combination")
+    @classmethod
+    def aztec_xihuitl_tonalpohualli_on_or_before(cls, xihuitl, tonalpohualli, date):
+        """Return fixed date of latest xihuitl_tonalpohualli combination
+        on or before date date.  That is the date on or before
+        date date that is Aztec xihuitl date xihuitl and
+        tonalpohualli date tonalpohualli.
+        Raises ValueError for impossible combinations."""
+        xihuitl_count = xihuitl.to_ordinal() + AztecXihuitlDate.CORRELATION
+        tonalpohualli_count = (tonalpohualli.to_ordinal() + AztecTonalpohualliDate.CORRELATION)
+        diff = tonalpohualli_count - xihuitl_count
+        if mod(diff, 5) == 0:
+            return date - mod(date - xihuitl_count - (365 * diff), 18980)
+        else:
+            raise ValueError("impossible combination")
 
 
 
@@ -1731,11 +1741,6 @@ class OldHinduSolarDate(OldHindu):
 ################################
 # balinese calendar algorithms #
 ################################
-def even(i):
-    return mod(i, 2) == 0
-
-def odd(i):
-    return not even(i)
 
 class BalineseDate(object):
 
