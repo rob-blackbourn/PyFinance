@@ -3,7 +3,7 @@ from mpmath import mpf
 from py_cal_cal import next_int, ifloor, iceiling, iround, quotient
 from py_cal_cal import GregorianDate, JulianMonth, Location, Clock
 from py_cal_cal import estimate_prior_solar_longitude, SPRING, solar_longitude, MEAN_TROPICAL_YEAR
-from julian_date import JulianDate
+from py_calendrical.julian_calendars import JulianDate
 
 class PersianDate(object):
 

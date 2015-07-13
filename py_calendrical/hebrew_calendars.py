@@ -3,7 +3,7 @@ from enum import IntEnum
 from py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
 from py_cal_cal import JulianMonth, Clock, GregorianDate, DayOfWeek
 from py_cal_cal import phasis_on_or_before, phasis_on_or_after, JAFFA, solar_longitude_after, SPRING
-from julian_date import JulianDate
+from py_calendrical.julian_calendars import JulianDate
 from coptic_calendars import CopticDate
 
 class HebrewMonth(IntEnum):
