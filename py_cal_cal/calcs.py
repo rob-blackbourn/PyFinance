@@ -3408,345 +3408,263 @@ class FrenchDate(object):
 ###############################
 # chinese calendar algorithms #
 ###############################
-# see lines 4330-4333 in calendrica-3.0.cl
-def chinese_date(cycle, year, month, leap, day):
-    """Return a Chinese date data structure."""
-    return [cycle, year, month, leap, day]
+class ChineseDate(object):
 
-# see lines 4335-4337 in calendrica-3.0.cl
-def chinese_cycle(date):
-    """Return 'cycle' element of a Chinese date, date."""
-    return date[0]
+    EPOCH = GregorianDate(-2636, JulianMonth.February, 15).to_fixed()
+    
+    def __init__(self, cycle, year, month, leap, day):
+        self.cycle = cycle
+        self.year = year
+        self.month = month
+        self.leap = leap
+        self.day = day
 
-# see lines 4339-4341 in calendrica-3.0.cl
-def chinese_year(date):
-    """Return 'year' element of a Chinese date, date."""
-    return date[1]
+    @classmethod        
+    def location(cls, tee):
+        """Return location of Beijing; time zone varies with time, tee."""
+        year = GregorianDate.to_year(ifloor(tee))
+        if (year < 1929):
+            return Location(angle(39, 55, 0), angle(116, 25, 0), 43.5, days_from_hours(1397/180))
+        else:
+            return Location(angle(39, 55, 0), angle(116, 25, 0), 43.5, days_from_hours(8))
 
-# see lines 4343-4345 in calendrica-3.0.cl
-def chinese_month(date):
-    """Return 'month' element of a Chinese date, date."""
-    return date[2]
+    @classmethod
+    def solar_longitude_on_or_after(cls, lam, date):
+        """Return moment (Beijing time) of the first date on or after
+        fixed date, date, (Beijing time) when the solar longitude
+        will be 'lam' degrees."""
+        tee = solar_longitude_after(lam, cls.location(date).universal_from_standard(date))
+        return cls.location(tee).standard_from_universal(tee)
 
-# see lines 4347-4349 in calendrica-3.0.cl
-def chinese_leap(date):
-    """Return 'leap' element of a Chinese date, date."""
-    return date[3]
+    @classmethod
+    def major_solar_term(cls, date):
+        """Return last Chinese major solar term (zhongqi) before
+        fixed date, date."""
+        s = solar_longitude(cls.location(date).universal_from_standard(date))
+        return amod(2 + quotient(int(s), 30), 12)
 
-# see lines 4351-4353 in calendrica-3.0.cl
-def chinese_day(date):
-    """Return 'day' element of a Chinese date, date."""
-    return date[4]
+    @classmethod
+    def major_solar_term_on_or_after(cls, date):
+        """Return moment (in Beijing) of the first Chinese major
+        solar term (zhongqi) on or after fixed date, date.  The
+        major terms begin when the sun's longitude is a
+        multiple of 30 degrees."""
+        s = solar_longitude(cls.midnight(date))
+        l = mod(30 * ceiling(s / 30), 360)
+        return cls.solar_longitude_on_or_after(l, date)
 
-# see lines 4355-4363 in calendrica-3.0.cl
-def chinese_location(tee):
-    """Return location of Beijing; time zone varies with time, tee."""
-    year = GregorianDate.to_year(ifloor(tee))
-    if (year < 1929):
-        return Location(angle(39, 55, 0), angle(116, 25, 0),
-                        43.5, days_from_hours(1397/180))
-    else:
-        return Location(angle(39, 55, 0), angle(116, 25, 0),
-                        43.5, days_from_hours(8))
+    @classmethod    
+    def current_minor_solar_term(cls, date):
+        """Return last Chinese minor solar term (jieqi) before date, date."""
+        s = solar_longitude(cls.location(date).universal_from_standard(date))
+        return amod(3 + quotient(s - 15, 30), 12)
 
+    @classmethod    
+    def minor_solar_term_on_or_after(cls, date):
+        """Return moment (in Beijing) of the first Chinese minor solar
+        term (jieqi) on or after fixed date, date.  The minor terms
+        begin when the sun's longitude is an odd multiple of 15 degrees."""
+        s = solar_longitude(cls.midnight(date))
+        l = mod(30 * ceiling((s - 15) / 30) + 15, 360)
+        return cls.solar_longitude_on_or_after(l, date)
 
-# see lines 4365-4377 in calendrica-3.0.cl
-def chinese_solar_longitude_on_or_after(lam, date):
-    """Return moment (Beijing time) of the first date on or after
-    fixed date, date, (Beijing time) when the solar longitude
-    will be 'lam' degrees."""
-    tee = solar_longitude_after(lam, chinese_location(date).universal_from_standard(date))
-    return chinese_location(tee).standard_from_universal(tee)
+    @classmethod    
+    def new_moon_before(cls, date):
+        """Return fixed date (Beijing) of first new moon before fixed date, date."""
+        tee = new_moon_before(cls.midnight(date))
+        return ifloor(cls.location(tee).standard_from_universal(tee))
+    
+    @classmethod    
+    def new_moon_on_or_after(cls, date):
+        """Return fixed date (Beijing) of first new moon on or after
+        fixed date, date."""
+        tee = new_moon_at_or_after(cls.midnight(date))
+        return ifloor(cls.chinese_location(tee).standard_from_universal(tee))
 
-# see lines 4379-4387 in calendrica-3.0.cl
-def current_major_solar_term(date):
-    """Return last Chinese major solar term (zhongqi) before
-    fixed date, date."""
-    s = solar_longitude(chinese_location(date).universal_from_standard(date))
-    return amod(2 + quotient(int(s), 30), 12)
+    @classmethod    
+    def is_no_major_solar_term(cls, date):
+        """Return True if Chinese lunar month starting on date, date,
+        has no major solar term."""
+        return (cls.current_major_solar_term(date) ==
+                cls.current_major_solar_term(cls.new_moon_on_or_after(date + 1)))
 
-# see lines 4389-4397 in calendrica-3.0.cl
-def major_solar_term_on_or_after(date):
-    """Return moment (in Beijing) of the first Chinese major
-    solar term (zhongqi) on or after fixed date, date.  The
-    major terms begin when the sun's longitude is a
-    multiple of 30 degrees."""
-    s = solar_longitude(midnight_in_china(date))
-    l = mod(30 * ceiling(s / 30), 360)
-    return chinese_solar_longitude_on_or_after(l, date)
+    @classmethod    
+    def midnight(cls, date):
+        """Return Universal time of (clock) midnight at start of fixed
+        date, date, in China."""
+        return cls.location(date).universal_from_standard(date)
 
-# see lines 4399-4407 in calendrica-3.0.cl
-def current_minor_solar_term(date):
-    """Return last Chinese minor solar term (jieqi) before date, date."""
-    s = solar_longitude(chinese_location(date).universal_from_standard(date))
-    return amod(3 + quotient(s - 15, 30), 12)
+    @classmethod    
+    def winter_solstice_on_or_before(cls, date):
+        """Return fixed date, in the Chinese zone, of winter solstice
+        on or before fixed date, date."""
+        approx = estimate_prior_solar_longitude(WINTER,
+                                                cls.midnight(date + 1))
+        return next_int(ifloor(approx) - 1,
+                    lambda day: WINTER < solar_longitude(
+                        cls.midnight(1 + day)))
+    
+    @classmethod    
+    def new_year_in_sui(cls, date):
+        """Return fixed date of Chinese New Year in sui (period from
+        solstice to solstice) containing date, date."""
+        s1 = cls.winter_solstice_on_or_before(date)
+        s2 = cls.winter_solstice_on_or_before(s1 + 370)
+        next_m11 = cls.new_moon_before(1 + s2)
+        m12 = cls.new_moon_on_or_after(1 + s1)
+        m13 = cls.new_moon_on_or_after(1 + m12)
+        leap_year = iround((next_m11 - m12) / MEAN_SYNODIC_MONTH) == 12
+    
+        if (leap_year and
+            (cls.is_no_major_solar_term(m12) or cls.is_no_major_solar_term(m13))):
+            return cls.new_moon_on_or_after(1 + m13)
+        else:
+            return m13
 
-# see lines 4409-4422 in calendrica-3.0.cl
-def minor_solar_term_on_or_after(date):
-    """Return moment (in Beijing) of the first Chinese minor solar
-    term (jieqi) on or after fixed date, date.  The minor terms
-    begin when the sun's longitude is an odd multiple of 15 degrees."""
-    s = solar_longitude(midnight_in_china(date))
-    l = mod(30 * ceiling((s - 15) / 30) + 15, 360)
-    return chinese_solar_longitude_on_or_after(l, date)
+    @classmethod
+    def new_year_on_or_before(cls, date):
+        """Return fixed date of Chinese New Year on or before fixed date, date."""
+        new_year = cls.new_year_in_sui(date)
+        if (date >= new_year):
+            return new_year
+        else:
+            return cls.new_year_in_sui(date - 180)
 
-# see lines 4424-4433 in calendrica-3.0.cl
-def chinese_new_moon_before(date):
-    """Return fixed date (Beijing) of first new moon before fixed date, date."""
-    tee = new_moon_before(midnight_in_china(date))
-    return ifloor(chinese_location(tee).standard_from_universal(tee))
+    @classmethod    
+    def new_year(cls, g_year):
+        """Return fixed date of Chinese New Year in Gregorian year, g_year."""
+        return cls.new_year_on_or_before(GregorianDate(g_year, JulianMonth.July, 1).to_fixed())
 
-# see lines 4435-4444 in calendrica-3.0.cl
-def chinese_new_moon_on_or_after(date):
-    """Return fixed date (Beijing) of first new moon on or after
-    fixed date, date."""
-    tee = new_moon_at_or_after(midnight_in_china(date))
-    return ifloor(chinese_location(tee).standard_from_universal(tee))
+    @classmethod    
+    def from_fixed(cls, date):
+        """Return Chinese date (cycle year month leap day) of fixed date, date."""
+        s1 = cls.winter_solstice_on_or_before(date)
+        s2 = cls.winter_solstice_on_or_before(s1 + 370)
+        next_m11 = cls.new_moon_before(1 + s2)
+        m12 = cls.new_moon_on_or_after(1 + s1)
+        leap_year = iround((next_m11 - m12) / MEAN_SYNODIC_MONTH) == 12
+    
+        m = cls.new_moon_before(1 + date)
+        month = amod(iround((m - m12) / MEAN_SYNODIC_MONTH) - (1 if (leap_year and cls.is_prior_leap_month(m12, m)) else 0), 12)
+        leap_month = (leap_year and cls.is_no_major_solar_term(m) and (not cls.is_prior_leap_month(m12, cls.new_moon_before(m))))
+        elapsed_years = (ifloor(mpf(1.5) - (month / 12) + ((date - cls.EPOCH) / MEAN_TROPICAL_YEAR)))
+        cycle = 1 + quotient(elapsed_years - 1, 60)
+        year = amod(elapsed_years, 60)
+        day = 1 + (date - m)
+        return ChineseDate(cycle, year, month, leap_month, day)
+    
+    def to_fixed(self):
+        """Return fixed date of Chinese date, c_date."""
+        mid_year = ifloor(self.EPOCH + ((((self.cycle - 1) * 60) + (self.year - 1) + 1/2) * MEAN_TROPICAL_YEAR))
+        new_year = self.new_year_on_or_before(mid_year)
+        p = self.new_moon_on_or_after(new_year + ((self.month - 1) * 29))
+        d = self.from_fixed(p)
+        prior_new_moon = (p if ((self.month == d.month) and (self.leap == d.leap)) else self.new_moon_on_or_after(1 + p))
+        return prior_new_moon + self.day - 1
 
-# see lines 4446-4449 in calendrica-3.0.cl
-CHINESE_EPOCH = GregorianDate(-2636, JulianMonth.February, 15).to_fixed()
+    @classmethod
+    def is_prior_leap_month(cls, m_prime, m):
+        """Return True if there is a Chinese leap month on or after lunar
+        month starting on fixed day, m_prime and at or before
+        lunar month starting at fixed date, m."""
+        return ((m >= m_prime) and
+                (cls.is_no_major_solar_term(m) or
+                 cls.is_prior_leap_month(m_prime, cls.new_moon_before(m))))
 
-# see lines 4451-4457 in calendrica-3.0.cl
-def is_chinese_no_major_solar_term(date):
-    """Return True if Chinese lunar month starting on date, date,
-    has no major solar term."""
-    return (current_major_solar_term(date) ==
-            current_major_solar_term(chinese_new_moon_on_or_after(date + 1)))
+    @classmethod
+    def dragon_festival(cls, g_year):
+        """Return fixed date of the Dragon Festival occurring in Gregorian
+        year g_year."""
+        elapsed_years = 1 + g_year - GregorianDate.to_year(cls.EPOCH)
+        cycle = 1 + quotient(elapsed_years - 1, 60)
+        year = amod(elapsed_years, 60)
+        return ChineseDate(cycle, year, 5, False, 5).to_fixed()
 
-# see lines 4459-4463 in calendrica-3.0.cl
-def midnight_in_china(date):
-    """Return Universal time of (clock) midnight at start of fixed
-    date, date, in China."""
-    return chinese_location(date).universal_from_standard(date)
+    @classmethod
+    def qing_ming(cls, g_year):
+        """Return fixed date of Qingming occurring in Gregorian year, g_year."""
+        return ifloor(cls.minor_solar_term_on_or_after(
+            GregorianDate(g_year, JulianMonth.March, 30).to_fixed()))
 
-# see lines 4465-4474 in calendrica-3.0.cl
-def chinese_winter_solstice_on_or_before(date):
-    """Return fixed date, in the Chinese zone, of winter solstice
-    on or before fixed date, date."""
-    approx = estimate_prior_solar_longitude(WINTER,
-                                            midnight_in_china(date + 1))
-    return next_int(ifloor(approx) - 1,
-                lambda day: WINTER < solar_longitude(
-                    midnight_in_china(1 + day)))
+    def age(self, date):
+        """Return the age at fixed date, date, given Chinese birthdate, birthdate,
+        according to the Chinese custom.
+        Raises ValueError if date is before birthdate."""
+        today = self.from_fixed(date)
+        if (date >= self.to_fixed()):
+            return (60 * (today.cycle - self.cycle) + (today.year -  self.year) + 1)
+        else:
+            raise ValueError("date is before birthdate")
+    
+    @classmethod    
+    def year_marriage_augury(cls, cycle, year):
+        """Return the marriage augury type of Chinese year, year in cycle, cycle.
+        0 means lichun does not occur (widow or double-blind years),
+        1 means it occurs once at the end (blind),
+        2 means it occurs once at the start (bright), and
+        3 means it occurs twice (double-bright or double-happiness)."""
+        new_year = ChineseDate(cycle, year, 1, False, 1).to_fixed()
+        c = (cycle + 1) if (year == 60) else cycle
+        y = 1 if (year == 60) else (year + 1)
+        next_new_year = ChineseDate(c, y, 1, False, 1).to_fixed()
+        first_minor_term = cls.current_minor_solar_term(new_year)
+        next_first_minor_term = cls.current_minor_solar_term(next_new_year)
+        if ((first_minor_term == 1) and (next_first_minor_term == 12)):
+            res = 0
+        elif ((first_minor_term == 1) and (next_first_minor_term != 12)):
+            res = 1
+        elif ((first_minor_term != 1) and (next_first_minor_term == 12)):
+            res = 2
+        else:
+            res = 3
+        return res
 
-# see lines 4476-4500 in calendrica-3.0.cl
-def chinese_new_year_in_sui(date):
-    """Return fixed date of Chinese New Year in sui (period from
-    solstice to solstice) containing date, date."""
-    s1 = chinese_winter_solstice_on_or_before(date)
-    s2 = chinese_winter_solstice_on_or_before(s1 + 370)
-    next_m11 = chinese_new_moon_before(1 + s2)
-    m12 = chinese_new_moon_on_or_after(1 + s1)
-    m13 = chinese_new_moon_on_or_after(1 + m12)
-    leap_year = iround((next_m11 - m12) / MEAN_SYNODIC_MONTH) == 12
+class ChineseName(object):
 
-    if (leap_year and
-        (is_chinese_no_major_solar_term(m12) or is_chinese_no_major_solar_term(m13))):
-        return chinese_new_moon_on_or_after(1 + m13)
-    else:
-        return m13
+    MONTH_NAME_EPOCH = 57
+    DAY_NAME_EPOCH = rd(45)
+    
+    def __init__(self, stem, branch):
+        if (mod(stem, 2) != mod(branch, 2)):
+            raise ValueError("Combination/branch combination is not possible")
+        self.stem = stem
+        self.branch = branch
+        
+    @classmethod
+    def sexagesimal_name(n):
+        """Return the n_th name of the Chinese sexagesimal cycle."""
+        return ChineseName(amod(n, 10), amod(n, 12))
 
+    @classmethod
+    def chinese_name_difference(cls, c_name1, c_name2):
+        """Return the number of names from Chinese name c_name1 to the
+        next occurrence of Chinese name c_name2."""
+        stem_difference   = c_name2.stem - c_name1.stem
+        branch_difference = c_name2.branch - c_name1.branch
+        return 1 + mod(stem_difference - 1 + 25 * (branch_difference - stem_difference), 60)
 
-# see lines 4502-4511 in calendrica-3.0.cl
-def chinese_new_year_on_or_before(date):
-    """Return fixed date of Chinese New Year on or before fixed date, date."""
-    new_year = chinese_new_year_in_sui(date)
-    if (date >= new_year):
-        return new_year
-    else:
-        return chinese_new_year_in_sui(date - 180)
+    @classmethod
+    def year_name(cls, year):
+        """Return sexagesimal name for Chinese year, year, of any cycle."""
+        return cls.sexagesimal_name(year)
 
-# see lines 4513-4518 in calendrica-3.0.cl
-def chinese_new_year(g_year):
-    """Return fixed date of Chinese New Year in Gregorian year, g_year."""
-    return chinese_new_year_on_or_before(GregorianDate(g_year, JulianMonth.July, 1).to_fixed())
+    @classmethod
+    def month_name(cls, month, year):
+        """Return sexagesimal name for month, month, of Chinese year, year."""
+        elapsed_months = (12 * (year - 1)) + (month - 1)
+        return cls.sexagesimal_name(elapsed_months - cls.MONTH_NAME_EPOCH)
 
-# see lines 4520-4565 in calendrica-3.0.cl
-def chinese_from_fixed(date):
-    """Return Chinese date (cycle year month leap day) of fixed date, date."""
-    s1 = chinese_winter_solstice_on_or_before(date)
-    s2 = chinese_winter_solstice_on_or_before(s1 + 370)
-    next_m11 = chinese_new_moon_before(1 + s2)
-    m12 = chinese_new_moon_on_or_after(1 + s1)
-    leap_year = iround((next_m11 - m12) / MEAN_SYNODIC_MONTH) == 12
+    @classmethod
+    def day_name(cls, date):
+        """Return Chinese sexagesimal name for date, date."""
+        return cls.sexagesimal_name(date - cls.DAY_NAME_EPOCH)
 
-    m = chinese_new_moon_before(1 + date)
-    month = amod(iround((m - m12) / MEAN_SYNODIC_MONTH) -
-                  (1 if (leap_year and
-                         is_chinese_prior_leap_month(m12, m)) else 0),
-                  12)
-    leap_month = (leap_year and
-                  is_chinese_no_major_solar_term(m) and
-                  (not is_chinese_prior_leap_month(m12,
-                                                chinese_new_moon_before(m))))
-    elapsed_years = (ifloor(mpf(1.5) -
-                           (month / 12) +
-                           ((date - CHINESE_EPOCH) / MEAN_TROPICAL_YEAR)))
-    cycle = 1 + quotient(elapsed_years - 1, 60)
-    year = amod(elapsed_years, 60)
-    day = 1 + (date - m)
-    return chinese_date(cycle, year, month, leap_month, day)
+    @classmethod
+    def day_name_on_or_before(cls, name, date):
+        """Return fixed date of latest date on or before fixed date, date, that
+        has Chinese name, name."""
+        return (date - mod(date + cls.name_difference(name, cls.sexagesimal_name(cls.DAY_NAME_EPOCH)), 60))
 
-
-
-# see lines 4567-4596 in calendrica-3.0.cl
-def fixed_from_chinese(c_date):
-    """Return fixed date of Chinese date, c_date."""
-    cycle = chinese_cycle(c_date)
-    year  = chinese_year(c_date)
-    month = chinese_month(c_date)
-    leap  = chinese_leap(c_date)
-    day   = chinese_day(c_date)
-    mid_year = ifloor(CHINESE_EPOCH +
-                      ((((cycle - 1) * 60) + (year - 1) + 1/2) *
-                       MEAN_TROPICAL_YEAR))
-    new_year = chinese_new_year_on_or_before(mid_year)
-    p = chinese_new_moon_on_or_after(new_year + ((month - 1) * 29))
-    d = chinese_from_fixed(p)
-    prior_new_moon = (p if ((month == chinese_month(d)) and
-                            (leap == chinese_leap(d)))
-                        else chinese_new_moon_on_or_after(1 + p))
-    return prior_new_moon + day - 1
-
-
-# see lines 4598-4607 in calendrica-3.0.cl
-def is_chinese_prior_leap_month(m_prime, m):
-    """Return True if there is a Chinese leap month on or after lunar
-    month starting on fixed day, m_prime and at or before
-    lunar month starting at fixed date, m."""
-    return ((m >= m_prime) and
-            (is_chinese_no_major_solar_term(m) or
-             is_chinese_prior_leap_month(m_prime, chinese_new_moon_before(m))))
-
-
-# see lines 4609-4615 in calendrica-3.0.cl
-def chinese_name(stem, branch):
-    """Raises ValueError if stem/branch combination is impossible."""
-    if (mod(stem, 2) == mod(branch, 2)):
-        return [stem, branch]
-    else:
-        raise ValueError("Combination/branch combination is not possible")
-
-
-# see lines 4617-4619 in calendrica-3.0.cl
-def chinese_stem(name):
-    return name[0]
-
-
-# see lines 4621-4623 in calendrica-3.0.cl
-def chinese_branch(name):
-    return name[1]
-
-# see lines 4625-4629 in calendrica-3.0.cl
-def chinese_sexagesimal_name(n):
-    """Return the n_th name of the Chinese sexagesimal cycle."""
-    return chinese_name(amod(n, 10), amod(n, 12))
-
-
-# see lines 4631-4644 in calendrica-3.0.cl
-def chinese_name_difference(c_name1, c_name2):
-    """Return the number of names from Chinese name c_name1 to the
-    next occurrence of Chinese name c_name2."""
-    stem1 = chinese_stem(c_name1)
-    stem2 = chinese_stem(c_name2)
-    branch1 = chinese_branch(c_name1)
-    branch2 = chinese_branch(c_name2)
-    stem_difference   = stem2 - stem1
-    branch_difference = branch2 - branch1
-    return 1 + mod(stem_difference - 1 +
-                   25 * (branch_difference - stem_difference), 60)
-
-
-# see lines 4646-4649 in calendrica-3.0.cl
-# see lines 214-215 in calendrica-3.0.errata.cl
-def chinese_year_name(year):
-    """Return sexagesimal name for Chinese year, year, of any cycle."""
-    return chinese_sexagesimal_name(year)
-
-
-# see lines 4651-4655 in calendrica-3.0.cl
-CHINESE_MONTH_NAME_EPOCH = 57
-
-# see lines 4657-4664 in calendrica-3.0.cl
-# see lines 211-212 in calendrica-3.0.errata.cl
-def chinese_month_name(month, year):
-    """Return sexagesimal name for month, month, of Chinese year, year."""
-    elapsed_months = (12 * (year - 1)) + (month - 1)
-    return chinese_sexagesimal_name(elapsed_months - CHINESE_MONTH_NAME_EPOCH)
-
-# see lines 4666-4669 in calendrica-3.0.cl
-CHINESE_DAY_NAME_EPOCH = rd(45)
-
-# see lines 4671-4675 in calendrica-3.0.cl
-# see lines 208-209 in calendrica-3.0.errata.cl
-def chinese_day_name(date):
-    """Return Chinese sexagesimal name for date, date."""
-    return chinese_sexagesimal_name(date - CHINESE_DAY_NAME_EPOCH)
-
-
-# see lines 4677-4687 in calendrica-3.0.cl
-def chinese_day_name_on_or_before(name, date):
-    """Return fixed date of latest date on or before fixed date, date, that
-    has Chinese name, name."""
-    return (date -
-            mod(date +
-                chinese_name_difference(name,
-                            chinese_sexagesimal_name(CHINESE_DAY_NAME_EPOCH)),
-                60))
-
-
-# see lines 4689-4699 in calendrica-3.0.cl
-def dragon_festival(g_year):
-    """Return fixed date of the Dragon Festival occurring in Gregorian
-    year g_year."""
-    elapsed_years = 1 + g_year - GregorianDate.to_year(CHINESE_EPOCH)
-    cycle = 1 + quotient(elapsed_years - 1, 60)
-    year = amod(elapsed_years, 60)
-    return fixed_from_chinese(chinese_date(cycle, year, 5, False, 5))
-
-
-# see lines 4701-4708 in calendrica-3.0.cl
-def qing_ming(g_year):
-    """Return fixed date of Qingming occurring in Gregorian year, g_year."""
-    return ifloor(minor_solar_term_on_or_after(
-        GregorianDate(g_year, JulianMonth.March, 30).to_fixed()))
-
-
-# see lines 4710-4722 in calendrica-3.0.cl
-def chinese_age(birthdate, date):
-    """Return the age at fixed date, date, given Chinese birthdate, birthdate,
-    according to the Chinese custom.
-    Raises ValueError if date is before birthdate."""
-    today = chinese_from_fixed(date)
-    if (date >= fixed_from_chinese(birthdate)):
-        return (60 * (chinese_cycle(today) - chinese_cycle(birthdate)) +
-                (chinese_year(today) -  chinese_year(birthdate)) + 1)
-    else:
-        raise ValueError("date is before birthdate")
-
-
-# see lines 4724-4758 in calendrica-3.0.cl
-def chinese_year_marriage_augury(cycle, year):
-    """Return the marriage augury type of Chinese year, year in cycle, cycle.
-    0 means lichun does not occur (widow or double-blind years),
-    1 means it occurs once at the end (blind),
-    2 means it occurs once at the start (bright), and
-    3 means it occurs twice (double-bright or double-happiness)."""
-    new_year = fixed_from_chinese(chinese_date(cycle, year, 1, False, 1))
-    c = (cycle + 1) if (year == 60) else cycle
-    y = 1 if (year == 60) else (year + 1)
-    next_new_year = fixed_from_chinese(chinese_date(c, y, 1, False, 1))
-    first_minor_term = current_minor_solar_term(new_year)
-    next_first_minor_term = current_minor_solar_term(next_new_year)
-    if ((first_minor_term == 1) and (next_first_minor_term == 12)):
-        res = 0
-    elif ((first_minor_term == 1) and (next_first_minor_term != 12)):
-        res = 1
-    elif ((first_minor_term != 1) and (next_first_minor_term == 12)):
-        res = 2
-    else:
-        res = 3
-    return res
 
 
 # see lines 4760-4769 in calendrica-3.0.cl
