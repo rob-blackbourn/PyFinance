@@ -1,8 +1,9 @@
 from operator import mod
 from enum import IntEnum
 from py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
-from py_cal_cal import JulianDate, JulianMonth, Clock, GregorianDate, DayOfWeek, CopticDate
+from py_cal_cal import JulianDate, JulianMonth, Clock, GregorianDate, DayOfWeek
 from py_cal_cal import phasis_on_or_before, phasis_on_or_after, JAFFA, solar_longitude_after, SPRING
+from coptic_calendars import CopticDate
 
 class HebrewMonth(IntEnum):
     NISAN = 1
