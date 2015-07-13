@@ -394,47 +394,6 @@ class MJD(object):
     def from_fixed(cls, fixed_date):
         return MJD(fixed_date - cls.EPOCH)
 
-class EgyptianDate(object):
-
-    EPOCH = JD(1448638).to_fixed()    
-
-    def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
-        
-    def to_fixed(self):
-        return self.EPOCH + (365*(self.year - 1)) + (30*(self.month - 1)) + (self.day - 1)
-
-    @classmethod
-    def from_fixed(cls, fixed_date):
-        """Return the Egyptian fixed_date corresponding to fixed fixed_date 'fixed_date'."""
-        days = fixed_date - cls.EPOCH
-        year = 1 + quotient(days, 365)
-        month = 1 + quotient(mod(days, 365), 30)
-        day = days - (365*(year - 1)) - (30*(month - 1)) + 1
-        return EgyptianDate(year, month, day)
-
-class ArmenianDate(object):
-
-    EPOCH = rd(201443)
-    
-    def __init__(self, year, month, day):
-        self.year = year
-        self.month = month
-        self.day = day
-
-    def to_fixed(self):
-        """Return the fixed date."""
-        return (self.EPOCH +
-                EgyptianDate(self.year, self.month, self.day).to_fixed() -
-                EgyptianDate.EPOCH)
-
-    @classmethod
-    def from_fixed(cls, fixed_date):
-        """Return the Armenian fixed_date corresponding to fixed fixed_date 'fixed_date'."""
-        ymd = EgyptianDate.from_fixed(fixed_date + (EgyptianDate.EPOCH - cls.EPOCH))
-        return ArmenianDate(ymd.year, ymd.month, ymd.day)
 
 class JulianMonth(IntEnum):
     January = 1
