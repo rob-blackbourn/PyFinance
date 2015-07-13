@@ -39,10 +39,17 @@ from __future__ import division
 
 # Precision in bits, for places where CL postfixes numbers with L0, meaning
 # at least 50 bits of precision
+import math
 from mpmath import *
 from enum import IntEnum, Enum
 mp.prec = 50
 
+# I (re)define floor: in CL it always returns an integer.
+# I make it explicit the fact it returns an integer by
+# naming it ifloor
+def ifloor(n):
+    """Return the whole part of m/n."""
+    return int(math.floor(n))
 
 # see lines 249-252 in calendrica-3.0.cl
 # m // n
@@ -59,22 +66,11 @@ def quotient(m, n):
     """Return the whole part of m/n towards negative infinity."""
     return ifloor(m / n)
 
-
-# I (re)define floor: in CL it always returns an integer.
-# I make it explicit the fact it returns an integer by
-# naming it ifloor
-def ifloor(n):
-    """Return the whole part of m/n."""
-    from math import floor
-    return int(floor(n))
-
-
 # I (re)define round: in CL it always returns an integer.
 # I make it explicit the fact it returns an integer by
 # naming it iround
 def iround(n):
     """Return the whole part of m/n."""
-    from __builtin__ import round
     return int(round(n))
 
 
@@ -86,33 +82,24 @@ def iround(n):
 # returns the time of the day
 from operator import mod
 
-
-# see lines 254-257 in calendrica-3.0.cl
 def amod(x, y):
     """Return the same as a % b with b instead of 0."""
     return y + (mod(x, -y))
 
-
-# see lines 259-264 in calendrica-3.0.cl
-def next(i, p):
+def next_int(i, p):
     """Return first integer greater or equal to initial index, i,
     such that condition, p, holds."""
-    return i if p(i) else next(i + 1, p)
+    return i if p(i) else next_int(i + 1, p)
 
-
-# see lines 266-271 in calendrica-3.0.cl
-def final(i, p):
+def final_int(i, p):
     """Return last integer greater or equal to initial index, i,
     such that condition, p, holds."""
-    return i - 1 if not p(i) else final(i + 1, p)
+    return i - 1 if not p(i) else final_int(i + 1, p)
 
-
-# see lines 273-281 in calendrica-3.0.cl
 def summa(f, k, p):
     """Return the sum of f(i) from i=k, k+1, ... till p(i) holds true or 0.
     This is a tail recursive implementation."""
     return 0 if not p(k) else f(k) + summa(f, k + 1, p)
-
 
 def altsumma(f, k, p):
     """Return the sum of f(i) from i=k, k+1, ... till p(i) holds true or 0.
@@ -134,8 +121,6 @@ def altsumma(f, k, p):
             j += 1
     return S
 
-
-# see lines 283-293 in calendrica-3.0.cl
 def binary_search(lo, hi, p, e):
     """Bisection search for x in [lo, hi] such that condition 'e' holds.
     p determines when to go left."""
@@ -147,8 +132,6 @@ def binary_search(lo, hi, p, e):
     else:
         return binary_search(x, hi, p, e)
 
-
-# see lines 295-302 in calendrica-3.0.cl
 def invert_angular(f, y, a, b, prec=10 ** -5):
     """Find inverse of angular function 'f' at 'y' within interval [a,b].
     Default precision is 0.00001"""
@@ -159,8 +142,6 @@ def invert_angular(f, y, a, b, prec=10 ** -5):
 #      from scipy.optimize import brentq
 #    return(brentq((lambda x: mod(f(x) - y), 360)), a, b, xtol=error)
 
-
-# see lines 304-313 in calendrica-3.0.cl
 def sigma(l, b):
     """Return the sum of body 'b' for indices i1..in
     running simultaneously thru lists l1..ln.
@@ -188,9 +169,6 @@ def sigma(l, b):
     # 780
     return sum(b(*e) for e in zip(*l))
 
-
-# see lines 315-321 in calendrica-3.0.cl
-from copy import copy
 def poly(x, a):
     """Calculate polynomial with coefficients 'a' at point x.
     The polynomial is a[0] + a[1] * x + a[2] * x^2 + ...a[n-1]x^(n-1)
@@ -203,14 +181,11 @@ def poly(x, a):
         p = p * x + a[n-i]
     return p
 
-
-# see lines 323-329 in calendrica-3.0.cl
 # Epoch definition. I took it out explicitly from rd().
 def epoch():
     """Epoch definition. For Rata Diem, R.D., it is 0 (but any other reference
     would do.)"""
     return 0
-
 
 def rd(tee):
     """Return rata diem (number of days since epoch) of moment in time, tee."""
@@ -255,17 +230,14 @@ class DayOfWeek(IntEnum):
         k=0 means Sunday, k=1 means Monday, and so on."""
         return self.on_or_before(fixed_date - 1)
 
-# see lines 371-374 in calendrica-3.0.cl
 def standard_month(date):
     """Return the month of date 'date'."""
     return date[1]
 
-# see lines 376-379 in calendrica-3.0.cl
 def standard_day(date):
     """Return the day of date 'date'."""
     return date[2]
 
-# see lines 381-384 in calendrica-3.0.cl
 def standard_year(date):
     """Return the year of date 'date'."""
     return date[0]
@@ -1156,11 +1128,11 @@ class HebrewDate(object):
         """Return  Hebrew (year month day) corresponding to fixed date date.
         # The fraction can be approximated by 365.25."""
         approx = quotient(date - cls.EPOCH, 35975351/98496) + 1
-        year = final(approx - 1, lambda y: cls.new_year(y) <= date)
+        year = final_int(approx - 1, lambda y: cls.new_year(y) <= date)
         start = (HebrewMonth.TISHRI
                  if (date < HebrewDate(year, HebrewMonth.NISAN, 1).to_fixed())
                  else  HebrewMonth.NISAN)
-        month = next(start, lambda m: date <= HebrewDate(year, m, cls.last_day_of_month(m, year)).to_fixed())
+        month = next_int(start, lambda m: date <= HebrewDate(year, m, cls.last_day_of_month(m, year)).to_fixed())
         day = date - HebrewDate(year, month, 1).to_fixed() + 1
         return HebrewDate(year, month, day)
 
@@ -2891,7 +2863,7 @@ def new_moon_before(tee):
     t0 = nth_new_moon(0)
     phi = lunar_phase(tee)
     n = iround(((tee - t0) / MEAN_SYNODIC_MONTH) - (phi / deg(360)))
-    return nth_new_moon(final(n - 1, lambda k: nth_new_moon(k) < tee))
+    return nth_new_moon(final_int(n - 1, lambda k: nth_new_moon(k) < tee))
 
 
 # see lines 3587-3594 in calendrica-3.0.cl
@@ -2900,7 +2872,7 @@ def new_moon_at_or_after(tee):
     t0 = nth_new_moon(0)
     phi = lunar_phase(tee)
     n = iround((tee - t0) / MEAN_SYNODIC_MONTH - phi / deg(360))
-    return nth_new_moon(next(n, lambda k: nth_new_moon(k) >= tee))
+    return nth_new_moon(next_int(n, lambda k: nth_new_moon(k) >= tee))
 
 
 # see lines 3596-3613 in calendrica-3.0.cl
@@ -3092,7 +3064,7 @@ def phasis_on_or_before(date, location):
     tau = ((mean - 30)
            if (((date - mean) <= 3) and (not visible_crescent(date, location)))
            else (mean - 2))
-    return  next(tau, lambda d: visible_crescent(d, location))
+    return  next_int(tau, lambda d: visible_crescent(d, location))
 
 # see lines 5862-5866 in calendrica-3.0.cl
 # see lines 220-221 in calendrica-3.0.errata.cl
@@ -3147,7 +3119,7 @@ def phasis_on_or_after(date, location):
     tau = (date if (((date - mean) <= 3) and
                     (not visible_crescent(date - 1, location)))
            else (mean + 29))
-    return next(tau, lambda d: visible_crescent(d, location))
+    return next_int(tau, lambda d: visible_crescent(d, location))
 
 # see lines 5940-5955 in calendrica-3.0.cl
 def observational_hebrew_new_year(g_year):
@@ -3216,7 +3188,7 @@ class PersianDate(object):
         """Return the fixed date of Astronomical Persian New Year on or
         before fixed date, date."""
         approx = estimate_prior_solar_longitude(SPRING, cls.midday_in_tehran(date))
-        return next(ifloor(approx) - 1, lambda day: (solar_longitude(cls.midday_in_tehran(day)) <= (SPRING + deg(2))))
+        return next_int(ifloor(approx) - 1, lambda day: (solar_longitude(cls.midday_in_tehran(day)) <= (SPRING + deg(2))))
 
     def to_fixed(self):
         """Return fixed date of Astronomical Persian date, p_date."""
@@ -3368,7 +3340,7 @@ class BahaiDate(object):
         """Return fixed date of Future Bahai New Year on or
         before fixed date, date."""
         approx = estimate_prior_solar_longitude(SPRING, cls.sunset_in_haifa(date))
-        return next(ifloor(approx) - 1,
+        return next_int(ifloor(approx) - 1,
                     lambda day: (solar_longitude(cls.sunset_in_haifa(day)) <=
                                  (SPRING + deg(2))))
 
@@ -3448,7 +3420,7 @@ class FrenchDate(object):
         """Return fixed date of French Revolutionary New Year on or
            before fixed date, date."""
         approx = estimate_prior_solar_longitude(AUTUMN, cls.midnight_in_paris(date))
-        return next(ifloor(approx) - 1, lambda day: AUTUMN <= solar_longitude(cls.midnight_in_paris(day)))
+        return next_int(ifloor(approx) - 1, lambda day: AUTUMN <= solar_longitude(cls.midnight_in_paris(day)))
 
     def to_fixed(self):
         """Return fixed date of French Revolutionary date, f_date"""
@@ -3619,7 +3591,7 @@ def chinese_winter_solstice_on_or_before(date):
     on or before fixed date, date."""
     approx = estimate_prior_solar_longitude(WINTER,
                                             midnight_in_china(date + 1))
-    return next(ifloor(approx) - 1,
+    return next_int(ifloor(approx) - 1,
                 lambda day: WINTER < solar_longitude(
                     midnight_in_china(1 + day)))
 
@@ -3954,7 +3926,7 @@ def hindu_arcsin(amp):
     if (amp < 0):
         return -hindu_arcsin(-amp)
     else:
-        pos = next(0, lambda k: amp <= hindu_sine_table(k))
+        pos = next_int(0, lambda k: amp <= hindu_sine_table(k))
         below = hindu_sine_table(pos - 1)
         return (angle(0, 225, 0) *
                 (pos - 1 + ((amp - below) / (hindu_sine_table(pos) - below))))
@@ -4083,7 +4055,7 @@ def hindu_solar_from_fixed(date):
     month    = hindu_zodiac(critical)
     year     = hindu_calendar_year(critical) - HINDU_SOLAR_ERA
     approx   = date - 3 - mod(ifloor(hindu_solar_longitude(critical)), deg(30))
-    begin    = next(approx,
+    begin    = next_int(approx,
                     lambda i: (hindu_zodiac(hindu_sunrise(i + 1)) ==  month))
     day      = date - begin + 1
     return OldHinduSolarDate(year, month, day)
@@ -4099,7 +4071,7 @@ def fixed_from_hindu_solar(s_date):
     begin = ifloor((year + HINDU_SOLAR_ERA + ((month - 1)/12)) *
                   HINDU_SIDEREAL_YEAR + OldHindu.EPOCH)
     return (day - 1 +
-            next(begin - 3,
+            next_int(begin - 3,
                  lambda d: (hindu_zodiac(hindu_sunrise(d + 1)) == month)))
 
 
@@ -4153,7 +4125,7 @@ def fixed_from_hindu_lunar(l_date):
     tau = (est -
            mod(hindu_lunar_day_from_moment(est + days_from_hours(6)) - day + 15, 30) +
            15)
-    date = next(tau - 1,
+    date = next_int(tau - 1,
                 lambda d: (hindu_lunar_day_from_moment(hindu_sunrise(d)) in
                            [day, amod(day + 1, 30)]))
     return (date + 1) if leap_day else date
@@ -4364,7 +4336,7 @@ def astro_hindu_solar_from_fixed(date):
     year     = astro_hindu_calendar_year(critical) - HINDU_SOLAR_ERA
     approx   = (date - 3 -
                 mod(ifloor(sidereal_solar_longitude( critical)), deg(30)))
-    begin    = next(approx,
+    begin    = next_int(approx,
                     lambda i: (sidereal_zodiac(astro_hindu_sunset(i)) == month))
     day      = date - begin + 1
     return OldHinduSolarDate(year, month, day)
@@ -4380,7 +4352,7 @@ def fixed_from_astro_hindu_solar(s_date):
     approx = (OldHindu.EPOCH - 3 +
               ifloor(((year + HINDU_SOLAR_ERA) + ((month - 1) / 12)) *
                     MEAN_SIDEREAL_YEAR))
-    begin = next(approx,
+    begin = next_int(approx,
                  lambda i: (sidereal_zodiac(astro_hindu_sunset(i)) == month))
     return begin + day - 1
 
@@ -4440,7 +4412,7 @@ def fixed_from_astro_hindu_lunar(l_date):
     tau = (est -
            mod(astro_lunar_day_from_moment(est + days_from_hours(6)) - day + 15, 30) +
            15)
-    date = next(tau - 1,
+    date = next_int(tau - 1,
                 lambda d: (astro_lunar_day_from_moment(alt_hindu_sunrise(d)) in
                            [day, amod(day + 1, 30)]))
     return (date + 1) if leap_day else date
@@ -4533,7 +4505,7 @@ def hindu_date_occur(l_month, l_day, l_year):
                               l_day,
                               False)
     if (expunged):
-        return next(ttry,
+        return next_int(ttry,
                     lambda d: (not is_hindu_lunar_on_or_before(
                         hindu_lunar_from_fixed(d),
                         l_date))) - 1
@@ -4709,10 +4681,10 @@ class TibetanDate(object):
         """Return the Tibetan lunar date corresponding to fixed date, date."""
         cap_Y = 365 + 4975/18382
         years = ceiling((date - cls.EPOCH) / cap_Y)
-        year0 = final(years, lambda y:(date >= TibetanDate(y, 1, False, 1, False).to_fixed()))
-        month0 = final(1, lambda m: (date >= TibetanDate(year0, m, False, 1, False).to_fixed()))
+        year0 = final_int(years, lambda y:(date >= TibetanDate(y, 1, False, 1, False).to_fixed()))
+        month0 = final_int(1, lambda m: (date >= TibetanDate(year0, m, False, 1, False).to_fixed()))
         est = date - TibetanDate(year0, month0, False, 1, False).to_fixed()
-        day0 = final(est -2, lambda d: (date >= TibetanDate(year0, month0, False, d, False).to_fixed()))
+        day0 = final_int(est -2, lambda d: (date >= TibetanDate(year0, month0, False, d, False).to_fixed()))
         leap_month = (day0 > 30)
         day = amod(day0, 30)
         if (day > day0):
