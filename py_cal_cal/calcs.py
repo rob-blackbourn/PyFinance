@@ -205,14 +205,6 @@ def poly(x, a):
         p = p * x + a[n-i]
     return p
 
-def days_from_hours(x):
-    """Return the number of days given x hours."""
-    return x / 24
-
-def days_from_seconds(x):
-    """Return the number of days given x seconds."""
-    return x / 24 / 60 / 60
-
 def secs(x):
     """Return the seconds in angle x."""
     return x / 3600
@@ -347,16 +339,6 @@ def standard_year(date):
     """Return the year of date 'date'."""
     return date[0]
 
-# see lines 402-405 in calendrica-3.0.cl
-def fixed_from_moment(tee):
-    """Return fixed date from moment 'tee'."""
-    return ifloor(tee)
-
-# see lines 407-410 in calendrica-3.0.cl
-def time_from_moment(tee):
-    """Return time from moment 'tee'."""
-    return mod(tee, 1)
-
 class Clock(object):
     
     def __init__(self, hour, minute, second):
@@ -371,11 +353,31 @@ class Clock(object):
     @classmethod
     def from_moment(cls, tee):
         """Return clock time hour:minute:second from moment 'tee'."""
-        time = time_from_moment(tee)
+        time = cls.time_from_moment(tee)
         hour = ifloor(time * 24)
         minute = ifloor(mod(time * 24 * 60, 60))
         second = mod(time * 24 * 60 * 60, 60)
         return Clock(hour, minute, second)
+
+    @classmethod
+    def fixed_from_moment(cls, tee):
+        """Return fixed date from moment 'tee'."""
+        return ifloor(tee)
+    
+    @classmethod
+    def time_from_moment(cls, tee):
+        """Return time from moment 'tee'."""
+        return mod(tee, 1)
+
+    @classmethod
+    def days_from_hours(cls, x):
+        """Return the number of days given x hours."""
+        return x / 24
+    
+    @classmethod
+    def days_from_seconds(cls, x):
+        """Return the number of days given x seconds."""
+        return x / 24 / 60 / 60
 
 class DegreeMinutesSeconds(object):
     
@@ -1156,7 +1158,7 @@ class HebrewDate(object):
         months_elapsed = month - HebrewMonth.TISHRI + quotient(235 * y - 234, 19)
         return (cls.EPOCH -
                876/25920 +
-               months_elapsed * (29 + days_from_hours(12) + 793/25920))
+               months_elapsed * (29 + Clock.days_from_hours(12) + 793/25920))
 
     @classmethod    
     def elapsed_days(cls, year):
@@ -1688,7 +1690,7 @@ class OldHinduLunarDate(OldHindu):
                 lunar_new_year +
                 (self.ARYA_LUNAR_MONTH * temp) +
                 ((self.day - 1) * self.ARYA_LUNAR_DAY) +
-                days_from_hours(-6))
+                Clock.days_from_hours(-6))
         return ceiling(temp)
 
     @classmethod
@@ -1701,7 +1703,7 @@ class OldHinduLunarDate(OldHindu):
     @classmethod
     def from_fixed(cls, date):
         """Return Old Hindu lunar date equivalent to fixed date date."""
-        sun = cls.hindu_day_count(date) + days_from_hours(6)
+        sun = cls.hindu_day_count(date) + Clock.days_from_hours(6)
         new_moon = sun - mod(sun, cls.ARYA_LUNAR_MONTH)
         leap = (((cls.ARYA_SOLAR_MONTH - cls.ARYA_LUNAR_MONTH)
                  >=
@@ -1724,7 +1726,7 @@ class OldHinduSolarDate(OldHindu):
     @classmethod
     def from_fixed(cls, date):
         """Return Old Hindu solar date equivalent to fixed date date."""
-        sun   = cls.hindu_day_count(date) + days_from_hours(6)
+        sun   = cls.hindu_day_count(date) + Clock.days_from_hours(6)
         year  = quotient(sun, cls.ARYA_SOLAR_YEAR)
         month = mod(quotient(sun, cls.ARYA_SOLAR_MONTH), 12) + 1
         day   = ifloor(mod(sun, cls.ARYA_SOLAR_MONTH)) + 1
@@ -1735,7 +1737,7 @@ class OldHinduSolarDate(OldHindu):
         return ceiling(self.HINDU_EPOCH                 +
                     self.year * self.ARYA_SOLAR_YEAR         +
                     (self.month - 1) * self.ARYA_SOLAR_MONTH +
-                    self.day + days_from_hours(-30))
+                    self.day + Clock.days_from_hours(-30))
 
 
 ################################
@@ -2088,7 +2090,7 @@ class Location(object):
     def midday(self, date):
         """Return standard time on fixed date, date, of midday
         at location, location."""
-        return self.standard_from_local(self.local_from_apparent(date + days_from_hours(mpf(12))))
+        return self.standard_from_local(self.local_from_apparent(date + Clock.days_from_hours(mpf(12))))
 
     def sine_offset(self, tee, alpha):
         """Return sine of angle between position of sun at 
@@ -2108,7 +2110,7 @@ class Location(object):
         early is true when MORNING event is sought and false for EVENING.
         Raise VlueError if depression angle is not reached."""
         ttry  = self.sine_offset(tee, alpha)
-        date = fixed_from_moment(tee)
+        date = Clock.fixed_from_moment(tee)
     
         if (alpha >= 0):
             if early:
@@ -2116,7 +2118,7 @@ class Location(object):
             else:
                 alt = date + 1
         else:
-            alt = date + days_from_hours(12)
+            alt = date + Clock.days_from_hours(12)
     
         if (abs(ttry) > 1):
             value = self.sine_offset(alt, alpha)
@@ -2126,8 +2128,8 @@ class Location(object):
     
         if (abs(value) <= 1):
             temp = -1 if early else 1
-            temp *= mod(days_from_hours(12) + arcsin_degrees(value) / 360, 1) - days_from_hours(6)
-            temp += date + days_from_hours(12)
+            temp *= mod(Clock.days_from_hours(12) + arcsin_degrees(value) / 360, 1) - Clock.days_from_hours(6)
+            temp += date + Clock.days_from_hours(12)
             return self.local_from_apparent(temp)
         else:
             raise ValueError("Depression angle not reached")
@@ -2137,7 +2139,7 @@ class Location(object):
         angle of sun is alpha (negative if above horizon) at location;
         early is true when MORNING event is sought, and false for EVENING."""
         tee = self.approx_moment_of_depression(approx, alpha, early)
-        if abs(approx - tee) < days_from_seconds(30):
+        if abs(approx - tee) < Clock.days_from_seconds(30):
             return tee
         else:
             return self.moment_of_depression(tee, alpha, early)
@@ -2145,13 +2147,13 @@ class Location(object):
     def dawn(self, date, alpha):
         """Return standard time in morning on fixed date date at
         location location when depression angle of sun is alpha."""
-        result = self.moment_of_depression(date + days_from_hours(6), alpha, self.MORNING)
+        result = self.moment_of_depression(date + Clock.days_from_hours(6), alpha, self.MORNING)
         return self.standard_from_local(result)
     
     def dusk(self, date, alpha):
         """Return standard time in evening on fixed date 'date' at
         location 'location' when depression angle of sun is alpha."""
-        result = self.moment_of_depression(date + days_from_hours(18), alpha, self.EVENING)
+        result = self.moment_of_depression(date + Clock.days_from_hours(18), alpha, self.EVENING)
         return self.standard_from_local(result)
 
     def refraction(self, tee):
@@ -2191,9 +2193,9 @@ class Location(object):
             approx = t - offset
         else:
             approx = t + (1 / 2) + offset
-        rise = binary_search(approx - days_from_hours(3),
-                             approx + days_from_hours(3),
-                             lambda u, l: ((u - l) < days_from_hours(1 / 60)),
+        rise = binary_search(approx - Clock.days_from_hours(3),
+                             approx + Clock.days_from_hours(3),
+                             lambda u, l: ((u - l) < Clock.days_from_hours(1 / 60)),
                              lambda x: self.observed_lunar_altitude(x) > 0)
         if (rise < (t + 1)):
             return self.standard_from_universal(rise)
@@ -2210,15 +2212,15 @@ class Location(object):
         at location, location."""
         return (self.sunrise(date + 1) - self.sunset(date)) / 12
 
-MECCA = Location(angle(21, 25, 24), angle(39, 49, 24), 298, days_from_hours(3))
-JERUSALEM = Location(31.8, 35.2, 800, days_from_hours(2))
-BRUXELLES = Location(angle(4, 21, 17), angle(50, 50, 47), 800, days_from_hours(1))
-URBANA = Location(40.1, -88.2, 225, days_from_hours(-6))
-GREENWHICH = Location(51.4777815, 0, 46.9, days_from_hours(0))
+MECCA = Location(angle(21, 25, 24), angle(39, 49, 24), 298, Clock.days_from_hours(3))
+JERUSALEM = Location(31.8, 35.2, 800, Clock.days_from_hours(2))
+BRUXELLES = Location(angle(4, 21, 17), angle(50, 50, 47), 800, Clock.days_from_hours(1))
+URBANA = Location(40.1, -88.2, 225, Clock.days_from_hours(-6))
+GREENWHICH = Location(51.4777815, 0, 46.9, Clock.days_from_hours(0))
 
 def urbana_sunset(gdate):
     """Return sunset time in Urbana, Ill, on Gregorian date 'gdate'."""
-    return time_from_moment(URBANA.sunset(gdate.to_fixed()))
+    return Clock.time_from_moment(URBANA.sunset(gdate.to_fixed()))
 
 def urbana_winter(g_year):
     """Return standard time of the winter solstice in Urbana, Illinois, USA."""
@@ -2242,7 +2244,7 @@ def jewish_sabbath_ends(date, location):
 # see lines 3055-3073 in calendrica-3.0.cl
 def standard_from_sundial(tee, location):
     """Return standard time of temporal moment, tee, at location, location."""
-    date = fixed_from_moment(tee)
+    date = Clock.fixed_from_moment(tee)
     hour = 24 * mod(tee, 1)
     if (6 <= hour <= 18):
         h = location.daytime_temporal_hour(date)
@@ -2260,13 +2262,11 @@ def standard_from_sundial(tee, location):
         return location.sunset(date) + ((hour - 18) * h)
 
 
-# see lines 3075-3079 in calendrica-3.0.cl
 def jewish_morning_end(date, location):
     """Return standard time on fixed date, date, at location, location,
     of end of morning according to Jewish ritual."""
-    return standard_from_sundial(date + days_from_hours(10), location)
+    return standard_from_sundial(date + Clock.days_from_hours(10), location)
 
-# see lines 3081-3099 in calendrica-3.0.cl
 def asr(date, location):
     """Return standard time of asr on fixed date, date,
     at location, location."""
@@ -2274,83 +2274,53 @@ def asr(date, location):
     phi = location.latitude
     delta = declination(noon, 0, solar_longitude(noon))
     altitude = delta - phi - 90
-    h = arctan_degrees(tan_degrees(altitude),
-                       2 * tan_degrees(altitude) + 1)
+    h = arctan_degrees(tan_degrees(altitude), 2 * tan_degrees(altitude) + 1)
     # For Shafii use instead:
     # tan_degrees(altitude) + 1)
-
     return location.dusk(date, -h)
 
 ############ here start the code inspired by Meeus
-# see lines 3101-3104 in calendrica-3.0.cl
 def universal_from_dynamical(tee):
     """Return Universal moment from Dynamical time, tee."""
     return tee - ephemeris_correction(tee)
 
-# see lines 3106-3109 in calendrica-3.0.cl
 def dynamical_from_universal(tee):
     """Return Dynamical time at Universal moment, tee."""
     return tee + ephemeris_correction(tee)
 
+J2000 = Clock.days_from_hours(mpf(12)) + GregorianDate.new_year(2000)
 
-# see lines 3111-3114 in calendrica-3.0.cl
-J2000 = days_from_hours(mpf(12)) + GregorianDate.new_year(2000)
-
-# see lines 3116-3126 in calendrica-3.0.cl
 def sidereal_from_moment(tee):
     """Return the mean sidereal time of day from moment tee expressed
     as hour angle.  Adapted from "Astronomical Algorithms"
     by Jean Meeus, Willmann_Bell, Inc., 1991."""
     c = (tee - J2000) / mpf(36525)
-    return mod(poly(c, [mpf(280.46061837),
-                            mpf(36525) * mpf(360.98564736629),
-                            mpf(0.000387933),
-                            mpf(-1)/mpf(38710000)]),
-               360)
+    return mod(poly(c, [mpf(280.46061837), mpf(36525) * mpf(360.98564736629), mpf(0.000387933), mpf(-1)/mpf(38710000)]), 360)
 
-# see lines 3128-3130 in calendrica-3.0.cl
 MEAN_TROPICAL_YEAR = mpf(365.242189)
-
-# see lines 3132-3134 in calendrica-3.0.cl
 MEAN_SIDEREAL_YEAR = mpf(365.25636)
-
-# see lines 93-97 in calendrica-3.0.errata.cl
 MEAN_SYNODIC_MONTH = mpf(29.530588861)
 
-# see lines 3140-3176 in calendrica-3.0.cl
 def ephemeris_correction(tee):
     """Return Dynamical Time minus Universal Time (in days) for
     moment, tee.  Adapted from "Astronomical Algorithms"
     by Jean Meeus, Willmann_Bell, Inc., 1991."""
     year = GregorianDate.to_year(ifloor(tee))
-    c = GregorianDate.date_difference(GregorianDate(1900, JulianMonth.January, 1),
-                                  GregorianDate(year, JulianMonth.July, 1)) / mpf(36525)
+    c = GregorianDate.date_difference(GregorianDate(1900, JulianMonth.January, 1), GregorianDate(year, JulianMonth.July, 1)) / mpf(36525)
     if (1988 <= year <= 2019):
         return 1/86400 * (year - 1933)
     elif (1900 <= year <= 1987):
-        return poly(c, [mpf(-0.00002), mpf(0.000297), mpf(0.025184),
-                        mpf(-0.181133), mpf(0.553040), mpf(-0.861938),
-                        mpf(0.677066), mpf(-0.212591)])
+        return poly(c, [mpf(-0.00002), mpf(0.000297), mpf(0.025184), mpf(-0.181133), mpf(0.553040), mpf(-0.861938), mpf(0.677066), mpf(-0.212591)])
     elif (1800 <= year <= 1899):
-        return poly(c, [mpf(-0.000009), mpf(0.003844), mpf(0.083563),
-                        mpf(0.865736), mpf(4.867575), mpf(15.845535),
-                        mpf(31.332267), mpf(38.291999), mpf(28.316289),
-                        mpf(11.636204), mpf(2.043794)])
+        return poly(c, [mpf(-0.000009), mpf(0.003844), mpf(0.083563), mpf(0.865736), mpf(4.867575), mpf(15.845535), mpf(31.332267), mpf(38.291999), mpf(28.316289), mpf(11.636204), mpf(2.043794)])
     elif (1700 <= year <= 1799):
-        return (1/86400 *
-                poly(year - 1700, [8.118780842, -0.005092142,
-                                   0.003336121, -0.0000266484]))
+        return (1/86400 * poly(year - 1700, [8.118780842, -0.005092142, 0.003336121, -0.0000266484]))
     elif (1620 <= year <= 1699):
-        return (1/86400 *
-                poly(year - 1600,
-                     [mpf(196.58333), mpf(-4.0675), mpf(0.0219167)]))
+        return (1/86400 * poly(year - 1600, [mpf(196.58333), mpf(-4.0675), mpf(0.0219167)]))
     else:
-        x = (days_from_hours(mpf(12)) +
-             GregorianDate.date_difference(GregorianDate(1810, JulianMonth.January, 1),
-                                       GregorianDate(year, JulianMonth.January, 1)))
+        x = (Clock.days_from_hours(mpf(12)) + GregorianDate.date_difference(GregorianDate(1810, JulianMonth.January, 1), GregorianDate(year, JulianMonth.January, 1)))
         return 1/86400 * (((x * x) / mpf(41048480)) - 15)
 
-# see lines 3178-3207 in calendrica-3.0.cl
 def equation_of_time(tee):
     """Return the equation of time (as fraction of day) for moment, tee.
     Adapted from "Astronomical Algorithms" by Jean Meeus,
@@ -2368,7 +2338,7 @@ def equation_of_time(tee):
                   cos_degrees(2 * lamb)) +
                  -0.5 * y * y * sin_degrees(4 * lamb) +
                  -1.25 * eccentricity * eccentricity * sin_degrees(2 * anomaly)))
-    return signum(equation) * min(abs(equation), days_from_hours(mpf(12)))
+    return signum(equation) * min(abs(equation), Clock.days_from_hours(mpf(12)))
 
 # see lines 3209-3259 in calendrica-3.0.cl
 def solar_longitude(tee):
@@ -2414,7 +2384,6 @@ def solar_longitude(tee):
            sigma([coefficients, addends, multipliers],
                  lambda x, y, z:  x * sin_degrees(y + (z * c))))
     return mod(lam + aberration(tee) + nutation(tee), 360)
-
 
 def geometric_solar_mean_longitude(tee):
     """Return the geometric mean longitude of the Sun at moment, tee,
@@ -3006,7 +2975,7 @@ def phasis_on_or_before(date, location):
 # see lines 220-221 in calendrica-3.0.errata.cl
 # Sample location for Observational Islamic calendar
 # (Cairo, Egypt).
-ISLAMIC_LOCATION = Location(mpf(30.1), mpf(31.3), 200, days_from_hours(2))
+ISLAMIC_LOCATION = Location(mpf(30.1), mpf(31.3), 200, Clock.days_from_hours(2))
 
 # see lines 5868-5882 in calendrica-3.0.cl
 def fixed_from_observational_islamic(i_date):
@@ -3029,7 +2998,7 @@ def observational_islamic_from_fixed(date):
     return IslamicDate(year, month, day)
 
 # see lines 5898-5901 in calendrica-3.0.cl
-JERUSALEM = Location(mpf(31.8), mpf(35.2), 800, days_from_hours(2))
+JERUSALEM = Location(mpf(31.8), mpf(35.2), 800, Clock.days_from_hours(2))
 
 # see lines 5903-5918 in calendrica-3.0.cl
 def astronomical_easter(g_year):
@@ -3042,7 +3011,7 @@ def astronomical_easter(g_year):
     return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
 # see lines 5920-5923 in calendrica-3.0.cl
-JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, days_from_hours(2))
+JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, Clock.days_from_hours(2))
 
 # see lines 5925-5938 in calendrica-3.0.cl
 def phasis_on_or_after(date, location):
@@ -3105,7 +3074,7 @@ def classical_passover_eve(g_year):
 class PersianDate(object):
 
     EPOCH = JulianDate(JulianDate.ce(622), JulianMonth.March, 19).to_fixed()
-    TEHRAN = Location(mpf(35.68), mpf(51.42), 1100, days_from_hours(3 + 1/2))
+    TEHRAN = Location(mpf(35.68), mpf(51.42), 1100, Clock.days_from_hours(3 + 1/2))
     
     def __init__(self, year, month, day):
         self.year = year
@@ -3261,7 +3230,7 @@ class BahaiDate(object):
         """Return fixed date of Bahai New Year in Gregorian year, g_year."""
         return GregorianDate(g_year, JulianMonth.March, 21).to_fixed()
     
-    HAIFA = Location(mpf(32.82), 35, 0, days_from_hours(2))
+    HAIFA = Location(mpf(32.82), 35, 0, Clock.days_from_hours(2))
 
     @classmethod    
     def sunset_in_haifa(cls, date):
@@ -3335,7 +3304,7 @@ class FrenchDate(object):
 
     #"""Fixed date of start of the French Revolutionary calendar."""
     FRENCH_EPOCH = GregorianDate(1792, JulianMonth.September, 22).to_fixed()
-    PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), 27, days_from_hours(1))
+    PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), 27, Clock.days_from_hours(1))
     
     def __init__(self, year, month, day):
         self.year = year
@@ -3424,9 +3393,9 @@ class ChineseDate(object):
         """Return location of Beijing; time zone varies with time, tee."""
         year = GregorianDate.to_year(ifloor(tee))
         if (year < 1929):
-            return Location(angle(39, 55, 0), angle(116, 25, 0), 43.5, days_from_hours(1397/180))
+            return Location(angle(39, 55, 0), angle(116, 25, 0), 43.5, Clock.days_from_hours(1397/180))
         else:
-            return Location(angle(39, 55, 0), angle(116, 25, 0), 43.5, days_from_hours(8))
+            return Location(angle(39, 55, 0), angle(116, 25, 0), 43.5, Clock.days_from_hours(8))
 
     @classmethod
     def solar_longitude_on_or_after(cls, lam, date):
@@ -3670,10 +3639,10 @@ def japanese_location(tee):
     year = GregorianDate.to_year(ifloor(tee))
     if (year < 1888):
         # Tokyo (139 deg 46 min east) local time
-        loc = Location(mpf(35.7), angle(139, 46, 0), 24, days_from_hours(9 + 143/450))
+        loc = Location(mpf(35.7), angle(139, 46, 0), 24, Clock.days_from_hours(9 + 143/450))
     else:
         # Longitude 135 time zone
-        loc = Location(35, 135, 0, days_from_hours(9))
+        loc = Location(35, 135, 0, Clock.days_from_hours(9))
     return loc
 
 def korean_location(tee):
@@ -3690,7 +3659,7 @@ def korean_location(tee):
         z = 8.5
     else:
         z = 9
-    return Location(angle(37, 34, 0), angle(126, 58, 0), 0, days_from_hours(z))
+    return Location(angle(37, 34, 0), angle(126, 58, 0), 0, Clock.days_from_hours(z))
 
 def korean_year(cycle, year):
     """Return equivalent Korean year to Chinese cycle, cycle, and year, year."""
@@ -3703,7 +3672,7 @@ def vietnamese_location(tee):
         z = 8
     else:
         z =7
-    return Location(angle(21, 2, 0), angle(105, 51, 0), 12, days_from_hours(z))
+    return Location(angle(21, 2, 0), angle(105, 51, 0), 12, Clock.days_from_hours(z))
 
 
 #####################################
@@ -3951,7 +3920,7 @@ def fixed_from_hindu_lunar(l_date):
                             ((month - 1) * 30) +
                             180, 360) -
                         180))
-    k = hindu_lunar_day_from_moment(s + days_from_hours(6))
+    k = hindu_lunar_day_from_moment(s + Clock.days_from_hours(6))
     if (3 < k < 27):
         temp = k
     else:
@@ -3963,7 +3932,7 @@ def fixed_from_hindu_lunar(l_date):
             temp = mod(k - 15, 30) + 15
     est = s + day - temp
     tau = (est -
-           mod(hindu_lunar_day_from_moment(est + days_from_hours(6)) - day + 15, 30) +
+           mod(hindu_lunar_day_from_moment(est + Clock.days_from_hours(6)) - day + 15, 30) +
            15)
     date = next_int(tau - 1,
                 lambda d: (hindu_lunar_day_from_moment(hindu_sunrise(d)) in
@@ -4029,25 +3998,17 @@ def hindu_daily_motion(date):
     factor = -3438/225 * sine_table_step * epicycle
     return mean_motion * (factor + 1)
 
-
-# see lines 5202-5205 in calendrica-3.0.cl
 def hindu_solar_sidereal_difference(date):
     """Return the difference between solar and sidereal day on date, date."""
     return hindu_daily_motion(date) * hindu_rising_sign(date)
 
+UJJAIN = Location(angle(23, 9, 0), angle(75, 46, 6), 0, Clock.days_from_hours(5 + 461/9000))
 
-# see lines 5207-5211 in calendrica-3.0.cl
-UJJAIN = Location(angle(23, 9, 0), angle(75, 46, 6),
-                  0, days_from_hours(5 + 461/9000))
-
-# see lines 5213-5216 in calendrica-3.0.cl
-# see lines 217-218 in calendrica-3.0.errata.cl
 HINDU_LOCATION = UJJAIN
 
-# see lines 5218-5228 in calendrica-3.0.cl
 def hindu_sunrise(date):
     """Return the sunrise at hindu_location on date, date."""
-    return (date + days_from_hours(6) + 
+    return (date + Clock.days_from_hours(6) + 
             ((UJJAIN.longitude - HINDU_LOCATION.longitude) / 360) -
             hindu_equation_of_time(date) +
             ((1577917828/1582237828 / 360) *
@@ -4112,7 +4073,7 @@ def alt_hindu_sunrise(date):
 # see lines 5282-5292 in calendrica-3.0.cl
 def hindu_sunset(date):
     """Return sunset at HINDU_LOCATION on date, date."""
-    return (date + days_from_hours(18) + 
+    return (date + Clock.days_from_hours(18) + 
             ((UJJAIN.longitude - HINDU_LOCATION.longitude) / 360) -
             hindu_equation_of_time(date) +
             (((1577917828/1582237828) / 360) *
@@ -4123,21 +4084,21 @@ def hindu_sunset(date):
 # see lines 5294-5313 in calendrica-3.0.cl
 def hindu_sundial_time(tee):
     """Return Hindu local time of temporal moment, tee."""
-    date = fixed_from_moment(tee)
+    date = Clock.fixed_from_moment(tee)
     time = mod(tee, 1)
     q    = ifloor(4 * time)
     if (q == 0):
         a = hindu_sunset(date - 1)
         b = hindu_sunrise(date)
-        t = days_from_hours(-6)
+        t = Clock.days_from_hours(-6)
     elif (q == 3):
         a = hindu_sunset(date)
         b = hindu_sunrise(date + 1)
-        t = days_from_hours(18)
+        t = Clock.days_from_hours(18)
     else:
         a = hindu_sunrise(date)
         b = hindu_sunset(date)
-        t = days_from_hours(6)
+        t = Clock.days_from_hours(6)
     return a + (2 * (b - a) * (time - t))
 
 
@@ -4238,7 +4199,7 @@ def fixed_from_astro_hindu_lunar(l_date):
               1/360 * MEAN_SIDEREAL_YEAR *
               (mod(sidereal_solar_longitude(approx) -
                   (month - 1) * 30 + 180, 360) - 180))
-    k = astro_lunar_day_from_moment(s + days_from_hours(6))
+    k = astro_lunar_day_from_moment(s + Clock.days_from_hours(6))
     if (3 < k < 27):
         temp = k
     else:
@@ -4250,7 +4211,7 @@ def fixed_from_astro_hindu_lunar(l_date):
             temp = mod(k - 15, 30) + 15
     est = s + day - temp
     tau = (est -
-           mod(astro_lunar_day_from_moment(est + days_from_hours(6)) - day + 15, 30) +
+           mod(astro_lunar_day_from_moment(est + Clock.days_from_hours(6)) - day + 15, 30) +
            15)
     date = next_int(tau - 1,
                 lambda d: (astro_lunar_day_from_moment(alt_hindu_sunrise(d)) in
@@ -4379,7 +4340,7 @@ def hindu_tithi_occur(l_month, tithi, tee, l_year):
     year, l_year."""
     approx = hindu_date_occur(l_month, ifloor(tithi), l_year)
     lunar  = hindu_lunar_day_at_or_after(tithi, approx - 2)
-    ttry    = fixed_from_moment(lunar)
+    ttry    = Clock.fixed_from_moment(lunar)
     tee_h  = standard_from_sundial(ttry + tee, UJJAIN)
     if ((lunar <= tee_h) or
         (hindu_lunar_phase(standard_from_sundial(ttry + 1 + tee, UJJAIN)) >
@@ -4406,14 +4367,14 @@ def hindu_lunar_event(l_month, tithi, tee, g_year):
 def shiva(g_year):
     """Return the list of fixed date(s) of Night of Shiva in Gregorian
     year, g_year."""
-    return hindu_lunar_event(11, 29, days_from_hours(24), g_year)
+    return hindu_lunar_event(11, 29, Clock.days_from_hours(24), g_year)
 
 
 # see lines 5628-5632 in calendrica-3.0.cl
 def rama(g_year):
     """Return the list of fixed date(s) of Rama's Birthday in Gregorian
     year, g_year."""
-    return hindu_lunar_event(1, 9, days_from_hours(12), g_year)
+    return hindu_lunar_event(1, 9, Clock.days_from_hours(12), g_year)
 
 
 # see lines 5634-5640 in calendrica-3.0.cl
