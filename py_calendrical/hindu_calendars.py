@@ -1,10 +1,11 @@
 from operator import mod
 from mpmath import mpf
-from py_cal_cal import amod, quotient, iceiling, ifloor, iround, signum, next_int, list_range, binary_search, is_in_range, sin_degrees, cos_degrees, tan_degrees
-
-from py_cal_cal import angle, invert_angular, standard_from_sundial, precession, MEAN_SIDEREAL_YEAR, solar_longitude, lunar_phase, new_moon_before, new_moon_at_or_after, lunar_longitude
-from py_cal_cal import JulianMonth, Clock, Location, DayOfWeek, GregorianDate
+from py_cal_cal import amod, quotient, iceiling, ifloor, iround, signum, next_int, list_range, binary_search, is_in_range, sin_degrees
+from py_cal_cal import angle, invert_angular
+from astro import standard_from_sundial, precession, MEAN_SIDEREAL_YEAR, solar_longitude, lunar_phase, new_moon_before, new_moon_at_or_after, lunar_longitude
+from py_cal_cal import JulianMonth, Clock, DayOfWeek, GregorianDate
 from py_calendrical.julian_calendars import JulianDate
+from location import Location
 
 class OldHindu(object):
     

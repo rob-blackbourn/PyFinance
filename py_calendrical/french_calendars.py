@@ -1,7 +1,8 @@
 from operator import mod
-from py_cal_cal import GregorianDate, JulianMonth, Location, angle, Clock
+from py_cal_cal import GregorianDate, JulianMonth, angle, Clock
 from py_cal_cal import next_int, ifloor, iround, quotient
-from py_cal_cal import estimate_prior_solar_longitude, AUTUMN, solar_longitude, MEAN_TROPICAL_YEAR
+from astro import estimate_prior_solar_longitude, AUTUMN, solar_longitude, MEAN_TROPICAL_YEAR
+from location import Location
 
 
 class FrenchDate(object):

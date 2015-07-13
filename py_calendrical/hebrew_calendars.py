@@ -2,10 +2,11 @@ from operator import mod
 from enum import IntEnum
 from mpmath import mpf
 from py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
-from py_cal_cal import JulianMonth, Clock, GregorianDate, DayOfWeek, Location
-from py_cal_cal import phasis_on_or_before, solar_longitude_after, SPRING, angle, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
-from py_calendrical.julian_calendars import JulianDate
+from py_cal_cal import JulianMonth, Clock, GregorianDate, DayOfWeek, angle
+from astro import phasis_on_or_before, solar_longitude_after, SPRING, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
+from julian_calendars import JulianDate
 from coptic_calendars import CopticDate
+from location import Location
 
 class HebrewMonth(IntEnum):
     NISAN = 1

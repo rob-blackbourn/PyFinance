@@ -2,8 +2,9 @@ from operator import mod
 from mpmath import mpf
 from py_cal_cal import GregorianDate, JulianMonth
 from py_cal_cal import ifloor, amod, quotient, iround, iceiling, rd, next_int
-from py_cal_cal import Location, angle, Clock, solar_longitude_after, solar_longitude, new_moon_before, new_moon_at_or_after, estimate_prior_solar_longitude
-from py_cal_cal import WINTER, MEAN_SYNODIC_MONTH, MEAN_TROPICAL_YEAR
+from py_cal_cal import angle, Clock
+from astro import WINTER, MEAN_SYNODIC_MONTH, MEAN_TROPICAL_YEAR, solar_longitude_after, solar_longitude, new_moon_before, new_moon_at_or_after, estimate_prior_solar_longitude
+from location import Location
 
 class ChineseDate(object):
 
