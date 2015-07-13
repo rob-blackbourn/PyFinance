@@ -1,8 +1,9 @@
 from operator import mod
 from enum import IntEnum
+from mpmath import mpf
 from py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
-from py_cal_cal import JulianMonth, Clock, GregorianDate, DayOfWeek
-from py_cal_cal import phasis_on_or_before, phasis_on_or_after, JAFFA, solar_longitude_after, SPRING
+from py_cal_cal import JulianMonth, Clock, GregorianDate, DayOfWeek, Location
+from py_cal_cal import phasis_on_or_before, solar_longitude_after, SPRING, angle, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
 from py_calendrical.julian_calendars import JulianDate
 from coptic_calendars import CopticDate
 
@@ -370,3 +371,17 @@ def classical_passover_eve(g_year):
     """Return fixed date of Classical (observational) Passover Eve
     (Nisan 14) occurring in Gregorian year, g_year."""
     return observational_hebrew_new_year(g_year) + 13
+
+# see lines 5920-5923 in calendrica-3.0.cl
+JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, Clock.days_from_hours(2))
+
+# see lines 5925-5938 in calendrica-3.0.cl
+def phasis_on_or_after(date, location):
+    """Return closest fixed date on or after date, date, on the eve
+    of which crescent moon first became visible at location, location."""
+    mean = date - ifloor(lunar_phase(date + 1) / mpf(360) *
+                        MEAN_SYNODIC_MONTH)
+    tau = (date if (((date - mean) <= 3) and
+                    (not visible_crescent(date - 1, location)))
+           else (mean + 29))
+    return next_int(tau, lambda d: visible_crescent(d, location))

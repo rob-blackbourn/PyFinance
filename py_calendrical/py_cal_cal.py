@@ -1690,31 +1690,3 @@ def astronomical_easter(g_year):
     # Return the Sunday following the Paschal moon.
     return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
-# see lines 5920-5923 in calendrica-3.0.cl
-JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, Clock.days_from_hours(2))
-
-# see lines 5925-5938 in calendrica-3.0.cl
-def phasis_on_or_after(date, location):
-    """Return closest fixed date on or after date, date, on the eve
-    of which crescent moon first became visible at location, location."""
-    mean = date - ifloor(lunar_phase(date + 1) / mpf(360) *
-                        MEAN_SYNODIC_MONTH)
-    tau = (date if (((date - mean) <= 3) and
-                    (not visible_crescent(date - 1, location)))
-           else (mean + 29))
-    return next_int(tau, lambda d: visible_crescent(d, location))
-
-
-
-
-
-
-
-
-
-
-
-
-# That's all folks!
-
-
