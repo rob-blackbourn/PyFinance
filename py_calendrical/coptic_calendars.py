@@ -1,6 +1,7 @@
 from operator import mod
 from py_cal_cal import quotient, list_range
-from py_cal_cal import JulianDate, JulianMonth, GregorianDate
+from py_cal_cal import JulianMonth, GregorianDate
+from julian_date import JulianDate
 
 class CopticDate(object):
 

@@ -1,8 +1,9 @@
 from operator import mod
 from mpmath import mpf
 from py_cal_cal import quotient, list_range, ifloor, iround
-from py_cal_cal import JulianDate, JulianMonth, GregorianDate, Location, Clock
+from py_cal_cal import JulianMonth, GregorianDate, Location, Clock
 from py_cal_cal import phasis_on_or_before, MEAN_SYNODIC_MONTH
+from julian_date import JulianDate
 
 class IslamicDate(object):
 

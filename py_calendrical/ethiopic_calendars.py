@@ -1,4 +1,5 @@
-from py_cal_cal import JulianDate, JulianMonth 
+from py_cal_cal import JulianMonth 
+from julian_date import JulianDate
 from coptic_calendars import CopticDate
 
 class EthiopicDate(object):

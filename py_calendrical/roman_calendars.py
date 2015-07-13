@@ -1,6 +1,8 @@
 from enum import Enum
 from py_cal_cal import amod
-from py_cal_cal import JulianDate, JulianMonth
+from py_cal_cal import JulianMonth
+from julian_date import JulianDate
+
 
 class Event(Enum):
     Kalends = 1
