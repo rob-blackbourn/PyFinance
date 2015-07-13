@@ -303,46 +303,6 @@ def standard_year(date):
     """Return the year of date 'date'."""
     return date[0]
 
-class Clock(object):
-    
-    def __init__(self, hour, minute, second):
-        self.hour = hour
-        self.minute = minute
-        self.second = second
-
-    def to_time(self):
-        """Return time of day from clock time 'hms'."""
-        return(1/24 * (self.hour + ((self.minute + (self.second / 60)) / 60)))
-
-    @classmethod
-    def from_moment(cls, tee):
-        """Return clock time hour:minute:second from moment 'tee'."""
-        time = cls.time_from_moment(tee)
-        hour = ifloor(time * 24)
-        minute = ifloor(mod(time * 24 * 60, 60))
-        second = mod(time * 24 * 60 * 60, 60)
-        return Clock(hour, minute, second)
-
-    @classmethod
-    def fixed_from_moment(cls, tee):
-        """Return fixed date from moment 'tee'."""
-        return ifloor(tee)
-    
-    @classmethod
-    def time_from_moment(cls, tee):
-        """Return time from moment 'tee'."""
-        return mod(tee, 1)
-
-    @classmethod
-    def days_from_hours(cls, x):
-        """Return the number of days given x hours."""
-        return x / 24
-    
-    @classmethod
-    def days_from_seconds(cls, x):
-        """Return the number of days given x seconds."""
-        return x / 24 / 60 / 60
-
 class DegreeMinutesSeconds(object):
     
     def __init__(self, degrees, minutes, seconds):

@@ -1,7 +1,7 @@
 from operator import mod
 from mpmath import mpf
 from py_cal_cal import quotient, list_range, ifloor, iround
-from py_cal_cal import Clock
+from time_arithmatic import Clock
 from astro import phasis_on_or_before, MEAN_SYNODIC_MONTH
 from julian_calendars import JulianDate
 from location import Location

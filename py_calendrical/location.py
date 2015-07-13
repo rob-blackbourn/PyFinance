@@ -2,8 +2,9 @@ from operator import mod
 from mpmath import mpf
 import math
 from py_cal_cal import sin_degrees, cos_degrees, tan_degrees, arctan_degrees, arcsin_degrees, arccos_degrees, secs, binary_search
-from py_cal_cal import Clock, angle
+from py_cal_cal import angle
 from astro import equation_of_time, solar_longitude, declination, lunar_phase
+from time_arithmatic import Clock
 
 class Location(object):
 

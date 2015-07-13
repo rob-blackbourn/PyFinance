@@ -3,10 +3,12 @@ from mpmath import mpf
 from py_cal_cal import amod, quotient, iceiling, ifloor, iround, signum, next_int, list_range, binary_search, is_in_range, sin_degrees
 from py_cal_cal import angle, invert_angular
 from astro import standard_from_sundial, precession, MEAN_SIDEREAL_YEAR, solar_longitude, lunar_phase, new_moon_before, new_moon_at_or_after, lunar_longitude
-from py_cal_cal import Clock, DayOfWeek
+from py_cal_cal import DayOfWeek
 from py_calendrical.julian_calendars import JulianDate
 from location import Location
 from gregorian_calendars import GregorianDate, JulianMonth
+from time_arithmatic import Clock
+
 
 class OldHindu(object):
     

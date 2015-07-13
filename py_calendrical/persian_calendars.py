@@ -1,7 +1,7 @@
 from operator import mod
 from mpmath import mpf
 from py_cal_cal import next_int, ifloor, iceiling, iround, quotient
-from py_cal_cal import Clock
+from time_arithmatic import Clock
 from astro import estimate_prior_solar_longitude, SPRING, solar_longitude, MEAN_TROPICAL_YEAR
 from julian_calendars import JulianDate
 from location import Location
