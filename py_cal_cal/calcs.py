@@ -44,13 +44,6 @@ from enum import IntEnum, Enum
 mp.prec = 50
 
 
-################################
-# basic calendrical algorithms #
-################################
-# see lines 244-247 in calendrica-3.0.cl
-BOGUS = 'bogus'
-
-
 # see lines 249-252 in calendrica-3.0.cl
 # m // n
 # The following
@@ -1186,7 +1179,7 @@ class HebrewDate(object):
     @classmethod    
     def omer(cls, fixed_date):
         """Return the number of elapsed weeks and days in the omer at date fixed_date.
-        Returns BOGUS if that date does not fall during the omer."""
+        Throws ValueError if that date does not fall during the omer."""
         c = fixed_date - cls.passover(GregorianDate.to_year(fixed_date))
         if 1 <= c <= 49:
             return [quotient(c, 7), mod(c, 7)]
@@ -1458,7 +1451,7 @@ class MayanTzolkinDate(MayanTzolkinOrdinal):
     @classmethod
     def mayan_year_bearer_from_fixed(cls, date):
         """Return year bearer of year containing fixed date date.
-        Returns BOGUS for uayeb."""
+        Raises ValueError for uayeb."""
         x = MayanHaabDate(1, 0).on_or_before(date + 364)
         if MayanHaabDate.from_fixed(date).month == 19:
             raise ValueError("Invalid date")
@@ -1467,14 +1460,14 @@ class MayanTzolkinDate(MayanTzolkinOrdinal):
 def mayan_calendar_round_on_or_before(haab, tzolkin, date):
     """Return fixed date of latest date on or before date, that is
     Mayan haab date haab and tzolkin date tzolkin.
-    Returns BOGUS for impossible combinations."""
+    Raises ValueError for impossible combinations."""
     haab_count = haab.to_ordinal() + MayanHaabDate.EPOCH
     tzolkin_count = tzolkin.to_ordinal() + MayanTzolkinDate.EPOCH
     diff = tzolkin_count - haab_count
     if mod(diff, 5) == 0:
         return date - mod(date - haab_count(365 * diff), 18980)
     else:
-        raise ValueError("Invalid date")
+        raise ValueError("impossible combinination")
 
 
 AZTEC_CORRELATION = JulianDate(1521, JulianMonth.August, 13).to_fixed()
@@ -1549,7 +1542,7 @@ class AztecXiuhmolpilliDesignation(AztecTonalpohualliDate):
     @classmethod    
     def from_fixed(cls, date):
         """Return designation of year containing fixed date date.
-        Returns BOGUS for nemontemi."""
+        Raises ValueError for nemontemi."""
         x = AztecXihuitlDate(18, 20).on_or_before(date + 364)
         month = AztecXihuitlDate.from_fixed(date).month
         if month == 19:
@@ -1562,7 +1555,7 @@ def aztec_xihuitl_tonalpohualli_on_or_before(xihuitl, tonalpohualli, date):
     on or before date date.  That is the date on or before
     date date that is Aztec xihuitl date xihuitl and
     tonalpohualli date tonalpohualli.
-    Returns BOGUS for impossible combinations."""
+    Raises ValueError for impossible combinations."""
     xihuitl_count = xihuitl.to_ordinal() + AztecXihuitlDate.CORRELATION
     tonalpohualli_count = (tonalpohualli.to_ordinal() + AztecTonalpohualliDate.CORRELATION)
     diff = tonalpohualli_count - xihuitl_count
@@ -2172,7 +2165,7 @@ class Location(object):
         """Return the moment in local time near tee when depression angle
         of sun is alpha (negative if above horizon) at location;
         early is true when MORNING event is sought and false for EVENING.
-        Returns BOGUS if depression angle is not reached."""
+        Raise VlueError if depression angle is not reached."""
         ttry  = self.sine_offset(tee, alpha)
         date = fixed_from_moment(tee)
     
@@ -2201,8 +2194,7 @@ class Location(object):
     def moment_of_depression(self, approx, alpha, early):
         """Return the moment in local time near approx when depression
         angle of sun is alpha (negative if above horizon) at location;
-        early is true when MORNING event is sought, and false for EVENING.
-        Returns BOGUS if depression angle is not reached."""
+        early is true when MORNING event is sought, and false for EVENING."""
         tee = self.approx_moment_of_depression(approx, alpha, early)
         if abs(approx - tee) < days_from_seconds(30):
             return tee
@@ -2211,15 +2203,13 @@ class Location(object):
 
     def dawn(self, date, alpha):
         """Return standard time in morning on fixed date date at
-        location location when depression angle of sun is alpha.
-        Returns BOGUS if there is no dawn on date date."""
+        location location when depression angle of sun is alpha."""
         result = self.moment_of_depression(date + days_from_hours(6), alpha, self.MORNING)
         return self.standard_from_local(result)
     
     def dusk(self, date, alpha):
         """Return standard time in evening on fixed date 'date' at
-        location 'location' when depression angle of sun is alpha.
-        Return BOGUS if there is no dusk on date 'date'."""
+        location 'location' when depression angle of sun is alpha."""
         result = self.moment_of_depression(date + days_from_hours(18), alpha, self.EVENING)
         return self.standard_from_local(result)
 
@@ -2265,18 +2255,19 @@ class Location(object):
                              approx + days_from_hours(3),
                              lambda u, l: ((u - l) < days_from_hours(1 / 60)),
                              lambda x: self.observed_lunar_altitude(x) > deg(0))
-        return self.standard_from_universal(rise) if (rise < (t + 1)) else BOGUS
+        if (rise < (t + 1)):
+            return self.standard_from_universal(rise)
+        
+        raise ValueError()
 
     def daytime_temporal_hour(self, date):
         """Return the length of daytime temporal hour on fixed date, date
-        at location, location.
-        Return BOGUS if there no sunrise or sunset on date, date."""
+        at location, location."""
         return (self.sunset(date) - self.sunrise(date)) / 12
     
     def nighttime_temporal_hour(self, date):
         """Return the length of nighttime temporal hour on fixed date, date,
-        at location, location.
-        Return BOGUS if there no sunrise or sunset on date, date."""
+        at location, location."""
         return (self.sunrise(date + 1) - self.sunset(date)) / 12
 
 MECCA = Location(angle(21, 25, 24), angle(39, 49, 24), mt(298), days_from_hours(3))
@@ -2310,8 +2301,7 @@ def jewish_sabbath_ends(date, location):
 
 # see lines 3055-3073 in calendrica-3.0.cl
 def standard_from_sundial(tee, location):
-    """Return standard time of temporal moment, tee, at location, location.
-    Return BOGUS if temporal hour is undefined that day."""
+    """Return standard time of temporal moment, tee, at location, location."""
     date = fixed_from_moment(tee)
     hour = 24 * mod(tee, 1)
     if (6 <= hour <= 18):
@@ -2322,9 +2312,7 @@ def standard_from_sundial(tee, location):
         h = location.nighttime_temporal_hour(date)
 
     # return
-    if (h == BOGUS):
-        return BOGUS
-    elif (6 <= hour <= 18):
+    if (6 <= hour <= 18):
         return location.sunrise(date) + ((hour - 6) * h)
     elif (hour < 6):
         return location.sunset(date - 1) + ((hour + 6) * h)
@@ -3727,11 +3715,11 @@ def is_chinese_prior_leap_month(m_prime, m):
 
 # see lines 4609-4615 in calendrica-3.0.cl
 def chinese_name(stem, branch):
-    """Return BOGUS if stem/branch combination is impossible."""
+    """Raises ValueError if stem/branch combination is impossible."""
     if (mod(stem, 2) == mod(branch, 2)):
         return [stem, branch]
     else:
-        return BOGUS
+        raise ValueError("Combination/branch combination is not possible")
 
 
 # see lines 4617-4619 in calendrica-3.0.cl
@@ -3822,13 +3810,13 @@ def qing_ming(g_year):
 def chinese_age(birthdate, date):
     """Return the age at fixed date, date, given Chinese birthdate, birthdate,
     according to the Chinese custom.
-    Returns BOGUS if date is before birthdate."""
+    Raises ValueError if date is before birthdate."""
     today = chinese_from_fixed(date)
     if (date >= fixed_from_chinese(birthdate)):
         return (60 * (chinese_cycle(today) - chinese_cycle(birthdate)) +
                 (chinese_year(today) -  chinese_year(birthdate)) + 1)
     else:
-        return BOGUS
+        raise ValueError("date is before birthdate")
 
 
 # see lines 4724-4758 in calendrica-3.0.cl
