@@ -3,7 +3,6 @@ from py_cal_cal import amod
 from py_calendrical.julian_calendars import JulianDate
 from gregorian_calendars import JulianMonth
 
-
 class Event(Enum):
     Kalends = 1
     Nones = 2
@@ -19,16 +18,6 @@ class RomanDate(object):
         self.event = event
         self.count = count
         self.leap = leap
-
-    @classmethod
-    def ides_of_month(cls, month):
-        """Return the date of the Ides in Roman month 'month'."""
-        return 15 if month in [JulianMonth.March, JulianMonth.May, JulianMonth.July, JulianMonth.October] else 13
-
-    @classmethod
-    def nones_of_month(cls, month):
-        """Return the date of Nones in Roman month 'month'."""
-        return cls.ides_of_month(month) - 8
 
     def to_fixed(self):
         """Return the fixed date."""
@@ -78,6 +67,12 @@ class RomanDate(object):
         else:
             return RomanDate(julian_date.year, JulianMonth.March, Event.Kalends, 31 - julian_date.day, julian_date.day == 25)
 
-    
+    @classmethod
+    def ides_of_month(cls, month):
+        """Return the date of the Ides in Roman month 'month'."""
+        return 15 if month in [JulianMonth.March, JulianMonth.May, JulianMonth.July, JulianMonth.October] else 13
 
-
+    @classmethod
+    def nones_of_month(cls, month):
+        """Return the date of Nones in Roman month 'month'."""
+        return cls.ides_of_month(month) - 8

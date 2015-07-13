@@ -9,7 +9,7 @@ from time_arithmatic import Clock
 class FrenchDate(object):
 
     #"""Fixed date of start of the French Revolutionary calendar."""
-    FRENCH_EPOCH = GregorianDate(1792, JulianMonth.September, 22).to_fixed()
+    EPOCH = GregorianDate(1792, JulianMonth.September, 22).to_fixed()
     PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), 27, Clock.days_from_hours(1))
     
     def __init__(self, year, month, day):

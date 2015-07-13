@@ -1,22 +1,15 @@
 from operator import mod
 from mpmath import mpf
-from py_cal_cal import quotient, list_range, rd, ifloor
+from py_cal_cal import quotient, list_range, ifloor
 from day_arithmatic import DayOfWeek
 from gregorian_calendars import GregorianDate, JulianMonth
 
 class JD(object):
     
-    EPOCH = rd(mpf(-1721424.5))
+    EPOCH = mpf(-1721424.5)
 
     def __init__(self, date_from_epoch):
         self.date_from_epoch = date_from_epoch
-    
-    def to_moment(self):
-        return self.date_from_epoch + self.EPOCH
-
-    @classmethod
-    def from_moment(cls, tee):
-        return JD(tee - cls.EPOCH)
     
     def to_fixed(self):
         return ifloor(self.to_moment())
@@ -24,10 +17,17 @@ class JD(object):
     @classmethod
     def from_fixed(cls, fixed_date):
         return cls.from_moment(fixed_date)
+    
+    def to_moment(self):
+        return self.date_from_epoch + self.EPOCH
+
+    @classmethod
+    def from_moment(cls, tee):
+        return JD(tee - cls.EPOCH)
 
 class MJD(object):
     
-    EPOCH = rd(678576)
+    EPOCH = 678576
 
     def __init__(self, date_from_epoch):
         self.date_from_epoch = date_from_epoch
@@ -47,22 +47,6 @@ class JulianDate(object):
         self.year = year
         self.month = month
         self.day = day
-        
-    @classmethod
-    def bce(cls, n):
-        """Return a negative value to indicate a BCE Julian year."""
-        return -n
-    
-    @classmethod
-    def ce(cls, n):
-        """Return a positive value to indicate a CE Julian year."""
-        return n
-
-    @classmethod
-    def is_leap_year(cls, year):
-        """Return True if Julian year 'year' is a leap year in
-        the Julian calendar."""
-        return mod(year, 4) == (0 if year > 0 else 3)
 
     def to_fixed(self):
         """Return the fixed date equivalent to the Julian date 'j_date'."""
@@ -85,6 +69,22 @@ class JulianDate(object):
         month      = quotient(12*(prior_days + correction) + 373, 367)
         day        = 1 + (fixed_date - JulianDate(year, month, 1).to_fixed())
         return JulianDate(year, month, day)
+        
+    @classmethod
+    def bce(cls, n):
+        """Return a negative value to indicate a BCE Julian year."""
+        return -n
+    
+    @classmethod
+    def ce(cls, n):
+        """Return a positive value to indicate a CE Julian year."""
+        return n
+
+    @classmethod
+    def is_leap_year(cls, year):
+        """Return True if Julian year 'year' is a leap year in
+        the Julian calendar."""
+        return mod(year, 4) == (0 if year > 0 else 3)
 
     @classmethod
     def julian_year_from_auc_year(cls, year):
@@ -121,7 +121,6 @@ class JulianDate(object):
 #######################################
 # ecclesiastical calendars algorithms #
 #######################################
-# see lines 1371-1385 in calendrica-3.0.cl
 def orthodox_easter(g_year):
     """Return fixed date of Orthodox Easter in Gregorian year g_year."""
     shifted_epact = mod(14 + 11 * mod(g_year, 19), 30)
@@ -129,7 +128,6 @@ def orthodox_easter(g_year):
     paschal_moon  = JulianDate(j_year, JulianMonth.April, 19).to_fixed() - shifted_epact
     return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
-# see lines 76-91 in calendrica-3.0.errata.cl
 def alt_orthodox_easter(g_year):
     """Return fixed date of Orthodox Easter in Gregorian year g_year.
     Alternative calculation."""

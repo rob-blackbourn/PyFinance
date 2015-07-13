@@ -34,6 +34,35 @@ class HebrewDate(object):
         self.year = year
         self.month = month
         self.day = day
+    
+    def to_fixed(self):
+        """Return fixed date of Hebrew date h_date."""
+        if (self.month < HebrewMonth.TISHRI):
+            tmp = (summa(lambda m: self.last_day_of_month(m, self.year),
+                         HebrewMonth.TISHRI,
+                         lambda m: m <= self.last_month_of_year(self.year)) +
+                   summa(lambda m: self.last_day_of_month(m, self.year),
+                         HebrewMonth.NISAN,
+                         lambda m: m < self.month))
+        else:
+            tmp = summa(lambda m: self.last_day_of_month(m, self.year),
+                        HebrewMonth.TISHRI,
+                        lambda m: m < self.month)
+    
+        return self.new_year(self.year) + self.day - 1 + tmp
+
+    @classmethod    
+    def from_fixed(cls, date):
+        """Return  Hebrew (year month day) corresponding to fixed date date.
+        # The fraction can be approximated by 365.25."""
+        approx = quotient(date - cls.EPOCH, 35975351/98496) + 1
+        year = final_int(approx - 1, lambda y: cls.new_year(y) <= date)
+        start = (HebrewMonth.TISHRI
+                 if (date < HebrewDate(year, HebrewMonth.NISAN, 1).to_fixed())
+                 else  HebrewMonth.NISAN)
+        month = next_int(start, lambda m: date <= HebrewDate(year, m, cls.last_day_of_month(m, year)).to_fixed())
+        day = date - HebrewDate(year, month, 1).to_fixed() + 1
+        return HebrewDate(year, month, day)
 
     @classmethod
     def is_leap_year(cls, year):
@@ -117,35 +146,6 @@ class HebrewDate(object):
     def is_short_kislev(cls, year):
         """Return True if Kislev is short in Hebrew year h_year."""
         return cls.days_in_year(year) in [353, 383]
-    
-    def to_fixed(self):
-        """Return fixed date of Hebrew date h_date."""
-        if (self.month < HebrewMonth.TISHRI):
-            tmp = (summa(lambda m: self.last_day_of_month(m, self.year),
-                         HebrewMonth.TISHRI,
-                         lambda m: m <= self.last_month_of_year(self.year)) +
-                   summa(lambda m: self.last_day_of_month(m, self.year),
-                         HebrewMonth.NISAN,
-                         lambda m: m < self.month))
-        else:
-            tmp = summa(lambda m: self.last_day_of_month(m, self.year),
-                        HebrewMonth.TISHRI,
-                        lambda m: m < self.month)
-    
-        return self.new_year(self.year) + self.day - 1 + tmp
-
-    @classmethod    
-    def hebrew_from_fixed(cls, date):
-        """Return  Hebrew (year month day) corresponding to fixed date date.
-        # The fraction can be approximated by 365.25."""
-        approx = quotient(date - cls.EPOCH, 35975351/98496) + 1
-        year = final_int(approx - 1, lambda y: cls.new_year(y) <= date)
-        start = (HebrewMonth.TISHRI
-                 if (date < HebrewDate(year, HebrewMonth.NISAN, 1).to_fixed())
-                 else  HebrewMonth.NISAN)
-        month = next_int(start, lambda m: date <= HebrewDate(year, m, cls.last_day_of_month(m, year)).to_fixed())
-        day = date - HebrewDate(year, month, 1).to_fixed() + 1
-        return HebrewDate(year, month, day)
 
     @classmethod    
     def yom_kippur(cls, year):

@@ -1,9 +1,8 @@
-from py_cal_cal import rd
 from egyptian_calendars import EgyptianDate
 
 class ArmenianDate(object):
 
-    EPOCH = rd(201443)
+    EPOCH = 201443
     
     def __init__(self, year, month, day):
         self.year = year

@@ -15,11 +15,6 @@ class IslamicDate(object):
         self.year = year
         self.month = month
         self.day = day
-
-    @classmethod    
-    def is_leap_year(cls, year):
-        """Return True if year is an Islamic leap year."""
-        return mod(14 + 11 * year, 30) < 11
     
     def to_fixed(self):
         """Return fixed date equivalent to Islamic date i_date."""
@@ -38,6 +33,11 @@ class IslamicDate(object):
         month      = quotient(11 * prior_days + 330, 325)
         day        = date - IslamicDate(year, month, 1).to_fixed() + 1
         return IslamicDate(year, month, day)
+
+    @classmethod    
+    def is_leap_year(cls, year):
+        """Return True if year is an Islamic leap year."""
+        return mod(14 + 11 * year, 30) < 11
 
     @classmethod
     def in_gregorian(cls, i_month, i_day, g_year):

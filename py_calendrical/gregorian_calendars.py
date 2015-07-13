@@ -1,8 +1,7 @@
 from operator import mod
 from enum import IntEnum
-from py_cal_cal import rd, quotient, amod, is_in_range
+from py_cal_cal import quotient, amod, is_in_range
 from day_arithmatic import DayOfWeek
-
 
 class JulianMonth(IntEnum):
     January = 1
@@ -18,10 +17,9 @@ class JulianMonth(IntEnum):
     November = 11
     December = 12
 
-
 class GregorianDate(object):    
 
-    EPOCH = rd(1)
+    EPOCH = 1
 
     def __init__(self, year, month, day):
         self.year = year
@@ -39,6 +37,18 @@ class GregorianDate(object):
                 (0 if self.month <= 2
                  else (-1 if self.is_leap_year(self.year) else -2)) +
                 self.day)
+
+    @classmethod    
+    def from_fixed(cls, fixed_date):
+        """Return the fixed_date corresponding to fixed fixed_date 'fixed_date'."""
+        year = cls.to_year(fixed_date)
+        prior_days = fixed_date - cls.new_year(year)
+        correction = (0
+                      if (fixed_date < GregorianDate(year, JulianMonth.March, 1).to_fixed())
+                      else (1 if cls.is_leap_year(year) else 2))
+        month = quotient((12 * (prior_days + correction)) + 373, 367)
+        day = 1 + (fixed_date - GregorianDate(year, month, 1).to_fixed())
+        return GregorianDate(year, month, day)
 
     @classmethod
     def is_leap_year(cls, year):
@@ -73,18 +83,6 @@ class GregorianDate(object):
     def year_range(cls, year):
         """Return the range of fixed dates in the year 'g_year'."""
         return [cls.new_year(year), cls.year_end(year)]
-
-    @classmethod    
-    def from_fixed(cls, fixed_date):
-        """Return the fixed_date corresponding to fixed fixed_date 'fixed_date'."""
-        year = cls.to_year(fixed_date)
-        prior_days = fixed_date - cls.new_year(year)
-        correction = (0
-                      if (fixed_date < GregorianDate(year, JulianMonth.March, 1).to_fixed())
-                      else (1 if cls.is_leap_year(year) else 2))
-        month = quotient((12 * (prior_days + correction)) + 373, 367)
-        day = 1 + (fixed_date - GregorianDate(year, month, 1).to_fixed())
-        return GregorianDate(year, month, day)
 
     @classmethod    
     def date_difference(cls, date1, date2):
