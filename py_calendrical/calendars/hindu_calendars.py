@@ -5,9 +5,9 @@ from py_cal_cal import invert_angular
 from triganometry import angle, sin_degrees
 from astro import standard_from_sundial, precession, MEAN_SIDEREAL_YEAR, solar_longitude, lunar_phase, new_moon_before, new_moon_at_or_after, lunar_longitude
 from day_arithmatic import DayOfWeek
-from py_calendrical.julian_calendars import JulianDate
+from py_calendrical.calendars.julian_calendars import JulianDate
 from location import Location
-from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian_calendars import GregorianDate, JulianMonth
 from time_arithmatic import Clock
 
 

@@ -2,7 +2,7 @@ from operator import mod
 from mpmath import mpf
 from py_cal_cal import quotient, list_range, ifloor
 from day_arithmatic import DayOfWeek
-from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian_calendars import GregorianDate, JulianMonth
 from py_calendrical.year_month_day import YearMonthDay
 
 class JD(object):

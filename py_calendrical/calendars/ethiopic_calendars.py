@@ -1,6 +1,6 @@
 from gregorian_calendars import JulianMonth 
-from py_calendrical.julian_calendars import JulianDate
-from coptic_calendars import CopticDate
+from py_calendrical.calendars.julian_calendars import JulianDate
+from py_calendrical.calendars.coptic_calendars import CopticDate
 from py_calendrical.year_month_day import YearMonthDay
 
 class EthiopicDate(YearMonthDay):

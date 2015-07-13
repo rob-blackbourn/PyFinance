@@ -5,7 +5,7 @@ from time_arithmatic import Clock
 from astro import phasis_on_or_before, MEAN_SYNODIC_MONTH
 from julian_calendars import JulianDate
 from location import Location
-from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian_calendars import GregorianDate, JulianMonth
 from py_calendrical.year_month_day import YearMonthDay
 
 class IslamicDate(YearMonthDay):

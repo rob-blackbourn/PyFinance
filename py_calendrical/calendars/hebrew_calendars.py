@@ -6,9 +6,9 @@ from triganometry import angle
 from day_arithmatic import DayOfWeek
 from astro import phasis_on_or_before, solar_longitude_after, SPRING, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
 from julian_calendars import JulianDate
-from coptic_calendars import CopticDate
+from py_calendrical.calendars.coptic_calendars import CopticDate
 from location import Location
-from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian_calendars import GregorianDate, JulianMonth
 from time_arithmatic import Clock
 from py_calendrical.year_month_day import YearMonthDay
 

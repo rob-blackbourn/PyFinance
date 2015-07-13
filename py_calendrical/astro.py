@@ -4,7 +4,7 @@ from py_cal_cal import ifloor, iround, next_int, final_int, signum, poly, pi, si
 from triganometry import angle, arcsin_degrees, sin_degrees, cos_degrees, tan_degrees, arctan_degrees, normalized_degrees, arccos_degrees, secs
 from day_arithmatic import DayOfWeek
 from py_cal_cal import invert_angular
-from gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian_calendars import GregorianDate, JulianMonth
 from location import Location, URBANA
 from time_arithmatic import Clock
 
