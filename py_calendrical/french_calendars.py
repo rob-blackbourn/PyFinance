@@ -1,5 +1,5 @@
 from operator import mod
-from py_cal_cal import angle
+from triganometry import angle
 from py_cal_cal import next_int, ifloor, iround, quotient
 from astro import estimate_prior_solar_longitude, AUTUMN, solar_longitude, MEAN_TROPICAL_YEAR
 from location import Location

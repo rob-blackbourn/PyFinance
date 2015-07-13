@@ -1,7 +1,8 @@
 from operator import mod
 from enum import IntEnum
 from mpmath import mpf
-from py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range, angle
+from py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
+from triganometry import angle
 from day_arithmatic import DayOfWeek
 from astro import phasis_on_or_before, solar_longitude_after, SPRING, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
 from julian_calendars import JulianDate

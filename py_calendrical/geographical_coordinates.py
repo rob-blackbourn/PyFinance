@@ -1,6 +1,5 @@
 from mpmath import atan2
-from py_cal_cal import cos_degrees, sin_degrees, tan_degrees, arcsin_degrees
-from py_cal_cal import normalized_degrees_from_radians
+from triganometry import cos_degrees, sin_degrees, tan_degrees, arcsin_degrees, normalized_degrees_from_radians
 
 class ElipticalCoordinates(object):
     
