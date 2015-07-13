@@ -40,6 +40,7 @@ from __future__ import division
 # Precision in bits, for places where CL postfixes numbers with L0, meaning
 # at least 50 bits of precision
 from mpmath import *
+from enum import IntEnum, Enum
 mp.prec = 50
 
 
@@ -222,41 +223,44 @@ def rd(tee):
     """Return rata diem (number of days since epoch) of moment in time, tee."""
     return tee - epoch()
 
+class DayOfWeek(IntEnum):
+    Sunday = 0
+    Monday = 1
+    Tuesday = 2
+    Wednesday = 3
+    Thursday = 4
+    Friday = 5
+    Saturday = 6
 
-# see lines 331-334 in calendrica-3.0.cl
-SUNDAY = 0
+    @classmethod
+    def from_fixed(cls, date):
+        """Return day of the week from a fixed date 'date'."""
+        return DayOfWeek(mod(date - rd(0) - DayOfWeek.Sunday, 7))
 
-# see lines 10-15 in calendrica-3.0.errata.cl
-MONDAY = 1
-
-# see lines 17-20 in calendrica-3.0.errata.cl
-TUESDAY = 2
-
-# see lines 22-25 in calendrica-3.0.errata.cl
-WEDNESDAY = 3
-
-# see lines 27-30 in calendrica-3.0.errata.cl
-THURSDAY = 4
-
-# see lines 32-35 in calendrica-3.0.errata.cl
-FRIDAY = 5
-
-# see lines 37-40 in calendrica-3.0.errata.cl
-SATURDAY = SUNDAY + 6
-
-DAYS_OF_WEEK_NAMES = {
-    SUNDAY    : "Sunday",
-    MONDAY    : "Monday",
-    TUESDAY   : "Tuesday",
-    WEDNESDAY : "Wednesday",
-    THURSDAY  : "Thursday",
-    FRIDAY    : "Friday",
-    SATURDAY  : "Saturday"}
-
-# see lines 366-369 in calendrica-3.0.cl
-def day_of_week_from_fixed(date):
-    """Return day of the week from a fixed date 'date'."""
-    return mod(date - rd(0) - SUNDAY, 7)
+    def on_or_before(self, fixed_date):
+        """Return the fixed date of the k-day on or before fixed date 'fixed_date'.
+        k=0 means Sunday, k=1 means Monday, and so on."""
+        return fixed_date - DayOfWeek.from_fixed(fixed_date - self.value)
+    
+    def on_or_after(self, fixed_date):
+        """Return the fixed date of the k-day on or after fixed date 'fixed_date'.
+        k=0 means Sunday, k=1 means Monday, and so on."""
+        return self.on_or_before(fixed_date + 6)
+    
+    def nearest(self, fixed_date):
+        """Return the fixed date of the k-day nearest fixed date 'fixed_date'.
+        k=0 means Sunday, k=1 means Monday, and so on."""
+        return self.on_or_before(fixed_date + 3)
+    
+    def after(self, fixed_date):
+        """Return the fixed date of the k-day after fixed date 'fixed_date'.
+        k=0 means Sunday, k=1 means Monday, and so on."""
+        return self.on_or_before(fixed_date + 7)
+    
+    def before(self, fixed_date):
+        """Return the fixed date of the k-day before fixed date 'date'.
+        k=0 means Sunday, k=1 means Monday, and so on."""
+        return self.on_or_before(fixed_date - 1)
 
 # see lines 371-374 in calendrica-3.0.cl
 def standard_month(date):
@@ -273,26 +277,6 @@ def standard_year(date):
     """Return the year of date 'date'."""
     return date[0]
 
-# see lines 386-388 in calendrica-3.0.cl
-def time_of_day(hour, minute, second):
-    """Return the time of day data structure."""
-    return [hour, minute, second]
-
-# see lines 390-392 in calendrica-3.0.cl
-def hour(clock):
-    """Return the hour of clock time 'clock'."""
-    return clock[0]
-
-# see lines 394-396 in calendrica-3.0.cl
-def minute(clock):
-    """Return the minutes of clock time 'clock'."""
-    return clock[1]
-
-# see lines 398-400 in calendrica-3.0.cl
-def seconds(clock):
-    """Return the seconds of clock time 'clock'."""
-    return clock[2]
-
 # see lines 402-405 in calendrica-3.0.cl
 def fixed_from_moment(tee):
     """Return fixed date from moment 'tee'."""
@@ -303,789 +287,650 @@ def time_from_moment(tee):
     """Return time from moment 'tee'."""
     return mod(tee, 1)
 
-# see lines 412-419 in calendrica-3.0.cl
-def clock_from_moment(tee):
-    """Return clock time hour:minute:second from moment 'tee'."""
-    time = time_from_moment(tee)
-    hour = ifloor(time * 24)
-    minute = ifloor(mod(time * 24 * 60, 60))
-    second = mod(time * 24 * 60 * 60, 60)
-    return time_of_day(hour, minute, second)
+class Clock(object):
+    
+    def __init__(self, hour, minute, second):
+        self.hour = hour
+        self.minute = minute
+        self.second = second
 
-# see lines 421-427 in calendrica-3.0.cl
-def time_from_clock(hms):
-    """Return time of day from clock time 'hms'."""
-    h = hour(hms)
-    m = minute(hms)
-    s = seconds(hms)
-    return(1/24 * (h + ((m + (s / 60)) / 60)))
+    def to_time(self):
+        """Return time of day from clock time 'hms'."""
+        return(1/24 * (self.hour + ((self.minute + (self.second / 60)) / 60)))
 
-# see lines 429-431 in calendrica-3.0.cl
-def degrees_minutes_seconds(d, m, s):
-    """Return the angular data structure."""
-    return [d, m, s]
+    @classmethod
+    def from_moment(cls, tee):
+        """Return clock time hour:minute:second from moment 'tee'."""
+        time = time_from_moment(tee)
+        hour = ifloor(time * 24)
+        minute = ifloor(mod(time * 24 * 60, 60))
+        second = mod(time * 24 * 60 * 60, 60)
+        return Clock(hour, minute, second)
 
-# see lines 433-440 in calendrica-3.0.cl
-def angle_from_degrees(alpha):
-    """Return an angle in degrees:minutes:seconds from angle,
-    'alpha' in degrees."""
-    d = ifloor(alpha)
-    m = ifloor(60 * mod(alpha, 1))
-    s = mod(alpha * 60 * 60, 60)
-    return degrees_minutes_seconds(d, m, s)
+class DegreeMinutesSeconds(object):
+    
+    def __init__(self, degrees, minutes, seconds):
+        self.degress = degrees
+        self.minutes = minutes
+        self.seconds = seconds
+
+    @classmethod        
+    def from_angle(cls, alpha):
+        """Return an angle in degrees:minutes:seconds from angle,
+        'alpha' in degrees."""
+        d = ifloor(alpha)
+        m = ifloor(60 * mod(alpha, 1))
+        s = mod(alpha * 60 * 60, 60)
+        return DegreeMinutesSeconds(d, m, s)
 
 # see lines 502-510 in calendrica-3.0.cl
 def list_range(ell, range):
     """Return those moments in list ell that occur in range 'range'."""
     return filter(lambda x: is_in_range(x, range), ell)
 
-# see lines 482-485 in calendrica-3.0.cl
-def interval(t0, t1):
-    """Return the range data structure."""
-    return [t0, t1]
-
-# see lines 487-490 in calendrica-3.0.cl
-def start(range):
-    """Return the start of range 'range'."""
-    return range[0]
-
-# see lines 492-495 in calendrica-3.0.cl
-def end(range):
-    """Return the end of range 'range'."""
-    return range[1]
-
 # see lines 497-500 in calendrica-3.0.cl
 def is_in_range(tee, range):
     """Return True if moment 'tee' falls within range 'range',
     False otherwise."""
-    return start(range) <= tee <= end(range)
+    return range[0] <= tee <= range[1]
 
-# see lines 442-445 in calendrica-3.0.cl
-JD_EPOCH = rd(mpf(-1721424.5))
+class JD(object):
+    
+    EPOCH = rd(mpf(-1721424.5))
 
-# see lines 447-450 in calendrica-3.0.cl
-def moment_from_jd(jd):
-    """Return the moment corresponding to the Julian day number 'jd'."""
-    return jd + JD_EPOCH
+    def __init__(self, date_from_epoch):
+        self.date_from_epoch = date_from_epoch
+    
+    def to_moment(self):
+        return self.date_from_epoch + self.EPOCH
 
-# see lines 452-455 in calendrica-3.0.cl
-def jd_from_moment(tee):
-    """Return the Julian day number corresponding to moment 'tee'."""
-    return tee - JD_EPOCH
+    @classmethod
+    def from_moment(cls, tee):
+        return JD(tee - cls.EPOCH)
+    
+    def to_fixed(self):
+        return ifloor(self.to_moment())
 
-# see lines 457-460 in calendrica-3.0.cl
-def fixed_from_jd(jd):
-    """Return the fixed date corresponding to Julian day number 'jd'."""
-    return ifloor(moment_from_jd(jd))
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        return cls.from_moment(fixed_date)
 
-# see lines 462-465 in calendrica-3.0.cl
-def jd_from_fixed(date):
-    """Return the Julian day number corresponding to fixed date 'rd'."""
-    return jd_from_moment(date)
+class MJD(object):
+    
+    EPOCH = rd(678576)
 
-# see lines 467-470 in calendrica-3.0.cl
-MJD_EPOCH = rd(678576)
+    def __init__(self, date_from_epoch):
+        self.date_from_epoch = date_from_epoch
 
-# see lines 472-475 in calendrica-3.0.cl
-def fixed_from_mjd(mjd):
-    """Return the fixed date corresponding to modified Julian day 'mjd'."""
-    return mjd + MJD_EPOCH
+    def to_fixed(self):
+        return self.date_from_epoch + self.EPOCH
 
-# see lines 477-480 in calendrica-3.0.cl
-def mjd_from_fixed(date):
-    """Return the modified Julian day corresponding to fixed date 'rd'."""
-    return date - MJD_EPOCH
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        return MJD(fixed_date - cls.EPOCH)
 
-##############################################
-# egyptian and armenian calendars algorithms #
-##############################################
-# see lines 515-518 in calendrica-3.0.cl
-def egyptian_date(year, month, day):
-    """Return the Egyptian date data structure."""
-    return [year, month, day]
+class EgyptianDate(object):
 
-# see lines 520-525 in calendrica-3.0.cl
-EGYPTIAN_EPOCH = fixed_from_jd(1448638)
+    EPOCH = JD(1448638).to_fixed()    
 
-# see lines 527-536 in calendrica-3.0.cl
-def fixed_from_egyptian(e_date):
-    """Return the fixed date corresponding to Egyptian date 'e_date'."""
-    month = standard_month(e_date)
-    day   = standard_day(e_date)
-    year  = standard_year(e_date)
-    return EGYPTIAN_EPOCH + (365*(year - 1)) + (30*(month - 1)) + (day - 1)
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
+        
+    def to_fixed(self):
+        return self.EPOCH + (365*(self.year - 1)) + (30*(self.month - 1)) + (self.day - 1)
 
-# see lines 538-553 in calendrica-3.0.cl
-def egyptian_from_fixed(date):
-    """Return the Egyptian date corresponding to fixed date 'date'."""
-    days = date - EGYPTIAN_EPOCH
-    year = 1 + quotient(days, 365)
-    month = 1 + quotient(mod(days, 365), 30)
-    day = days - (365*(year - 1)) - (30*(month - 1)) + 1
-    return egyptian_date(year, month, day)
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        """Return the Egyptian fixed_date corresponding to fixed fixed_date 'fixed_date'."""
+        days = fixed_date - cls.EPOCH
+        year = 1 + quotient(days, 365)
+        month = 1 + quotient(mod(days, 365), 30)
+        day = days - (365*(year - 1)) - (30*(month - 1)) + 1
+        return EgyptianDate(year, month, day)
 
-# see lines 555-558 in calendrica-3.0.cl
-def armenian_date(year, month, day):
-    """Return the Armenian date data structure."""
-    return [year, month, day]
+class ArmenianDate(object):
 
-# see lines 560-564 in calendrica-3.0.cl
-ARMENIAN_EPOCH = rd(201443)
+    EPOCH = rd(201443)
+    
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
-# see lines 566-575 in calendrica-3.0.cl
-def fixed_from_armenian(a_date):
-    """Return the fixed date corresponding to Armenian date 'a_date'."""
-    month = standard_month(a_date)
-    day   = standard_day(a_date)
-    year  = standard_year(a_date)
-    return (ARMENIAN_EPOCH +
-            fixed_from_egyptian(egyptian_date(year, month, day)) -
-            EGYPTIAN_EPOCH)
+    def to_fixed(self):
+        """Return the fixed date."""
+        return (self.EPOCH +
+                EgyptianDate(self.year, self.month, self.day).to_fixed() -
+                EgyptianDate.EPOCH)
 
-# see lines 577-581 in calendrica-3.0.cl
-def armenian_from_fixed(date):
-    """Return the Armenian date corresponding to fixed date 'date'."""
-    return egyptian_from_fixed(date + (EGYPTIAN_EPOCH - ARMENIAN_EPOCH))
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        """Return the Armenian fixed_date corresponding to fixed fixed_date 'fixed_date'."""
+        ymd = EgyptianDate.from_fixed(fixed_date + (EgyptianDate.EPOCH - cls.EPOCH))
+        return ArmenianDate(ymd.year, ymd.month, ymd.day)
 
-#################################
-# gregorian calendar algorithms #
-#################################
-# see lines 586-589 in calendrica-3.0.cl
-def gregorian_date(year, month, day):
-    """Return a Gregorian date data structure."""
-    return [year, month, day]
-
-# see lines 591-595 in calendrica-3.0.cl 
-GREGORIAN_EPOCH = rd(1)
-
-# see lines 597-600 in calendrica-3.0.cl
-JANUARY = 1
-
-# see lines 602-605 in calendrica-3.0.cl
-FEBRUARY = 2
-
-# see lines 607-610 in calendrica-3.0.cl
-MARCH = 3
-
-# see lines 612-615 in calendrica-3.0.cl
-APRIL = 4
-
-# see lines 617-620 in calendrica-3.0.cl
-MAY = 5
-
-# see lines 622-625 in calendrica-3.0.cl
-JUNE = 6
-
-# see lines 627-630 in calendrica-3.0.cl
-JULY = 7
-
-# see lines 632-635 in calendrica-3.0.cl
-AUGUST = 8
-
-# see lines 637-640 in calendrica-3.0.cl
-SEPTEMBER = 9
-
-# see lines 642-645 in calendrica-3.0.cl
-OCTOBER = 10
-
-# see lines 647-650 in calendrica-3.0.cl
-NOVEMBER = 11
-
-# see lines 652-655 in calendrica-3.0.cl
-DECEMBER = 12
-
-# see lines 657-663 in calendrica-3.0.cl
-def is_gregorian_leap_year(g_year):
-    """Return True if Gregorian year 'g_year' is leap."""
-    return (mod(g_year, 4) == 0) and (mod(g_year, 400) not in [100, 200, 300])
-
-# see lines 665-687 in calendrica-3.0.cl
-def fixed_from_gregorian(g_date):
-    """Return the fixed date equivalent to the Gregorian date 'g_date'."""
-    month = standard_month(g_date)
-    day   = standard_day(g_date)
-    year  = standard_year(g_date)
-    return ((GREGORIAN_EPOCH - 1) + 
-            (365 * (year -1)) + 
-            quotient(year - 1, 4) - 
-            quotient(year - 1, 100) + 
-            quotient(year - 1, 400) + 
-            quotient((367 * month) - 362, 12) + 
-            (0 if month <= 2
-             else (-1 if is_gregorian_leap_year(year) else -2)) +
-            day)
-
-# see lines 689-715 in calendrica-3.0.cl
-def gregorian_year_from_fixed(date):
-    """Return the Gregorian year corresponding to the fixed date 'date'."""
-    d0   = date - GREGORIAN_EPOCH
-    n400 = quotient(d0, 146097)
-    d1   = mod(d0, 146097)
-    n100 = quotient(d1, 36524)
-    d2   = mod(d1, 36524)
-    n4   = quotient(d2, 1461)
-    d3   = mod(d2, 1461)
-    n1   = quotient(d3, 365)
-    year = (400 * n400) + (100 * n100) + (4 * n4) + n1
-    return year if (n100 == 4) or (n1 == 4) else (year + 1)
-
-# see lines 717-721 in calendrica-3.0.cl
-def gregorian_new_year(g_year):
-    """Return the fixed date of January 1 in Gregorian year 'g_year'."""
-    return fixed_from_gregorian(gregorian_date(g_year, JANUARY, 1))
-
-# see lines 723-727 in calendrica-3.0.cl
-def gregorian_year_end(g_year):
-    """Return the fixed date of December 31 in Gregorian year 'g_year'."""
-    return fixed_from_gregorian(gregorian_date(g_year, DECEMBER, 31))
-
-# see lines 729-733 in calendrica-3.0.cl
-def gregorian_year_range(g_year):
-    """Return the range of fixed dates in Gregorian year 'g_year'."""
-    return interval(gregorian_new_year(g_year), gregorian_year_end(g_year))
-
-# see lines 735-756 in calendrica-3.0.cl
-def gregorian_from_fixed(date):
-    """Return the Gregorian date corresponding to fixed date 'date'."""
-    year = gregorian_year_from_fixed(date)
-    prior_days = date - gregorian_new_year(year)
-    correction = (0
-                  if (date < fixed_from_gregorian(gregorian_date(year,
-                                                                 MARCH,
-                                                                 1)))
-                  else (1 if is_gregorian_leap_year(year) else 2))
-    month = quotient((12 * (prior_days + correction)) + 373, 367)
-    day = 1 + (date - fixed_from_gregorian(gregorian_date(year, month, 1)))
-    return gregorian_date(year, month, day)
-
-# see lines 758-763 in calendrica-3.0.cl
-def gregorian_date_difference(g_date1, g_date2):
-    """Return the number of days from Gregorian date 'g_date1'
-    till Gregorian date 'g_date2'."""
-    return fixed_from_gregorian(g_date2) - fixed_from_gregorian(g_date1)
-
-# see lines 42-49 in calendrica-3.0.errata.cl
-def day_number(g_date):
-    """Return the day number in the year of Gregorian date 'g_date'."""
-    return gregorian_date_difference(
-        gregorian_date(standard_year(g_date) - 1, DECEMBER, 31),
-        g_date)
-
-# see lines 53-58 in calendrica-3.0.cl
-def days_remaining(g_date):
-    """Return the days remaining in the year after Gregorian date 'g_date'."""
-    return gregorian_date_difference(
-        g_date,
-        gregorian_date(standard_year(g_date), DECEMBER, 31))
-
-# see lines 779-801 in calendrica-3.0.cl
-def alt_fixed_from_gregorian(g_date):
-    """Return the fixed date equivalent to the Gregorian date 'g_date'.
-    Alternative calculation."""
-    month = standard_month(g_date)
-    day   = standard_day(g_date)
-    year  = standard_year(g_date)
-    m     = amod(month - 2, 12)
-    y     = year + quotient(month + 9, 12)
-    return ((GREGORIAN_EPOCH - 1)  +
-            -306                   +
-            365 * (y - 1)          +
-            quotient(y - 1, 4)     +
-            -quotient(y - 1, 100)  +
-            quotient(y - 1, 400)   +
-            quotient(3 * m - 1, 5) +
-            30 * (m - 1)           +
-            day)
+class JulianMonth(IntEnum):
+    January = 1
+    February = 2
+    March = 3
+    April = 4
+    May = 5
+    June = 6
+    July = 7
+    August = 8
+    September = 9
+    October = 10
+    November = 11
+    December = 12
 
 
-# see lines 803-825 in calendrica-3.0.cl
-def alt_gregorian_from_fixed(date):
-    """Return the Gregorian date corresponding to fixed date 'date'.
-    Alternative calculation."""
-    y = gregorian_year_from_fixed(GREGORIAN_EPOCH - 1 + date + 306)
-    prior_days = date - fixed_from_gregorian(gregorian_date(y - 1, MARCH, 1))
-    month = amod(quotient(5 * prior_days + 2, 153) + 3, 12)
-    year  = y - quotient(month + 9, 12)
-    day   = date - fixed_from_gregorian(gregorian_date(year, month, 1)) + 1
-    return gregorian_date(year, month, day)
+class GregorianDate(object):    
 
+    EPOCH = rd(1)
 
-# see lines 827-841 in calendrica-3.0.cl
-def alt_gregorian_year_from_fixed(date):
-    """Return the Gregorian year corresponding to the fixed date 'date'.
-    Alternative calculation."""
-    approx = quotient(date - GREGORIAN_EPOCH +2, 146097/400)
-    start  = (GREGORIAN_EPOCH        +
-              (365 * approx)         +
-              quotient(approx, 4)    +
-              -quotient(approx, 100) +
-              quotient(approx, 400))
-    return approx if (date < start) else (approx + 1)
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
+    def to_fixed(self):
+        """Return the serial date equivalent."""
+        return ((self.EPOCH - 1) + 
+                (365 * (self.year -1)) + 
+                quotient(self.year - 1, 4) - 
+                quotient(self.year - 1, 100) + 
+                quotient(self.year - 1, 400) + 
+                quotient((367 * self.month) - 362, 12) + 
+                (0 if self.month <= 2
+                 else (-1 if self.is_leap_year(self.year) else -2)) +
+                self.day)
 
-# see lines 843-847 in calendrica-3.0.cl
-def independence_day(g_year):
-    """Return the fixed date of United States Independence Day in
-    Gregorian year 'g_year'."""
-    return fixed_from_gregorian(gregorian_date(g_year, JULY, 4))
+    @classmethod
+    def is_leap_year(cls, year):
+        """Return True if 'year' is leap."""
+        return (mod(year, 4) == 0) and (mod(year, 400) not in [100, 200, 300])
+    
+    @classmethod
+    def to_year(cls, fixed_date):
+        """Return the year corresponding to the fixed date 'fixed_date'."""
+        d0   = fixed_date - cls.EPOCH
+        n400 = quotient(d0, 146097)
+        d1   = mod(d0, 146097)
+        n100 = quotient(d1, 36524)
+        d2   = mod(d1, 36524)
+        n4   = quotient(d2, 1461)
+        d3   = mod(d2, 1461)
+        n1   = quotient(d3, 365)
+        year = (400 * n400) + (100 * n100) + (4 * n4) + n1
+        return year if (n100 == 4) or (n1 == 4) else (year + 1)
 
-# see lines 849-853 in calendrica-3.0.cl
-def kday_on_or_before(k, date):
-    """Return the fixed date of the k-day on or before fixed date 'date'.
-    k=0 means Sunday, k=1 means Monday, and so on."""
-    return date - day_of_week_from_fixed(date - k)
+    @classmethod
+    def new_year(cls, year):
+        """Return the fixed date of January 1 in the year 'year'."""
+        return GregorianDate(year, JulianMonth.January, 1).to_fixed()
 
-# see lines 855-859 in calendrica-3.0.cl
-def kday_on_or_after(k, date):
-    """Return the fixed date of the k-day on or after fixed date 'date'.
-    k=0 means Sunday, k=1 means Monday, and so on."""
-    return kday_on_or_before(k, date + 6)
+    @classmethod
+    def year_end(cls, year):
+        """Return the fixed date of December 31 in the year 'year'."""
+        return GregorianDate(year, JulianMonth.December, 31).to_fixed()
 
-# see lines 861-865 in calendrica-3.0.cl
-def kday_nearest(k, date):
-    """Return the fixed date of the k-day nearest fixed date 'date'.
-    k=0 means Sunday, k=1 means Monday, and so on."""
-    return kday_on_or_before(k, date + 3)
+    @classmethod    
+    def year_range(cls, year):
+        """Return the range of fixed dates in the year 'g_year'."""
+        return [cls.new_year(year), cls.year_end(year)]
 
-# see lines 867-871 in calendrica-3.0.cl
-def kday_after(k, date):
-    """Return the fixed date of the k-day after fixed date 'date'.
-    k=0 means Sunday, k=1 means Monday, and so on."""
-    return kday_on_or_before(k, date + 7)
+    @classmethod    
+    def from_fixed(cls, fixed_date):
+        """Return the fixed_date corresponding to fixed fixed_date 'fixed_date'."""
+        year = cls.to_year(fixed_date)
+        prior_days = fixed_date - cls.new_year(year)
+        correction = (0
+                      if (fixed_date < GregorianDate(year, JulianMonth.March, 1).to_fixed())
+                      else (1 if cls.is_leap_year(year) else 2))
+        month = quotient((12 * (prior_days + correction)) + 373, 367)
+        day = 1 + (fixed_date - GregorianDate(year, month, 1).to_fixed())
+        return GregorianDate(year, month, day)
 
-# see lines 873-877 in calendrica-3.0.cl
-def kday_before(k, date):
-    """Return the fixed date of the k-day before fixed date 'date'.
-    k=0 means Sunday, k=1 means Monday, and so on."""
-    return kday_on_or_before(k, date - 1)
+    @classmethod    
+    def date_difference(cls, date1, date2):
+        """Return the number of days from date 'date1'
+        till date 'date2'."""
+        return date2.to_fixed() - date1.to_fixed()
+    
+    def day_number(self):
+        """Return the day number in the year."""
+        return self.date_difference(GregorianDate(self.year - 1, JulianMonth.December, 31), self)
+    
+    def days_remaining(self):
+        """Return the days remaining in the year."""
+        return self.date_difference(self, GregorianDate(self.year, JulianMonth.December, 31))
+    
+    def to_fixed_alt(self):
+        """Return the fixed date equivalent.
+        Alternative calculation."""
+        m     = amod(self.month - 2, 12)
+        y     = self.year + quotient(self.month + 9, 12)
+        return ((self.EPOCH - 1)  +
+                -306                   +
+                365 * (y - 1)          +
+                quotient(y - 1, 4)     +
+                -quotient(y - 1, 100)  +
+                quotient(y - 1, 400)   +
+                quotient(3 * m - 1, 5) +
+                30 * (m - 1)           +
+                self.day)
 
-# see lines 62-74 in calendrica-3.0.errata.cl
-def nth_kday(n, k, g_date):
-    """Return the fixed date of n-th k-day after Gregorian date 'g_date'.
-    If n>0, return the n-th k-day on or after  'g_date'.
-    If n<0, return the n-th k-day on or before 'g_date'.
-    If n=0, return BOGUS.
-    A k-day of 0 means Sunday, 1 means Monday, and so on."""
-    if n > 0:
-        return 7*n + kday_before(k, fixed_from_gregorian(g_date))
-    elif n < 0:
-        return 7*n + kday_after(k, fixed_from_gregorian(g_date))
-    else:
-        return BOGUS
+    @classmethod    
+    def to_gregorian_alt(cls, fixed_date):
+        """Return the date corresponding to fixed date 'fixed_date'.
+        Alternative calculation."""
+        y = cls.to_year(cls.EPOCH - 1 + fixed_date + 306)
+        prior_days = fixed_date - GregorianDate(y - 1, JulianMonth.March, 1).to_fixed()
+        month = amod(quotient(5 * prior_days + 2, 153) + 3, 12)
+        year  = y - quotient(month + 9, 12)
+        day   = fixed_date - GregorianDate(year, month, 1).to_fixed() + 1
+        return GregorianDate(year, month, day)
+    
+    @classmethod    
+    def to_year_alt(cls, fixed_date):
+        """Return the year corresponding to the fixed date 'fixed_date'.
+        Alternative calculation."""
+        approx = quotient(fixed_date - cls.EPOCH +2, 146097/400)
+        start  = (cls.EPOCH        +
+                  (365 * approx)         +
+                  quotient(approx, 4)    +
+                  -quotient(approx, 100) +
+                  quotient(approx, 400))
+        return approx if (fixed_date < start) else (approx + 1)
 
-# see lines 892-897 in calendrica-3.0.cl
-def first_kday(k, g_date):
-    """Return the fixed date of first k-day on or after Gregorian date 'g_date'.
-    A k-day of 0 means Sunday, 1 means Monday, and so on."""
-    return nth_kday(1, k, g_date)
+    def nth_day_of_week(self, n, day_of_week):
+        """Return the fixed date of n-th day of week.
+        If n>0, return the n-th day of week on or after this date.
+        If n<0, return the n-th day of week on or before this date.
+        If n=0, return raise an error.
+        A k-day of 0 means Sunday, 1 means Monday, and so on."""
+        if n > 0:
+            return 7*n + day_of_week.before(self.to_fixed())
+        elif n < 0:
+            return 7*n + day_of_week.after(self.to_fixed())
+        else:
+            raise ValueError("No valid answer where 'n' == 0.")
 
-# see lines 899-904 in calendrica-3.0.cl
-def last_kday(k, g_date):
-    """Return the fixed date of last k-day on or before Gregorian date 'g_date'.
-    A k-day of 0 means Sunday, 1 means Monday, and so on."""
-    return nth_kday(-1, k, g_date)
+    def first_day_of_week(self, day_of_week):
+        """Return the fixed date of first day of week on or after this date."""
+        return self.nth_day_of_week(1, day_of_week)
+    
+    def last_day_of_week(self, day_of_week):
+        """Return the fixed date of last day of week on or before this date."""
+        return self.nth_day_of_week(-1, day_of_week)
+
+#     @classmethod
+#     def orthodox_easter(cls, year):
+#         """Return fixed date of Orthodox Easter in Gregorian year g_year."""
+#         shifted_epact = mod(14 + 11 * mod(year, 19), 30)
+#         j_year        = year if year > 0 else year - 1
+#         paschal_moon  = JulianDate(j_year, JulianMonth.April, 19).to_fixed() - shifted_epact
+#         return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
+    
+    @classmethod
+    def alt_orthodox_easter(cls, year):
+        """Return fixed date of Orthodox Easter in Gregorian year g_year.
+        Alternative calculation."""
+        paschal_moon = (354 * year +
+                        30 * quotient((7 * year) + 8, 19) +
+                        quotient(year, 4)  -
+                        quotient(year, 19) -
+                        273 +
+                        cls.EPOCH)
+        return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
+    
+    @classmethod
+    def easter(cls, year):
+        """Return fixed date of Easter in Gregorian year g_year."""
+        century = quotient(year, 100) + 1
+        shifted_epact = mod(14 +
+                            11 * mod(year, 19) -
+                            quotient(3 * century, 4) +
+                            quotient(5 + (8 * century), 25), 30)
+        adjusted_epact = ((shifted_epact + 1)
+                          if ((shifted_epact == 0) or ((shifted_epact == 1) and
+                                                      (10 < mod(year, 19))))
+                          else  shifted_epact)
+        paschal_moon = (GregorianDate(year, JulianMonth.April, 19).to_fixed() - adjusted_epact)
+        return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
+
+    @classmethod    
+    def pentecost(cls, year):
+        """Return fixed date of Pentecost in Gregorian year g_year."""
+        return cls.easter(year) + 49
+
+#     @classmethod
+#     def eastern_orthodox_christmas(cls, g_year):
+#         """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
+#         in Gregorian year 'g_year'."""
+#         return JulianDate.julian_in_gregorian(JulianMonth.December, 25, g_year)
+
 
 # see lines 906-910 in calendrica-3.0.cl
 def labor_day(g_year):
     """Return the fixed date of United States Labor Day in Gregorian
     year 'g_year' (the first Monday in September)."""
-    return first_kday(MONDAY, gregorian_date(g_year, SEPTEMBER, 1))
+    return GregorianDate(g_year, JulianMonth.September, 1).first_day_of_week(DayOfWeek.Monday)
 
 # see lines 912-916 in calendrica-3.0.cl
 def memorial_day(g_year):
     """Return the fixed date of United States' Memorial Day in Gregorian
     year 'g_year' (the last Monday in May)."""
-    return last_kday(MONDAY, gregorian_date(g_year, MAY, 31))
+    return GregorianDate(g_year, JulianMonth.May, 31).last_day_of_week(DayOfWeek.Monday)
 
 # see lines 918-923 in calendrica-3.0.cl
 def election_day(g_year):
     """Return the fixed date of United States' Election Day in Gregorian
     year 'g_year' (the Tuesday after the first Monday in November)."""
-    return first_kday(TUESDAY, gregorian_date(g_year, NOVEMBER, 2))
+    return GregorianDate(g_year, JulianMonth.November, 2).first_day_of_week(DayOfWeek.Tuesday)
 
-# see lines 925-930 in calendrica-3.0.cl
 def daylight_saving_start(g_year):
     """Return the fixed date of the start of United States daylight
     saving time in Gregorian year 'g_year' (the second Sunday in March)."""
-    return nth_kday(2, SUNDAY, gregorian_date(g_year, MARCH, 1))
+    return GregorianDate(g_year, JulianMonth.March, 1).nth_day_of_week(2, DayOfWeek.Sunday)
 
-# see lines 932-937 in calendrica-3.0.cl
 def daylight_saving_end(g_year):
     """Return the fixed date of the end of United States daylight saving
     time in Gregorian year 'g_year' (the first Sunday in November)."""
-    return first_kday(SUNDAY, gregorian_date(g_year, NOVEMBER, 1))
+    return GregorianDate(g_year, JulianMonth.November, 1).first_day_of_week(DayOfWeek.Sunday)
 
-# see lines 939-943 in calendrica-3.0.cl
 def christmas(g_year):
     """Return the fixed date of Christmas in Gregorian year 'g_year'."""
-    return fixed_from_gregorian(gregorian_date(g_year, DECEMBER, 25))
+    return GregorianDate(g_year, JulianMonth.December, 25).to_fixed()
 
-# see lines 945-951 in calendrica-3.0.cl
 def advent(g_year):
     """Return the fixed date of Advent in Gregorian year 'g_year'
     (the Sunday closest to November 30)."""
-    return kday_nearest(SUNDAY,
-                        fixed_from_gregorian(gregorian_date(g_year,
-                                                            NOVEMBER,
-                                                            30)))
+    return DayOfWeek(DayOfWeek.Sunday).nearest(GregorianDate(g_year, JulianMonth.November, 30).to_fixed())
 
-# see lines 953-957 in calendrica-3.0.cl
 def epiphany(g_year):
     """Return the fixed date of Epiphany in U.S. in Gregorian year 'g_year'
     (the first Sunday after January 1)."""
-    return first_kday(SUNDAY, gregorian_date(g_year, JANUARY, 2))
+    return GregorianDate(g_year, JulianMonth.January, 2).first_day_of_week(DayOfWeek.Sunday)
 
 def epiphany_it(g_year):
     """Return fixed date of Epiphany in Italy in Gregorian year 'g_year'."""
-    return gregorian_date(g_year, JANUARY, 6)
+    return GregorianDate(g_year, JulianMonth.January, 6)
 
-# see lines 959-974 in calendrica-3.0.cl
 def unlucky_fridays_in_range(range):
     """Return the list of Fridays within range 'range' of fixed dates that
     are day 13 of the relevant Gregorian months."""
-    a    = start(range)
-    b    = end(range)
-    fri  = kday_on_or_after(FRIDAY, a)
-    date = gregorian_from_fixed(fri)
+    a    = range[0]
+    b    = range[1]
+    fri  = DayOfWeek(DayOfWeek.Friday).on_or_after(a)
+    date = GregorianDate.from_fixed(fri)
     ell  = [fri] if (standard_day(date) == 13) else []
     if is_in_range(fri, range):
-        ell[:0] = unlucky_fridays_in_range(interval(fri + 1, b))
+        ell[:0] = unlucky_fridays_in_range([fri + 1, b])
         return ell
     else:
         return []
 
+class JulianDate(object):
+    
+    EPOCH = GregorianDate(0, JulianMonth.December, 30).to_fixed()
+    
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
+        
+    @classmethod
+    def bce(cls, n):
+        """Return a negative value to indicate a BCE Julian year."""
+        return -n
+    
+    @classmethod
+    def ce(cls, n):
+        """Return a positive value to indicate a CE Julian year."""
+        return n
 
+    @classmethod
+    def is_leap_year(cls, year):
+        """Return True if Julian year 'year' is a leap year in
+        the Julian calendar."""
+        return mod(year, 4) == (0 if year > 0 else 3)
 
+    def to_fixed(self):
+        """Return the fixed date equivalent to the Julian date 'j_date'."""
+        y     = self.year + 1 if self.year < 0 else self.year
+        return (self.EPOCH - 1 +
+                (365 * (y - 1)) +
+                quotient(y - 1, 4) +
+                quotient(367*self.month - 362, 12) +
+                (0 if self.month <= 2 else (-1 if self.is_leap_year(self.year) else -2)) +
+                self.day)
 
-##############################
-# julian calendar algorithms #
-##############################
-# see lines 1037-1040 in calendrica-3.0.cl
-def julian_date(year, month, day):
-    """Return the Julian date data structure."""
-    return [year, month, day]
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        """Return the Julian fixed_date corresponding to fixed fixed_date 'fixed_date'."""
+        approx     = quotient(((4 * (fixed_date - cls.EPOCH))) + 1464, 1461)
+        year       = approx - 1 if approx <= 0 else approx
+        prior_days = fixed_date - JulianDate(year, JulianMonth.January, 1).to_fixed()
+        correction = (0 if fixed_date < JulianDate(year, JulianMonth.March, 1).to_fixed()
+                      else (1 if cls.is_leap_year(year) else 2))
+        month      = quotient(12*(prior_days + correction) + 373, 367)
+        day        = 1 + (fixed_date - JulianDate(year, month, 1).to_fixed())
+        return JulianDate(year, month, day)
 
-# see lines 1042-1045 in calendrica-3.0.cl
-JULIAN_EPOCH = fixed_from_gregorian(gregorian_date(0, DECEMBER, 30))
+    @classmethod
+    def julian_year_from_auc_year(cls, year):
+        """Return the Julian year equivalent to AUC year 'year'."""
+        return ((year + cls.YEAR_ROME_FOUNDED - 1) 
+                if (1 <= year <= (year - cls.YEAR_ROME_FOUNDED))
+                else (year + cls.YEAR_ROME_FOUNDED))
+    
+    @classmethod
+    def auc_year_from_julian_year(cls, year):
+        """Return the AUC year equivalent to Julian year 'year'."""
+        return ((year - cls.YEAR_ROME_FOUNDED - 1)
+                if (cls.YEAR_ROME_FOUNDED <= year <= -1)
+                else (year - cls.YEAR_ROME_FOUNDED))
+    
+    
+    @classmethod
+    def julian_in_gregorian(j_month, j_day, g_year):
+        """Return the list of the fixed dates of Julian month 'j_month', day
+        'j_day' that occur in Gregorian year 'g_year'."""
+        jan1 = GregorianDate.new_year(g_year)
+        y    = JulianDate.from_fixed(jan1).year
+        y_prime = 1 if (y == -1) else (y + 1)
+        date1 = JulianDate(y, j_month, j_day).to_fixed()
+        date2 = JulianDate(y_prime, j_month, j_day).to_fixed()
+        return list_range([date1, date2], GregorianDate.year_range(g_year))
 
-# see lines 1047-1050 in calendrica-3.0.cl
-def bce(n):
-    """Retrun a negative value to indicate a BCE Julian year."""
-    return -n
+class Event(Enum):
+    Kalends = 1
+    Nones = 2
+    Ides = 3
+    
+class RomanDate(object):
+    
+    YEAR_ROME_FOUNDED = JulianDate.bce(753)
 
-# see lines 1052-1055 in calendrica-3.0.cl
-def ce(n):
-    """Return a positive value to indicate a CE Julian year."""
-    return n
+    def __init__(self, year, month, event, count, leap):
+        self.year = year
+        self.month = month
+        self.event = event
+        self.count = count
+        self.leap = leap
 
-# see lines 1057-1060 in calendrica-3.0.cl
-def is_julian_leap_year(j_year):
-    """Return True if Julian year 'j_year' is a leap year in
-    the Julian calendar."""
-    return mod(j_year, 4) == (0 if j_year > 0 else 3)
+    @classmethod
+    def ides_of_month(cls, month):
+        """Return the date of the Ides in Roman month 'month'."""
+        return 15 if month in [JulianMonth.March, JulianMonth.May, JulianMonth.July, JulianMonth.October] else 13
 
+    @classmethod
+    def nones_of_month(cls, month):
+        """Return the date of Nones in Roman month 'month'."""
+        return cls.ides_of_month(month) - 8
 
-# see lines 1062-1082 in calendrica-3.0.cl
-def fixed_from_julian(j_date):
-    """Return the fixed date equivalent to the Julian date 'j_date'."""
-    month = standard_month(j_date)
-    day   = standard_day(j_date)
-    year  = standard_year(j_date)
-    y     = year + 1 if year < 0 else year
-    return (JULIAN_EPOCH - 1 +
-            (365 * (y - 1)) +
-            quotient(y - 1, 4) +
-            quotient(367*month - 362, 12) +
-            (0 if month <= 2 else (-1 if is_julian_leap_year(year) else -2)) +
-            day)
+    def to_fixed(self):
+        """Return the fixed date."""
+        return ({Event.Kalends: JulianDate(self.year, self.month, 1).to_fixed(),
+                 Event.Nones:   JulianDate(self.year, self.month, self.nones_of_month(self.month)).to_fixed(),
+                 Event.Ides:    JulianDate(self.year, self.month, self.ides_of_month(self.month)).to_fixed()
+                 }[self.event] -
+                self.count +
+                (0 if (JulianDate.is_leap_year(self.year) and
+                       (self.month == JulianMonth.March) and
+                       (self.event == Event.Kalends) and
+                       (16 >= self.count >= 6))
+                 else 1) +
+                (1 if self.leap else 0))
 
-# see lines 1084-1111 in calendrica-3.0.cl
-def julian_from_fixed(date):
-    """Return the Julian date corresponding to fixed date 'date'."""
-    approx     = quotient(((4 * (date - JULIAN_EPOCH))) + 1464, 1461)
-    year       = approx - 1 if approx <= 0 else approx
-    prior_days = date - fixed_from_julian(julian_date(year, JANUARY, 1))
-    correction = (0 if date < fixed_from_julian(julian_date(year, MARCH, 1))
-                  else (1 if is_julian_leap_year(year) else 2))
-    month      = quotient(12*(prior_days + correction) + 373, 367)
-    day        = 1 + (date - fixed_from_julian(julian_date(year, month, 1)))
-    return julian_date(year, month, day)
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        """Return the Roman name corresponding to fixed fixed_date 'fixed_date'."""
+        julian_date = JulianDate.from_fixed(fixed_date)
+        month_prime = amod(1 + julian_date.month, 12)
+        year_prime  = (julian_date.year if month_prime != 1 
+                       else (julian_date.year + 1 if (julian_date.year != -1) else 1))
+        kalends1 = RomanDate(year_prime, month_prime, Event.Kalends, 1, False).to_fixed()
+    
+        if julian_date.day == 1:
+            return RomanDate(julian_date.year, julian_date.month, Event.Kalends, 1, False)
+        elif julian_date.day <= cls.nones_of_month(julian_date.month):
+            return RomanDate(julian_date.year,
+                             julian_date.month,
+                             Event.Nones, 
+                             cls.nones_of_month(julian_date.month) - julian_date.day + 1,
+                             False)
+        elif julian_date.day <= cls.ides_of_month(julian_date.month):
+            return RomanDate(julian_date.year,
+                             julian_date.month,
+                             Event.Ides,
+                             cls.ides_of_month(julian_date.month) - julian_date.day + 1,
+                             False)
+        elif (julian_date.month != JulianMonth.February) or not julian_date.is_leap_year(julian_date.year):
+            return RomanDate(year_prime,
+                             month_prime,
+                             Event.Kalends,
+                             kalends1 - fixed_date + 1,
+                             False)
+        elif julian_date.day < 25:
+            return RomanDate(julian_date.year, JulianMonth.March, Event.Kalends, 30 - julian_date.day, False)
+        else:
+            return RomanDate(julian_date.year, JulianMonth.March, Event.Kalends, 31 - julian_date.day, julian_date.day == 25)
 
-
-# see lines 1113-1116 in calendrica-3.0.cl
-KALENDS = 1
-
-# see lines 1118-1121 in calendrica-3.0.cl
-NONES = 2
-
-# see lines 1123-1126 in calendrica-3.0.cl
-IDES = 3
-
-# see lines 1128-1131 in calendrica-3.0.cl
-def roman_date(year, month, event, count, leap):
-    """Return the Roman date data structure."""
-    return [year, month, event, count, leap]
-
-# see lines 1133-1135 in calendrica-3.0.cl
-def roman_year(date):
-    """Return the year of Roman date 'date'."""
-    return date[0]
-
-# see lines 1137-1139 in calendrica-3.0.cl
-def roman_month(date):
-    """Return the month of Roman date 'date'."""
-    return date[1]
-
-# see lines 1141-1143 in calendrica-3.0.cl
-def roman_event(date):
-    """Return the event of Roman date 'date'."""
-    return date[2]
-
-# see lines 1145-1147 in calendrica-3.0.cl
-def roman_count(date):
-    """Return the count of Roman date 'date'."""
-    return date[3]
-
-# see lines 1149-1151 in calendrica-3.0.cl
-def roman_leap(date):
-    """Return the leap indicator of Roman date 'date'."""
-    return date[4]
-
-# see lines 1153-1158 in calendrica-3.0.cl
-def ides_of_month(month):
-    """Return the date of the Ides in Roman month 'month'."""
-    return 15 if month in [MARCH, MAY, JULY, OCTOBER] else 13
-
-# see lines 1160-1163 in calendrica-3.0.cl
-def nones_of_month(month):
-    """Return the date of Nones in Roman month 'month'."""
-    return ides_of_month(month) - 8
-
-# see lines 1165-1191 in calendrica-3.0.cl
-def fixed_from_roman(r_date):
-    """Return the fixed date corresponding to Roman date 'r_date'."""
-    leap  = roman_leap(r_date)
-    count = roman_count(r_date)
-    event = roman_event(r_date)
-    month = roman_month(r_date)
-    year  = roman_year(r_date)
-    return ({KALENDS: fixed_from_julian(julian_date(year, month, 1)),
-             NONES:   fixed_from_julian(julian_date(year,
-                                                    month,
-                                                    nones_of_month(month))),
-             IDES:    fixed_from_julian(julian_date(year,
-                                                    month,
-                                                    ides_of_month(month)))
-             }[event] -
-            count +
-            (0 if (is_julian_leap_year(year) and
-                   (month == MARCH) and
-                   (event == KALENDS) and
-                   (16 >= count >= 6))
-             else 1) +
-            (1 if leap else 0))
-
-
-# see lines 1193-1229 in calendrica-3.0.cl
-def roman_from_fixed(date):
-    """Return the Roman name corresponding to fixed date 'date'."""
-    j_date = julian_from_fixed(date)
-    month  = standard_month(j_date)
-    day    = standard_day(j_date)
-    year   = standard_year(j_date)
-    month_prime = amod(1 + month, 12)
-    year_prime  = (year if month_prime != 1 
-                   else (year + 1 if (year != -1) else 1))
-    kalends1 = fixed_from_roman(
-        roman_date(year_prime, month_prime, KALENDS, 1, False))
-
-    if day == 1:
-        res = roman_date(year, month, KALENDS, 1, False)
-    elif day <= nones_of_month(month):
-        res = roman_date(year,
-                         month,
-                         NONES, 
-                         nones_of_month(month) - day + 1,
-                         False)
-    elif day <= ides_of_month(month):
-        res = roman_date(year,
-                         month,
-                         IDES,
-                         ides_of_month(month) - day + 1,
-                         False)
-    elif (month != FEBRUARY) or not is_julian_leap_year(year):
-        res = roman_date(year_prime,
-                         month_prime,
-                         KALENDS,
-                         kalends1 - date + 1,
-                         False)
-    elif day < 25:
-        res = roman_date(year, MARCH, KALENDS, 30 - day, False)
-    else:
-        res = roman_date(year, MARCH, KALENDS, 31 - day, day == 25)
-    return res
-
-# see lines 1231-1234 in calendrica-3.0.cl
-YEAR_ROME_FOUNDED = bce(753)
-
-# see lines 1236-1241 in calendrica-3.0.cl
-def julian_year_from_auc_year(year):
-    """Return the Julian year equivalent to AUC year 'year'."""
-    return ((year + YEAR_ROME_FOUNDED - 1) 
-            if (1 <= year <= (year - YEAR_ROME_FOUNDED))
-            else (year + YEAR_ROME_FOUNDED))
-
-# see lines 1243-1248 in calendrica-3.0.cl
-def auc_year_from_julian_year(year):
-    """Return the AUC year equivalent to Julian year 'year'."""
-    return ((year - YEAR_ROME_FOUNDED - 1)
-            if (YEAR_ROME_FOUNDED <= year <= -1)
-            else (year - YEAR_ROME_FOUNDED))
-
-
-# see lines 1250-1266 in calendrica-3.0.cl
-def julian_in_gregorian(j_month, j_day, g_year):
-    """Return the list of the fixed dates of Julian month 'j_month', day
-    'j_day' that occur in Gregorian year 'g_year'."""
-    jan1 = gregorian_new_year(g_year)
-    y    = standard_year(julian_from_fixed(jan1))
-    y_prime = 1 if (y == -1) else (y + 1)
-    date1 = fixed_from_julian(julian_date(y, j_month, j_day))
-    date2 = fixed_from_julian(julian_date(y_prime, j_month, j_day))
-    return list_range([date1, date2], gregorian_year_range(g_year))
     
 
 # see lines 1268-1272 in calendrica-3.0.cl
 def eastern_orthodox_christmas(g_year):
     """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
     in Gregorian year 'g_year'."""
-    return julian_in_gregorian(DECEMBER, 25, g_year)
+    return JulianDate.julian_in_gregorian(JulianMonth.December, 25, g_year)
 
 ###########################
 # ISO calendar algorithms #
 ###########################
 # see lines 979-981 in calendrica-3.0.cl
-def iso_date(year, week, day):
-    """Return the ISO date data structure."""
-    return [year, week, day]
+class IsoDate(object):
+    
+    def __init__(self, year, week, day):
+        self.year = year
+        self.week = week
+        self.day = day
+        
+    def to_fixed(self):
+        """Return the fixed date equivalent to ISO date 'i_date'."""
+        return GregorianDate(self.year - 1, JulianMonth.December, 28).nth_day_of_week(self.week, DayOfWeek.Sunday) + self.day
+    
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the ISO date corresponding to the fixed date 'date'."""
+        approx = GregorianDate.to_year(date - 3)
+        year   = (approx +
+                  1 if date >= IsoDate(approx + 1, 1, 1).to_fixed()
+                  else approx)
+        week   = 1 + quotient(date - IsoDate(year, 1, 1).to_fixed(), 7)
+        day    = amod(date - rd(0), 7)
+        return IsoDate(year, week, day)
 
-# see lines 983-985 in calendrica-3.0.cl
-def iso_week(date):
-    """Return the week of ISO date 'date'."""
-    return date[1]
-
-# see lines 987-989 in calendrica-3.0.cl
-def iso_day(date):
-    """Return the day of ISO date 'date'."""
-    return date[2]
-
-# see lines 991-993 in calendrica-3.0.cl
-def iso_year(date):
-    """Return the year of ISO date 'date'."""
-    return date[0]
-
-# see lines 995-1005 in calendrica-3.0.cl
-def fixed_from_iso(i_date):
-    """Return the fixed date equivalent to ISO date 'i_date'."""
-    week = iso_week(i_date)
-    day  = iso_day(i_date)
-    year = iso_year(i_date)
-    return nth_kday(week, SUNDAY, gregorian_date(year - 1, DECEMBER, 28)) + day
-
-# see lines 1007-1022 in calendrica-3.0.cl
-def iso_from_fixed(date):
-    """Return the ISO date corresponding to the fixed date 'date'."""
-    approx = gregorian_year_from_fixed(date - 3)
-    year   = (approx +
-              1 if date >= fixed_from_iso(iso_date(approx + 1, 1, 1))
-              else approx)
-    week   = 1 + quotient(date - fixed_from_iso(iso_date(year, 1, 1)), 7)
-    day    = amod(date - rd(0), 7)
-    return iso_date(year, week, day)
-
-# see lines 1024-1032 in calendrica-3.0.cl
-def is_iso_long_year(i_year):
-    """Return True if ISO year 'i_year' is a long (53-week) year."""
-    jan1  = day_of_week_from_fixed(gregorian_new_year(i_year))
-    dec31 = day_of_week_from_fixed(gregorian_year_end(i_year))
-    return (jan1 == THURSDAY) or (dec31 == THURSDAY)
+    @classmethod    
+    def is_long_year(cls, i_year):
+        """Return True if ISO year 'i_year' is a long (53-week) year."""
+        jan1  = DayOfWeek.from_fixed(GregorianDate.new_year(i_year))
+        dec31 = DayOfWeek._from_fixed(GregorianDate.year_end(i_year))
+        return (jan1 == DayOfWeek.Thursday) or (dec31 == DayOfWeek.Thursday)
 
 
 # see lines 1277-1279 in calendrica-3.0.cl
 ############################################
 # coptic and ethiopic calendars algorithms #
 ############################################
-def coptic_date(year, month, day):
-    """Return the Coptic date data structure."""
-    return [year, month, day]
+class CopticDate(object):
 
-# see lines 1281-1284 in calendrica-3.0.cl
-COPTIC_EPOCH = fixed_from_julian(julian_date(ce(284), AUGUST, 29))
+    EPOCH = JulianDate(JulianDate.ce(284), JulianMonth.August, 29).to_fixed()
+    
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
-# see lines 1286-1289 in calendrica-3.0.cl
-def is_coptic_leap_year(c_year):
-    """Return True if Coptic year 'c_year' is a leap year
-    in the Coptic calendar."""
-    return mod(c_year, 4) == 3
+    @classmethod
+    def is_leap_year(year):
+        """Return True if Coptic year 'c_year' is a leap year
+        in the Coptic calendar."""
+        return mod(year, 4) == 3
+    
+    def to_fixed(self):
+        """Return the fixed date of Coptic date 'c_date'."""
+        return (self.EPOCH - 1  +
+                365 * (self.year - 1)  +
+                quotient(self.year, 4) +
+                30 * (self.month - 1)  +
+                self.day)
 
-# see lines 1291-1301 in calendrica-3.0.cl
-def fixed_from_coptic(c_date):
-    """Return the fixed date of Coptic date 'c_date'."""
-    month = standard_month(c_date)
-    day   = standard_day(c_date)
-    year  = standard_year(c_date)
-    return (COPTIC_EPOCH - 1  +
-            365 * (year - 1)  +
-            quotient(year, 4) +
-            30 * (month - 1)  +
-            day)
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        """Return the Coptic date equivalent of fixed date 'fixed_date'."""
+        year  = quotient((4 * (fixed_date - cls.EPOCH)) + 1463, 1461)
+        month = 1 + quotient(fixed_date - CopticDate(year, 1, 1).to_fixed(), 30)
+        day   = fixed_date + 1 - CopticDate(year, month, 1).to_fixed()
+        return CopticDate(year, month, day)
 
-# see lines 1303-1318 in calendrica-3.0.cl
-def coptic_from_fixed(date):
-    """Return the Coptic date equivalent of fixed date 'date'."""
-    year  = quotient((4 * (date - COPTIC_EPOCH)) + 1463, 1461)
-    month = 1 + quotient(date - fixed_from_coptic(coptic_date(year, 1, 1)), 30)
-    day   = date + 1 - fixed_from_coptic(coptic_date(year, month, 1))
-    return coptic_date(year, month, day)
+    @classmethod
+    def in_gregorian(cls, c_month, c_day, g_year):
+        """Return the list of the fixed dates of Coptic month 'c_month',
+        day 'c_day' that occur in Gregorian year 'g_year'."""
+        jan1  = GregorianDate.new_year(g_year)
+        y     = cls.from_fixed(jan1).year
+        date1 = CopticDate(y, c_month, c_day).to_fixed()
+        date2 = CopticDate(y+1, c_month, c_day).to_fixed()
+        return list_range([date1, date2], GregorianDate.year_range(g_year))
 
-# see lines 1320-1323 in calendrica-3.0.cl
-def ethiopic_date(year, month, day):
-    """Return the Ethiopic date data structure."""
-    return [year, month, day]
+    @classmethod    
+    def christmas(cls, g_year):
+        """Retuen the list of zero or one fixed dates of Coptic Christmas
+        dates in Gregorian year 'g_year'."""
+        return cls.coptic_in_gregorian(4, 29, g_year)
 
-# see lines 1325-1328 in calendrica-3.0.cl
-ETHIOPIC_EPOCH = fixed_from_julian(julian_date(ce(8), AUGUST, 29))
+class EthiopicDate(object):
+    
+    EPOCH = JulianDate(JulianDate.ce(8), JulianMonth.August, 29).to_fixed()
 
-# see lines 1330-1339 in calendrica-3.0.cl
-def fixed_from_ethiopic(e_date):
-    """Return the fixed date corresponding to Ethiopic date 'e_date'."""
-    month = standard_month(e_date)
-    day   = standard_day(e_date)
-    year  = standard_year(e_date)
-    return (ETHIOPIC_EPOCH +
-            fixed_from_coptic(coptic_date(year, month, day)) - COPTIC_EPOCH)
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
-# see lines 1341-1345 in calendrica-3.0.cl
-def ethiopic_from_fixed(date):
-    """Return the Ethiopic date equivalent of fixed date 'date'."""
-    return coptic_from_fixed(date + (COPTIC_EPOCH - ETHIOPIC_EPOCH))
+    def to_fixed(self):
+        """Return the fixed date corresponding to Ethiopic date 'e_date'."""
+        return (self.EPOCH + CopticDate(self.year, self.month, self.day).to_fixed() - CopticDate.EPOCH)
 
-# see lines 1347-1360 in calendrica-3.0.cl
-def coptic_in_gregorian(c_month, c_day, g_year):
-    """Return the list of the fixed dates of Coptic month 'c_month',
-    day 'c_day' that occur in Gregorian year 'g_year'."""
-    jan1  = gregorian_new_year(g_year)
-    y     = standard_year(coptic_from_fixed(jan1))
-    date1 = fixed_from_coptic(coptic_date(y, c_month, c_day))
-    date2 = fixed_from_coptic(coptic_date(y+1, c_month, c_day))
-    return list_range([date1, date2], gregorian_year_range(g_year))
-
-# see lines 1362-1366 in calendrica-3.0.cl
-def coptic_christmas(g_year):
-    """Retuen the list of zero or one fixed dates of Coptic Christmas
-    dates in Gregorian year 'g_year'."""
-    return coptic_in_gregorian(4, 29, g_year)
-
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the Ethiopic date equivalent of fixed date 'date'."""
+        ymd = CopticDate.from_fixed(date + (CopticDate.EPOCH - cls.EPOCH))
+        return EthiopicDate(ymd.year, ymd.month, ymd.day)
 
 
 #######################################
@@ -1096,9 +941,8 @@ def orthodox_easter(g_year):
     """Return fixed date of Orthodox Easter in Gregorian year g_year."""
     shifted_epact = mod(14 + 11 * mod(g_year, 19), 30)
     j_year        = g_year if g_year > 0 else g_year - 1
-    paschal_moon  = fixed_from_julian(
-        julian_date(j_year, APRIL, 19)) - shifted_epact
-    return kday_after(SUNDAY, paschal_moon)
+    paschal_moon  = JulianDate(j_year, JulianMonth.April, 19).to_fixed() - shifted_epact
+    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
 # see lines 76-91 in calendrica-3.0.errata.cl
 def alt_orthodox_easter(g_year):
@@ -1109,8 +953,8 @@ def alt_orthodox_easter(g_year):
                     quotient(g_year, 4)  -
                     quotient(g_year, 19) -
                     273 +
-                    GREGORIAN_EPOCH)
-    return kday_after(SUNDAY, paschal_moon)
+                    GregorianDate.EPOCH)
+    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
 # see lines 1401-1426 in calendrica-3.0.cl
 def easter(g_year):
@@ -1124,9 +968,8 @@ def easter(g_year):
                       if ((shifted_epact == 0) or ((shifted_epact == 1) and
                                                   (10 < mod(g_year, 19))))
                       else  shifted_epact)
-    paschal_moon = (fixed_from_gregorian(gregorian_date(g_year, APRIL, 19)) -
-                    adjusted_epact)
-    return kday_after(SUNDAY, paschal_moon)
+    paschal_moon = GregorianDate(g_year, JulianMonth.April, 19).to_fixed() - adjusted_epact
+    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
 # see lines 1429-1431 in calendrica-3.0.cl
 def pentecost(g_year):
@@ -1137,711 +980,581 @@ def pentecost(g_year):
 ###############################
 # islamic calendar algorithms #
 ###############################
-# see lines 1436-1439 in calendrica-3.0.cl
-def islamic_date(year, month, day):
-    """Return an Islamic date data structure."""
-    return [year, month, day]
+class IslamicDate(object):
 
-# see lines 1441-1444 in calendrica-3.0.cl
-ISLAMIC_EPOCH = fixed_from_julian(julian_date(ce(622), JULY, 16))
+    EPOCH = JulianDate(JulianDate.ce(622), JulianMonth.July, 16).to_fixed()
 
-# see lines 1446-1449 in calendrica-3.0.cl
-def is_islamic_leap_year(i_year):
-    """Return True if i_year is an Islamic leap year."""
-    return mod(14 + 11 * i_year, 30) < 11
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
-# see lines 1451-1463 in calendrica-3.0.cl
-def fixed_from_islamic(i_date):
-    """Return fixed date equivalent to Islamic date i_date."""
-    month = standard_month(i_date)
-    day   = standard_day(i_date)
-    year  = standard_year(i_date)
-    return (ISLAMIC_EPOCH - 1 +
-            (year - 1) * 354  +
-            quotient(3 + 11 * year, 30) +
-            29 * (month - 1) +
-            quotient(month, 2) +
-            day)
+    @classmethod    
+    def is_leap_year(cls, year):
+        """Return True if year is an Islamic leap year."""
+        return mod(14 + 11 * year, 30) < 11
+    
+    def to_fixed(self):
+        """Return fixed date equivalent to Islamic date i_date."""
+        return (self.EPOCH - 1 +
+                (self.year - 1) * 354  +
+                quotient(3 + 11 * self.year, 30) +
+                29 * (self.month - 1) +
+                quotient(self.month, 2) +
+                self.day)
 
-# see lines 1465-1483 in calendrica-3.0.cl
-def islamic_from_fixed(date):
-    """Return Islamic date (year month day) corresponding to fixed date date."""
-    year       = quotient(30 * (date - ISLAMIC_EPOCH) + 10646, 10631)
-    prior_days = date - fixed_from_islamic(islamic_date(year, 1, 1))
-    month      = quotient(11 * prior_days + 330, 325)
-    day        = date - fixed_from_islamic(islamic_date(year, month, 1)) + 1
-    return islamic_date(year, month, day)
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Islamic date (year month day) corresponding to fixed date date."""
+        year       = quotient(30 * (date - cls.EPOCH) + 10646, 10631)
+        prior_days = date - IslamicDate(year, 1, 1).to_fixed()
+        month      = quotient(11 * prior_days + 330, 325)
+        day        = date - IslamicDate(year, month, 1).to_fixed() + 1
+        return IslamicDate(year, month, day)
 
-# see lines 1485-1501 in calendrica-3.0.cl
-def islamic_in_gregorian(i_month, i_day, g_year):
-    """Return list of the fixed dates of Islamic month i_month, day i_day that
-    occur in Gregorian year g_year."""
-    jan1  = gregorian_new_year(g_year)
-    y     = standard_year(islamic_from_fixed(jan1))
-    date1 = fixed_from_islamic(islamic_date(y, i_month, i_day))
-    date2 = fixed_from_islamic(islamic_date(y + 1, i_month, i_day))
-    date3 = fixed_from_islamic(islamic_date(y + 2, i_month, i_day))
-    return list_range([date1, date2, date3], gregorian_year_range(g_year))
+    @classmethod
+    def in_gregorian(cls, i_month, i_day, g_year):
+        """Return list of the fixed dates of Islamic month i_month, day i_day that
+        occur in Gregorian year g_year."""
+        jan1  = GregorianDate.new_year(g_year)
+        y     = cls.from_fixed(jan1).year
+        date1 = IslamicDate(y, i_month, i_day).to_fixed()
+        date2 = IslamicDate(y + 1, i_month, i_day).to_fixed()
+        date3 = IslamicDate(y + 2, i_month, i_day).to_fixed()
+        return list_range([date1, date2, date3], GregorianDate.year_range(g_year))
+    
+    @classmethod
+    def mawlid_an_nabi(cls, g_year):
+        """Return list of fixed dates of Mawlid_an_Nabi occurring in Gregorian
+        year g_year."""
+        return cls.in_gregorian(3, 12, g_year)
 
-# see lines 1503-1507 in calendrica-3.0.cl
-def mawlid_an_nabi(g_year):
-    """Return list of fixed dates of Mawlid_an_Nabi occurring in Gregorian
-    year g_year."""
-    return islamic_in_gregorian(3, 12, g_year)
 
 
 
 ##############################
 # hebrew calendar algorithms #
 ##############################
-# see lines 1512-1514 in calendrica-3.0.cl
-def hebrew_date(year, month, day):
-    """Return an Hebrew date data structure."""
-    return [year, month, day]
-
-# see lines 1516-1519 in calendrica-3.0.cl
-NISAN = 1
-
-# see lines 1521-1524 in calendrica-3.0.cl
-IYYAR = 2
-
-# see lines 1526-1529 in calendrica-3.0.cl
-SIVAN = 3
-
-# see lines 1531-1534 in calendrica-3.0.cl
-TAMMUZ = 4
-
-# see lines 1536-1539 in calendrica-3.0.cl
-AV = 5
-
-# see lines 1541-1544 in calendrica-3.0.cl
-ELUL = 6
-
-# see lines 1546-1549 in calendrica-3.0.cl
-TISHRI = 7
-
-# see lines 1551-1554 in calendrica-3.0.cl
-MARHESHVAN = 8
-
-# see lines 1556-1559 in calendrica-3.0.cl
-KISLEV = 9
-
-# see lines 1561-1564 in calendrica-3.0.cl
-TEVET = 10
-
-# see lines 1566-1569 in calendrica-3.0.cl
-SHEVAT = 11
-
-# see lines 1571-1574 in calendrica-3.0.cl
-ADAR = 12
-
-# see lines 1576-1579 in calendrica-3.0.cl
-ADARII = 13
-
-# see lines 1581-1585 in calendrica-3.0.cl
-HEBREW_EPOCH = fixed_from_julian(julian_date(bce(3761),  OCTOBER, 7))
-
-# see lines 1587-1590 in calendrica-3.0.cl
-def is_hebrew_leap_year(h_year):
-    """Return True if h_year is a leap year on Hebrew calendar."""
-    return mod(7 * h_year + 1, 19) < 7
-
-# see lines 1592-1597 in calendrica-3.0.cl
-def last_month_of_hebrew_year(h_year):
-    """Return last month of Hebrew year."""
-    return ADARII if is_hebrew_leap_year(h_year) else ADAR
-
-# see lines 1599-1603 in calendrica-3.0.cl
-def is_hebrew_sabbatical_year(h_year):
-    """Return True if h_year is a sabbatical year on the Hebrew calendar."""
-    return mod(h_year, 7) == 0
-
-# see lines 1605-1617 in calendrica-3.0.cl
-def last_day_of_hebrew_month(h_month, h_year):
-    """Return last day of month h_month in Hebrew year h_year."""
-    if ((h_month in [IYYAR, TAMMUZ, ELUL, TEVET, ADARII])
-        or ((h_month == ADAR) and (not is_hebrew_leap_year(h_year)))
-        or ((h_month == MARHESHVAN) and (not is_long_marheshvan(h_year)))
-        or ((h_month == KISLEV) and is_short_kislev(h_year))):
-        return 29
-    else:
-        return 30
-
-# see lines 1619-1634 in calendrica-3.0.cl
-def molad(h_month, h_year):
-    """Return moment of mean conjunction of h_month in Hebrew h_year."""
-    y = (h_year + 1) if (h_month < TISHRI) else h_year
-    months_elapsed = h_month - TISHRI + quotient(235 * y - 234, 19)
-    return (HEBREW_EPOCH -
-           876/25920 +
-           months_elapsed * (29 + days_from_hours(12) + 793/25920))
-
-# see lines 1636-1663 in calendrica-3.0.cl
-def hebrew_calendar_elapsed_days(h_year):
-    """Return number of days elapsed from the (Sunday) noon prior
-    to the epoch of the Hebrew calendar to the mean
-    conjunction (molad) of Tishri of Hebrew year h_year,
-    or one day later."""
-    months_elapsed = quotient(235 * h_year - 234, 19)
-    parts_elapsed  = 12084 + 13753 * months_elapsed
-    days = 29 * months_elapsed + quotient(parts_elapsed, 25920)
-    return   (days + 1) if (mod(3 * (days + 1), 7) < 3) else days
-
-# see lines 1665-1670 in calendrica-3.0.cl
-def hebrew_new_year(h_year):
-    """Return fixed date of Hebrew new year h_year."""
-    return (HEBREW_EPOCH +
-           hebrew_calendar_elapsed_days(h_year) +
-           hebrew_year_length_correction(h_year))
-
-# see lines 1672-1684 in calendrica-3.0.cl
-def hebrew_year_length_correction(h_year):
-    """Return delays to start of Hebrew year h_year to keep ordinary
-    year in range 353-356 and leap year in range 383-386."""
-    # I had a bug... h_year = 1 instead of h_year - 1!!!
-    ny0 = hebrew_calendar_elapsed_days(h_year - 1)
-    ny1 = hebrew_calendar_elapsed_days(h_year)
-    ny2 = hebrew_calendar_elapsed_days(h_year + 1)
-    if ((ny2 - ny1) == 356):
-        return 2
-    elif ((ny1 - ny0) == 382):
-        return 1
-    else:
-        return 0
-
-# see lines 1686-1690 in calendrica-3.0.cl
-def days_in_hebrew_year(h_year):
-    """Return number of days in Hebrew year h_year."""
-    return hebrew_new_year(h_year + 1) - hebrew_new_year(h_year)
-
-# see lines 1692-1695 in calendrica-3.0.cl
-def is_long_marheshvan(h_year):
-    """Return True if Marheshvan is long in Hebrew year h_year."""
-    return days_in_hebrew_year(h_year) in [355, 385]
-
-# see lines 1697-1700 in calendrica-3.0.cl
-def is_short_kislev(h_year):
-    """Return True if Kislev is short in Hebrew year h_year."""
-    return days_in_hebrew_year(h_year) in [353, 383]
-
-# see lines 1702-1721 in calendrica-3.0.cl
-def fixed_from_hebrew(h_date):
-    """Return fixed date of Hebrew date h_date."""
-    month = standard_month(h_date)
-    day   = standard_day(h_date)
-    year  = standard_year(h_date)
-
-    if (month < TISHRI):
-        tmp = (summa(lambda m: last_day_of_hebrew_month(m, year),
-                     TISHRI,
-                     lambda m: m <= last_month_of_hebrew_year(year)) +
-               summa(lambda m: last_day_of_hebrew_month(m, year),
-                     NISAN,
-                     lambda m: m < month))
-    else:
-        tmp = summa(lambda m: last_day_of_hebrew_month(m, year),
-                    TISHRI,
-                    lambda m: m < month)
-
-    return hebrew_new_year(year) + day - 1 + tmp
-
-# see lines 1723-1751 in calendrica-3.0.cl
-def hebrew_from_fixed(date):
-    """Return  Hebrew (year month day) corresponding to fixed date date.
-    # The fraction can be approximated by 365.25."""
-    approx = quotient(date - HEBREW_EPOCH, 35975351/98496) + 1
-    year = final(approx - 1, lambda y: hebrew_new_year(y) <= date)
-    start = (TISHRI
-             if (date < fixed_from_hebrew(hebrew_date(year, NISAN, 1)))
-             else  NISAN)
-    month = next(start, lambda m: date <= fixed_from_hebrew(
-        hebrew_date(year, m, last_day_of_hebrew_month(m, year))))
-    day = date - fixed_from_hebrew(hebrew_date(year, month, 1)) + 1
-    return hebrew_date(year, month, day)
-
-# see lines 1753-1761 in calendrica-3.0.cl
-def yom_kippur(g_year):
-    """Return fixed date of Yom Kippur occurring in Gregorian year g_year."""
-    hebrew_year = g_year - gregorian_year_from_fixed(HEBREW_EPOCH) + 1
-    return fixed_from_hebrew(hebrew_date(hebrew_year, TISHRI, 10))
-
-# see lines 1763-1770 in calendrica-3.0.cl
-def passover(g_year):
-    """Return fixed date of Passover occurring in Gregorian year g_year."""
-    hebrew_year = g_year - gregorian_year_from_fixed(HEBREW_EPOCH)
-    return fixed_from_hebrew(hebrew_date(hebrew_year, NISAN, 15))
-
-# see lines 1772-1782 in calendrica-3.0.cl
-def omer(date):
-    """Return the number of elapsed weeks and days in the omer at date date.
-    Returns BOGUS if that date does not fall during the omer."""
-    c = date - passover(gregorian_year_from_fixed(date))
-    return [quotient(c, 7), mod(c, 7)] if (1 <= c <= 49) else BOGUS
-
-# see lines 1784-1793 in calendrica-3.0.cl
-def purim(g_year):
-    """Return fixed date of Purim occurring in Gregorian year g_year."""
-    hebrew_year = g_year - gregorian_year_from_fixed(HEBREW_EPOCH)
-    last_month  = last_month_of_hebrew_year(hebrew_year)
-    return fixed_from_hebrew(hebrew_date(hebrew_year, last_month, 14))
-
-# see lines 1795-1805 in calendrica-3.0.cl
-def ta_anit_esther(g_year):
-    """Return fixed date of Ta'anit Esther occurring in Gregorian
-    year g_year."""
-    purim_date = purim(g_year)
-    return ((purim_date - 3)
-            if (day_of_week_from_fixed(purim_date) == SUNDAY)
-            else (purim_date - 1))
-
-# see lines 1807-1821 in calendrica-3.0.cl
-def tishah_be_av(g_year):
-    """Return fixed date of Tishah be_Av occurring in Gregorian year g_year."""
-    hebrew_year = g_year - gregorian_year_from_fixed(HEBREW_EPOCH)
-    av9 = fixed_from_hebrew(hebrew_date(hebrew_year, AV, 9))
-    return (av9 + 1) if (day_of_week_from_fixed(av9) == SATURDAY) else av9
-
-# see lines 1823-1834 in calendrica-3.0.cl
-def birkath_ha_hama(g_year):
-    """Return the list of fixed date of Birkath ha_Hama occurring in
-    Gregorian year g_year, if it occurs."""
-    dates = coptic_in_gregorian(7, 30, g_year)
-    return (dates
-            if ((not (dates == [])) and
-                (mod(standard_year(coptic_from_fixed(dates[0])), 28) == 17))
-            else [])
-
-# see lines 1836-1840 in calendrica-3.0.cl
-def sh_ela(g_year):
-    """Return the list of fixed dates of Sh'ela occurring in
-    Gregorian year g_year."""
-    return coptic_in_gregorian(3, 26, g_year)
-
-# exercise for the reader from pag 104
-def hebrew_in_gregorian(h_month, h_day, g_year):
-    """Return list of the fixed dates of Hebrew month, h_month, day, h_day,
-    that occur in Gregorian year g_year."""
-    jan1  = gregorian_new_year(g_year)
-    y     = standard_year(hebrew_from_fixed(jan1))
-    date1 = fixed_from_hebrew(hebrew_date(y, h_month, h_day))
-    date2 = fixed_from_hebrew(hebrew_date(y + 1, h_month, h_day))
-    # Hebrew and Gregorian calendar are aligned but certain
-    # holidays, i.e. Tzom Tevet, can fall on either side of Jan 1.
-    # So we can have 0, 1 or 2 occurences of that holiday.
-    dates = [date1, date2]
-    return list_range(dates, gregorian_year_range(g_year))
-
-# see pag 104
-def tzom_tevet(g_year):
-    """Return the list of fixed dates for Tzom Tevet (Tevet 10) that
-    occur in Gregorian year g_year. It can occur 0, 1 or 2 times per
-    Gregorian year."""
-    jan1  = gregorian_new_year(g_year)
-    y     = standard_year(hebrew_from_fixed(jan1))
-    d1 = fixed_from_hebrew(hebrew_date(y, TEVET, 10))
-    d1 = (d1 + 1) if (day_of_week_from_fixed(d1) == SATURDAY) else d1
-    d2 = fixed_from_hebrew(hebrew_date(y + 1, TEVET, 10))
-    d2 = (d2 + 1) if (day_of_week_from_fixed(d2) == SATURDAY) else d2
-    dates = [d1, d2]
-    return list_range(dates, gregorian_year_range(g_year))
-
-# this is a simplified version where no check for SATURDAY
-# is performed: from hebrew year 1 till 2000000
-# there is no TEVET 10 falling on Saturday...
-def alt_tzom_tevet(g_year):
-    """Return the list of fixed dates for Tzom Tevet (Tevet 10) that
-    occur in Gregorian year g_year. It can occur 0, 1 or 2 times per
-    Gregorian year."""
-    return hebrew_in_gregorian(TEVET, 10, g_year)
-
-# see lines 1842-1859 in calendrica-3.0.cl
-def yom_ha_zikkaron(g_year):
-    """Return fixed date of Yom ha_Zikkaron occurring in Gregorian
-    year g_year."""
-    hebrew_year = g_year - gregorian_year_from_fixed(HEBREW_EPOCH)
-    iyyar4 = fixed_from_hebrew(hebrew_date(hebrew_year, IYYAR, 4))
+class HebrewMonth(IntEnum):
+    NISAN = 1
+    IYYAR = 2
+    SIVAN = 3
+    TAMMUZ = 4
+    AV = 5
+    ELUL = 6
+    TISHRI = 7
+    MARHESHVAN = 8
+    KISLEV = 9
+    TEVET = 10
+    SHEVAT = 11
+    ADAR = 12
+    ADARII = 13
     
-    if (day_of_week_from_fixed(iyyar4) in [THURSDAY, FRIDAY]):
-        return kday_before(WEDNESDAY, iyyar4)
-    elif (SUNDAY == day_of_week_from_fixed(iyyar4)):
-        return iyyar4 + 1
-    else:
-        return iyyar4
+class HebrewDate(object):
 
-# see lines 1861-1879 in calendrica-3.0.cl
-def hebrew_birthday(birthdate, h_year):
-    """Return fixed date of the anniversary of Hebrew birth date
-    birthdate occurring in Hebrew h_year."""
-    birth_day   = standard_day(birthdate)
-    birth_month = standard_month(birthdate)
-    birth_year  = standard_year(birthdate)
-    if (birth_month == last_month_of_hebrew_year(birth_year)):
-        return fixed_from_hebrew(hebrew_date(h_year,
-                                             last_month_of_hebrew_year(h_year),
-                                             birth_day))
-    else:
-        return (fixed_from_hebrew(hebrew_date(h_year, birth_month, 1)) +
-                birth_day - 1)
+    EPOCH = JulianDate(JulianDate.bce(3761),  JulianMonth.October, 7).to_fixed()
+    
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
-# see lines 1881-1893 in calendrica-3.0.cl
-def hebrew_birthday_in_gregorian(birthdate, g_year):
-    """Return the list of the fixed dates of Hebrew birthday
-    birthday that occur in Gregorian g_year."""
-    jan1 = gregorian_new_year(g_year)
-    y    = standard_year(hebrew_from_fixed(jan1))
-    date1 = hebrew_birthday(birthdate, y)
-    date2 = hebrew_birthday(birthdate, y + 1)
-    return list_range([date1, date2], gregorian_year_range(g_year))
+    @classmethod
+    def is_leap_year(cls, year):
+        """Return True if h_year is a leap year on Hebrew calendar."""
+        return mod(7 * year + 1, 19) < 7
 
-# see lines 1895-1937 in calendrica-3.0.cl
-def yahrzeit(death_date, h_year):
-    """Return fixed date of the anniversary of Hebrew death date death_date
-    occurring in Hebrew h_year."""
-    death_day   = standard_day(death_date)
-    death_month = standard_month(death_date)
-    death_year  = standard_year(death_date)
+    @classmethod    
+    def last_month_of_year(cls, year):
+        """Return last month of Hebrew year."""
+        return HebrewMonth.ADARII if cls.is_leap_year(year) else HebrewMonth.ADAR
 
-    if ((death_month == MARHESHVAN) and
-        (death_day == 30) and
-        (not is_long_marheshvan(death_year + 1))):
-        return fixed_from_hebrew(hebrew_date(h_year, KISLEV, 1)) - 1
-    elif ((death_month == KISLEV) and
-          (death_day == 30) and
-          is_short_kislev(death_year + 1)):
-        return fixed_from_hebrew(hebrew_date(h_year, TEVET, 1)) - 1
-    elif (death_month == ADARII):
-        return fixed_from_hebrew(hebrew_date(h_year,
-                                             last_month_of_hebrew_year(h_year),
-                                             death_day))
-    elif ((death_day == 30) and
-          (death_month == ADAR) and
-          (not is_hebrew_leap_year(h_year))):
-        return fixed_from_hebrew(hebrew_date(h_year, SHEVAT, 30))
-    else:
-        return (fixed_from_hebrew(hebrew_date(h_year, death_month, 1)) +
-                death_day - 1)
+    @classmethod    
+    def is_sabbatical_year(cls, year):
+        """Return True if year is a sabbatical year on the Hebrew calendar."""
+        return mod(year, 7) == 0
 
-# see lines 1939-1951 in calendrica-3.0.cl
-def yahrzeit_in_gregorian(death_date, g_year):
-    """Return the list of the fixed dates of death date death_date (yahrzeit)
-    that occur in Gregorian year g_year."""
-    jan1 = gregorian_new_year(g_year)
-    y    = standard_year(hebrew_from_fixed(jan1))
-    date1 = yahrzeit(death_date, y)
-    date2 = yahrzeit(death_date, y + 1)
-    return list_range([date1, date2], gregorian_year_range(g_year))
+    @classmethod    
+    def last_day_of_month(cls, month, year):
+        """Return last day of month month in Hebrew year year."""
+        if ((month in [HebrewMonth.IYYAR, HebrewMonth.TAMMUZ, HebrewMonth.ELUL, HebrewMonth.TEVET, HebrewMonth.ADARII])
+            or ((month == HebrewMonth.ADAR) and (not cls.is_leap_year(year)))
+            or ((month == HebrewMonth.MARHESHVAN) and (not cls.is_long_marheshvan(year)))
+            or ((month == HebrewMonth.KISLEV) and cls.is_short_kislev(year))):
+            return 29
+        else:
+            return 30
 
-# see lines 1953-1960 in calendrica-3.0.cl
-def shift_days(l, cap_Delta):
-    """Shift each weekday on list l by cap_Delta days."""
-    return map(lambda x: day_of_week_from_fixed(x + cap_Delta), l)
+    @classmethod    
+    def molad(cls, month, year):
+        """Return moment of mean conjunction of month in Hebrew year."""
+        y = (year + 1) if (month < HebrewMonth.TISHRI) else year
+        months_elapsed = month - HebrewMonth.TISHRI + quotient(235 * y - 234, 19)
+        return (cls.EPOCH -
+               876/25920 +
+               months_elapsed * (29 + days_from_hours(12) + 793/25920))
 
-# see lines 480-504 in calendrica-3.0.errata.cl
-def possible_hebrew_days(h_month, h_day):
-    """Return a list of possible days of week for Hebrew day h_day
-    and Hebrew month h_month."""
-    h_date0 = hebrew_date(5, NISAN, 1)
-    h_year  = 6 if (h_month > ELUL) else 5
-    h_date  = hebrew_date(h_year, h_month, h_day)
-    n       = fixed_from_hebrew(h_date) - fixed_from_hebrew(h_date0)
-    basic   = [TUESDAY, THURSDAY, SATURDAY]
+    @classmethod    
+    def elapsed_days(cls, year):
+        """Return number of days elapsed from the (Sunday) noon prior
+        to the epoch of the Hebrew calendar to the mean
+        conjunction (molad) of Tishri of Hebrew year h_year,
+        or one day later."""
+        months_elapsed = quotient(235 * year - 234, 19)
+        parts_elapsed  = 12084 + 13753 * months_elapsed
+        days = 29 * months_elapsed + quotient(parts_elapsed, 25920)
+        return   (days + 1) if (mod(3 * (days + 1), 7) < 3) else days
 
-    if (h_month == MARHESHVAN) and (h_day == 30):
-        extra = []
-    elif (h_month == KISLEV) and (h_day < 30):
-        extra = [MONDAY, WEDNESDAY, FRIDAY]
-    elif (h_month == KISLEV) and (h_day == 30):
-        extra = [MONDAY]
-    elif h_month in [TEVET, SHEVAT]:
-        extra = [SUNDAY, MONDAY]
-    elif (h_month == ADAR) and (h_day < 30):
-        extra = [SUNDAY, MONDAY]
-    else:
-        extra = [SUNDAY]
+    @classmethod    
+    def hebrew_new_year(cls, year):
+        """Return fixed date of Hebrew new year h_year."""
+        return (cls.EPOCH +
+               cls.elapsed_days(year) +
+               cls.year_length_correction(year))
+    
+    @classmethod
+    def year_length_correction(cls, year):
+        """Return delays to start of Hebrew year h_year to keep ordinary
+        year in range 353-356 and leap year in range 383-386."""
+        # I had a bug... h_year = 1 instead of h_year - 1!!!
+        ny0 = cls.elapsed_days(year - 1)
+        ny1 = cls.elapsed_days(year)
+        ny2 = cls.elapsed_days(year + 1)
+        if ((ny2 - ny1) == 356):
+            return 2
+        elif ((ny1 - ny0) == 382):
+            return 1
+        else:
+            return 0
 
-    basic.extend(extra)
-    return shift_days(basic, n)
+    @classmethod    
+    def days_in_year(cls, year):
+        """Return number of days in Hebrew year h_year."""
+        return cls.new_year(year + 1) - cls.new_year(year)
 
+    @classmethod    
+    def is_long_marheshvan(cls, year):
+        """Return True if Marheshvan is long in Hebrew year h_year."""
+        return cls.days_in_year(year) in [355, 385]
+
+    @classmethod    
+    def is_short_kislev(cls, year):
+        """Return True if Kislev is short in Hebrew year h_year."""
+        return cls.days_in_year(year) in [353, 383]
+    
+    def to_fixed(self):
+        """Return fixed date of Hebrew date h_date."""
+        if (self.month < HebrewMonth.TISHRI):
+            tmp = (summa(lambda m: self.last_day_of_month(m, self.year),
+                         HebrewMonth.TISHRI,
+                         lambda m: m <= self.last_month_of_year(self.year)) +
+                   summa(lambda m: self.last_day_of_month(m, self.year),
+                         HebrewMonth.NISAN,
+                         lambda m: m < self.month))
+        else:
+            tmp = summa(lambda m: self.last_day_of_month(m, self.year),
+                        HebrewMonth.TISHRI,
+                        lambda m: m < self.month)
+    
+        return self.new_year(self.year) + self.day - 1 + tmp
+
+    @classmethod    
+    def hebrew_from_fixed(cls, date):
+        """Return  Hebrew (year month day) corresponding to fixed date date.
+        # The fraction can be approximated by 365.25."""
+        approx = quotient(date - cls.EPOCH, 35975351/98496) + 1
+        year = final(approx - 1, lambda y: cls.new_year(y) <= date)
+        start = (HebrewMonth.TISHRI
+                 if (date < HebrewDate(year, HebrewMonth.NISAN, 1).to_fixed())
+                 else  HebrewMonth.NISAN)
+        month = next(start, lambda m: date <= HebrewDate(year, m, cls.last_day_of_month(m, year)).to_fixed())
+        day = date - HebrewDate(year, month, 1).to_fixed() + 1
+        return HebrewDate(year, month, day)
+
+    @classmethod    
+    def yom_kippur(cls, year):
+        """Return fixed date of Yom Kippur occurring in Gregorian year."""
+        hebrew_year = year - GregorianDate.to_year(cls.EPOCH) + 1
+        return HebrewDate(hebrew_year, HebrewMonth.TISHRI, 10).to_fixed()
+    
+    @classmethod    
+    def passover(cls, year):
+        """Return fixed date of Passover occurring in Gregorian year g_year."""
+        hebrew_year = year - GregorianDate.to_year(cls.EPOCH)
+        return HebrewDate(hebrew_year, HebrewMonth.NISAN, 15).to_fixed()
+   
+    @classmethod    
+    def omer(cls, fixed_date):
+        """Return the number of elapsed weeks and days in the omer at date fixed_date.
+        Returns BOGUS if that date does not fall during the omer."""
+        c = fixed_date - cls.passover(GregorianDate.to_year(fixed_date))
+        if 1 <= c <= 49:
+            return [quotient(c, 7), mod(c, 7)]
+        else:
+            raise ValueError("Date does not fall within omer")
+
+    @classmethod   
+    def purim(cls, g_year):
+        """Return fixed date of Purim occurring in Gregorian year g_year."""
+        hebrew_year = g_year - GregorianDate.to_year(cls.EPOCH)
+        last_month  = cls.last_month_of_year(hebrew_year)
+        return HebrewDate(hebrew_year, last_month, 14).to_fixed()
+
+    @classmethod    
+    def ta_anit_esther(cls, g_year):
+        """Return fixed date of Ta'anit Esther occurring in Gregorian
+        year g_year."""
+        purim_date = cls.purim(g_year)
+        return ((purim_date - 3)
+                if (DayOfWeek.from_fixed(purim_date) == DayOfWeek.Sunday)
+                else (purim_date - 1))
+    
+    @classmethod
+    def tishah_be_av(cls, g_year):
+        """Return fixed date of Tishah be_Av occurring in Gregorian year g_year."""
+        hebrew_year = g_year - GregorianDate.to_year(cls.EPOCH)
+        av9 = HebrewDate(hebrew_year, HebrewMonth.AV, 9).to_fixed()
+        return (av9 + 1) if (DayOfWeek.from_fixed(av9) == DayOfWeek.Saturday) else av9
+
+    @classmethod    
+    def birkath_ha_hama(cls, g_year):
+        """Return the list of fixed date of Birkath ha_Hama occurring in
+        Gregorian year g_year, if it occurs."""
+        dates = CopticDate.in_gregorian(7, 30, g_year)
+        return (dates
+                if ((not (dates == [])) and
+                    (mod(CopticDate.from_fixed(dates[0]).year, 28) == 17))
+                else [])
+    
+    @classmethod
+    def sh_ela(cls, g_year):
+        """Return the list of fixed dates of Sh'ela occurring in
+        Gregorian year g_year."""
+        return CopticDate.in_gregorian(3, 26, g_year)
+    
+    @classmethod
+    def in_gregorian(cls, h_month, h_day, g_year):
+        """Return list of the fixed dates of Hebrew month, h_month, day, h_day,
+        that occur in Gregorian year g_year."""
+        jan1  = GregorianDate.new_year(g_year)
+        y     = HebrewDate.from_fixed(jan1).year
+        date1 = HebrewDate(y, h_month, h_day).to_fixed()
+        date2 = HebrewDate(y + 1, h_month, h_day).to_fixed()
+        # Hebrew and Gregorian calendar are aligned but certain
+        # holidays, i.e. Tzom Tevet, can fall on either side of Jan 1.
+        # So we can have 0, 1 or 2 occurences of that holiday.
+        dates = [date1, date2]
+        return list_range(dates, GregorianDate.year_range(g_year))
+    
+    @classmethod
+    def tzom_tevet(cls, g_year):
+        """Return the list of fixed dates for Tzom Tevet (Tevet 10) that
+        occur in Gregorian year g_year. It can occur 0, 1 or 2 times per
+        Gregorian year."""
+        jan1  = GregorianDate.new_year(g_year)
+        y     = HebrewDate.from_fixed(jan1).year
+        d1 = HebrewDate(y, HebrewMonth.TEVET, 10).to_fixed()
+        d1 = (d1 + 1) if (DayOfWeek.from_fixed(d1) == DayOfWeek.Saturday) else d1
+        d2 = HebrewDate(y + 1, HebrewMonth.TEVET, 10).to_fixed()
+        d2 = (d2 + 1) if (DayOfWeek.from_fixed(d2) == DayOfWeek.Saturday) else d2
+        dates = [d1, d2]
+        return list_range(dates, GregorianDate.year_range(g_year))
+    
+    # this is a simplified version where no check for SATURDAY
+    # is performed: from hebrew year 1 till 2000000
+    # there is no TEVET 10 falling on Saturday...
+    @classmethod
+    def alt_tzom_tevet(cls, g_year):
+        """Return the list of fixed dates for Tzom Tevet (Tevet 10) that
+        occur in Gregorian year g_year. It can occur 0, 1 or 2 times per
+        Gregorian year."""
+        return cls.in_gregorian(HebrewMonth.TEVET, 10, g_year)
+
+    @classmethod    
+    def yom_ha_zikkaron(cls, g_year):
+        """Return fixed date of Yom ha_Zikkaron occurring in Gregorian
+        year g_year."""
+        hebrew_year = g_year - GregorianDate.to_year(cls.EPOCH)
+        iyyar4 = HebrewDate(hebrew_year, HebrewMonth.IYYAR, 4).to_fixed()
+        
+        if (DayOfWeek.from_fixed(iyyar4) in [DayOfWeek.Thursday, DayOfWeek.Friday]):
+            return DayOfWeek(DayOfWeek.Wednesday).before(iyyar4)
+        elif (DayOfWeek.Sunday == DayOfWeek.from_fixed(iyyar4)):
+            return iyyar4 + 1
+        else:
+            return iyyar4
+
+    @classmethod    
+    def birthday(cls, birthdate, year):
+        """Return fixed date of the anniversary of Hebrew birth date
+        birthdate occurring in Hebrew year."""
+        if (birthdate.month == cls.last_month_of_year(birthdate.year)):
+            return HebrewDate(year, cls.last_month_of_year(year), birthdate.day).to_fixed()
+        else:
+            return HebrewDate(year, birthdate.month, 1).to_fixed() + birthdate.day - 1
+    
+    @classmethod
+    def birthday_in_gregorian(cls, birthdate, g_year):
+        """Return the list of the fixed dates of Hebrew birthday
+        birthday that occur in Gregorian g_year."""
+        jan1 = GregorianDate.new_year(g_year)
+        y    = HebrewDate.from_fixed(jan1).year
+        date1 = cls.birthday(birthdate, y)
+        date2 = cls.birthday(birthdate, y + 1)
+        return list_range([date1, date2], GregorianDate.year_range(g_year))
+
+    @classmethod    
+    def yahrzeit(cls, death_date, h_year):
+        """Return fixed date of the anniversary of Hebrew death date death_date
+        occurring in Hebrew h_year."""
+    
+        if ((death_date.month == HebrewMonth.MARHESHVAN) and
+            (death_date.day == 30) and
+            (not cls.is_long_marheshvan(death_date.year + 1))):
+            return HebrewDate(h_year, HebrewMonth.KISLEV, 1).to_fixed() - 1
+        elif ((death_date.month == HebrewMonth.KISLEV) and
+              (death_date.day == 30) and
+              cls.is_short_kislev(death_date.year + 1)):
+            return HebrewDate(h_year, HebrewMonth.TEVET, 1).to_fixed() - 1
+        elif (death_date.month == HebrewMonth.ADARII):
+            return HebrewDate(h_year, cls.last_month_of_year(h_year), death_date.day).to_fixed()
+        elif ((death_date.day == 30) and
+              (death_date.month == HebrewMonth.ADAR) and
+              (not cls.is_leap_year(h_year))):
+            return HebrewDate(h_year, HebrewMonth.SHEVAT, 30).to_fixed()
+        else:
+            return HebrewDate(h_year, death_date.month, 1).to_fixed() + death_date.day - 1
+
+    @classmethod    
+    def yahrzeit_in_gregorian(cls, death_date, g_year):
+        """Return the list of the fixed dates of death date death_date (yahrzeit)
+        that occur in Gregorian year g_year."""
+        jan1 = GregorianDate.new_year(g_year)
+        y    = HebrewDate.from_fixed(jan1).year
+        date1 = cls.yahrzeit(death_date, y)
+        date2 = cls.yahrzeit(death_date, y + 1)
+        return list_range([date1, date2], GregorianDate.year_range(g_year))
+    
+    @classmethod    
+    def possible_hebrew_days(cls, h_month, h_day):
+        """Return a list of possible days of week for Hebrew day h_day
+        and Hebrew month h_month."""
+        h_date0 = HebrewDate(5, HebrewMonth.NISAN, 1)
+        h_year  = 6 if (h_month > HebrewMonth.ELUL) else 5
+        h_date  = HebrewDate(h_year, h_month, h_day)
+        n       = h_date.to_fixed() - h_date0.to_fixed()
+        basic   = [DayOfWeek.Tuesday, DayOfWeek.Thursday, DayOfWeek.Saturday]
+    
+        if (h_month == HebrewMonth.MARHESHVAN) and (h_day == 30):
+            extra = []
+        elif (h_month == HebrewMonth.KISLEV) and (h_day < 30):
+            extra = [DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday]
+        elif (h_month == HebrewMonth.KISLEV) and (h_day == 30):
+            extra = [DayOfWeek.Monday]
+        elif h_month in [HebrewMonth.TEVET, HebrewMonth.SHEVAT]:
+            extra = [DayOfWeek.Sunday, DayOfWeek.Monday]
+        elif (h_month == HebrewMonth.ADAR) and (h_day < 30):
+            extra = [DayOfWeek.Sunday, DayOfWeek.Monday]
+        else:
+            extra = [DayOfWeek.Sunday]
+    
+        basic.extend(extra)
+        return map(lambda x: DayOfWeek.from_fixed(x + n), basic)
+    
 ##############################
 # mayan calendars algorithms #
 ##############################
-# see lines 1989-1992 in calendrica-3.0.cl
-def mayan_long_count_date(baktun, katun, tun, uinal, kin):
-    """Return a long count Mayan date data structure."""
-    return [baktun, katun, tun, uinal, kin]
+class MayanLongCountDate(object):
 
-# see lines 1994-1996 in calendrica-3.0.cl
-def mayan_haab_date(month, day):
-    """Return a Haab Mayan date data structure."""
-    return [month, day]
+    EPOCH = JD.from_fixed(584283)
+    
+    def __init__(self, baktun, katun, tun, uinal, kin):
+        self.baktun = baktun
+        self.katun = katun
+        self.tun = tun
+        self.uinal = uinal
+        self.kin = kin
+        
+    def to_fixed(self):
+        """Return fixed date corresponding to the Mayan long count count,
+        which is a list [baktun, katun, tun, uinal, kin]."""
+        return (self.EPOCH       +
+                (self.baktun * 144000) +
+                (self.katun * 7200)    +
+                (self.tun * 360)       +
+                (self.uinal * 20)      +
+                self.kin)
+    
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Mayan long count date of fixed date date."""
+        long_count = date - cls.EPOCH
+        baktun, day_of_baktun  = divmod(long_count, 144000)
+        katun, day_of_katun    = divmod(day_of_baktun, 7200)
+        tun, day_of_tun        = divmod(day_of_katun, 360)
+        uinal, kin             = divmod(day_of_tun, 20)
+        return MayanLongCountDate(baktun, katun, tun, uinal, kin)
 
-# see lines 1998-2001 in calendrica-3.0.cl
-def mayan_tzolkin_date(number, name):
-    """Return a Tzolkin Mayan date data structure."""
-    return [number, name]
+class MayanHaabOrdinal(object):
 
-# see lines 2003-2005 in calendrica-3.0.cl
-def mayan_baktun(date):
-    """Return the baktun field of a long count Mayan
-    date = [baktun, katun, tun, uinal, kin]."""
-    return date[0]
+    def __init__(self, month, day):
+        self.month = month
+        self.day = day
+        
+    def to_ordinal(self):
+        """Return the number of days into cycle of Mayan haab date h_date."""
+        return ((self.month - 1) * 20) + self.day
 
-# see lines 2007-2009 in calendrica-3.0.cl
-def mayan_katun(date):
-    """Return the katun field of a long count Mayan
-    date = [baktun, katun, tun, uinal, kin]."""
-    return date[1]
+class MayanHaabDate(MayanHaabOrdinal):
 
-# see lines 2011-2013 in calendrica-3.0.cl
-def mayan_tun(date):
-    """Return the tun field of a long count Mayan
-    date = [baktun, katun, tun, uinal, kin]."""
-    return date[2]
+    EPOCH = MayanLongCountDate.EPOCH - MayanHaabOrdinal(18, 8).to_ordinal()
+    
+    def __init__(self, month, day):
+        MayanHaabOrdinal.__init__(self, month, day)
+    
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Mayan haab date of fixed date date."""
+        count = mod(date - cls.EPOCH, 365)
+        day   = mod(count, 20)
+        month = quotient(count, 20) + 1
+        return MayanHaabDate(month, day)
+    
+    def on_or_before(self, date):
+        """Return fixed date of latest date on or before fixed date date
+        that is Mayan haab date haab."""
+        return date - mod(date - self.EPOCH - self.to_ordinal(), 365)
 
-# see lines 2015-2017 in calendrica-3.0.cl
-def mayan_uinal(date):
-    """Return the uinal field of a long count Mayan
-    date = [baktun, katun, tun, uinal, kin]."""
-    return date[3]
+class MayanTzolkinOrdinal(object):
 
-# see lines 2019-2021 in calendrica-3.0.cl
-def mayan_kin(date):
-    """Return the kin field of a long count Mayan
-    date = [baktun, katun, tun, uinal, kin]."""
-    return date[4]
+    def __init__(self, number, name):
+        self.number = number
+        self.name = name
 
-# see lines 2023-2025 in calendrica-3.0.cl
-def mayan_haab_month(date):
-    """Return the month field of Haab Mayan date = [month, day]."""
-    return date[0]
+    def to_ordinal(self):
+        """Return number of days into Mayan tzolkin cycle of t_date."""
+        return mod(self.number - 1 + (39 * (self.number - self.name)), 260)
 
-# see lines 2027-2029 in calendrica-3.0.cl
-def mayan_haab_day(date):
-    """Return the day field of Haab Mayan date = [month, day]."""
-    return date[1]
+class MayanTzolkinDate(MayanTzolkinOrdinal):
 
-# see lines 2031-2033 in calendrica-3.0.cl
-def mayan_tzolkin_number(date):
-    """Return the number field of Tzolkin Mayan date = [number, name]."""
-    return date[0]
+    EPOCH = MayanLongCountDate.EPOCH - MayanTzolkinOrdinal(4, 20).to_ordinal()
+    
+    def __init__(self, number, name):
+        MayanTzolkinOrdinal.__init__(self, number, name)
+    
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Mayan tzolkin date of fixed date date."""
+        count  = date - cls.EPOCH + 1
+        number = amod(count, 13)
+        name   = amod(count, 20)
+        return MayanTzolkinDate(number, name)
+    
+    def on_or_before(self, date):
+        """Return fixed date of latest date on or before fixed date date
+        that is Mayan tzolkin date tzolkin."""
+        return date - mod(date - self.EPOCH - self.to_ordinal(), 260)
 
-# see lines 2035-2037 in calendrica-3.0.cl
-def mayan_tzolkin_name(date):
-    """Return the name field of Tzolkin Mayan date = [number, name]."""
-    return date[1]
+    @classmethod
+    def mayan_year_bearer_from_fixed(cls, date):
+        """Return year bearer of year containing fixed date date.
+        Returns BOGUS for uayeb."""
+        x = MayanHaabDate(1, 0).on_or_before(date + 364)
+        if MayanHaabDate.from_fixed(date).month == 19:
+            raise ValueError("Invalid date")
+        return cls.from_fixed(x).name
 
-# see lines 2039-2044 in calendrica-3.0.cl
-MAYAN_EPOCH = fixed_from_jd(584283)
-
-# see lines 2046-2060 in calendrica-3.0.cl
-def fixed_from_mayan_long_count(count):
-    """Return fixed date corresponding to the Mayan long count count,
-    which is a list [baktun, katun, tun, uinal, kin]."""
-    baktun = mayan_baktun(count)
-    katun  = mayan_katun(count)
-    tun    = mayan_tun(count)
-    uinal  = mayan_uinal(count)
-    kin    = mayan_kin(count)
-    return (MAYAN_EPOCH       +
-            (baktun * 144000) +
-            (katun * 7200)    +
-            (tun * 360)       +
-            (uinal * 20)      +
-            kin)
-
-# see lines 2062-2074 in calendrica-3.0.cl
-def mayan_long_count_from_fixed(date):
-    """Return Mayan long count date of fixed date date."""
-    long_count = date - MAYAN_EPOCH
-    baktun, day_of_baktun  = divmod(long_count, 144000)
-    katun, day_of_katun    = divmod(day_of_baktun, 7200)
-    tun, day_of_tun        = divmod(day_of_katun, 360)
-    uinal, kin             = divmod(day_of_tun, 20)
-    return mayan_long_count_date(baktun, katun, tun, uinal, kin)
-
-# see lines 2076-2081 in calendrica-3.0.cl
-def mayan_haab_ordinal(h_date):
-    """Return the number of days into cycle of Mayan haab date h_date."""
-    day   = mayan_haab_day(h_date)
-    month = mayan_haab_month(h_date)
-    return ((month - 1) * 20) + day
-
-# see lines 2083-2087 in calendrica-3.0.cl
-MAYAN_HAAB_EPOCH = MAYAN_EPOCH - mayan_haab_ordinal(mayan_haab_date(18, 8))
-
-# see lines 2089-2096 in calendrica-3.0.cl
-def mayan_haab_from_fixed(date):
-    """Return Mayan haab date of fixed date date."""
-    count = mod(date - MAYAN_HAAB_EPOCH, 365)
-    day   = mod(count, 20)
-    month = quotient(count, 20) + 1
-    return mayan_haab_date(month, day)
-
-# see lines 2098-2105 in calendrica-3.0.cl
-def mayan_haab_on_or_before(haab, date):
-    """Return fixed date of latest date on or before fixed date date
-    that is Mayan haab date haab."""
-    return date - mod(date - MAYAN_HAAB_EPOCH - mayan_haab_ordinal(haab), 365)
-
-# see lines 2107-2114 in calendrica-3.0.cl
-def mayan_tzolkin_ordinal(t_date):
-    """Return number of days into Mayan tzolkin cycle of t_date."""
-    number = mayan_tzolkin_number(t_date)
-    name   = mayan_tzolkin_name(t_date)
-    return mod(number - 1 + (39 * (number - name)), 260)
-
-# see lines 2116-2120 in calendrica-3.0.cl
-MAYAN_TZOLKIN_EPOCH = (MAYAN_EPOCH - 
-                        mayan_tzolkin_ordinal(mayan_tzolkin_date(4, 20)))
-
-# see lines 2122-2128 in calendrica-3.0.cl
-def mayan_tzolkin_from_fixed(date):
-    """Return Mayan tzolkin date of fixed date date."""
-    count  = date - MAYAN_TZOLKIN_EPOCH + 1
-    number = amod(count, 13)
-    name   = amod(count, 20)
-    return mayan_tzolkin_date(number, name)
-
-# see lines 2130-2138 in calendrica-3.0.cl
-def mayan_tzolkin_on_or_before(tzolkin, date):
-    """Return fixed date of latest date on or before fixed date date
-    that is Mayan tzolkin date tzolkin."""
-    return (date -
-            mod(date -
-                MAYAN_TZOLKIN_EPOCH -
-                mayan_tzolkin_ordinal(tzolkin), 260))
-
-# see lines 2140-2150 in calendrica-3.0.cl
-def mayan_year_bearer_from_fixed(date):
-    """Return year bearer of year containing fixed date date.
-    Returns BOGUS for uayeb."""
-    x = mayan_haab_on_or_before(mayan_haab_date(1, 0), date + 364)
-    return (BOGUS if (mayan_haab_month(mayan_haab_from_fixed(date)) == 19)
-            else mayan_tzolkin_name(mayan_tzolkin_from_fixed(x)))
-
-# see lines 2152-2168 in calendrica-3.0.cl
 def mayan_calendar_round_on_or_before(haab, tzolkin, date):
     """Return fixed date of latest date on or before date, that is
     Mayan haab date haab and tzolkin date tzolkin.
     Returns BOGUS for impossible combinations."""
-    haab_count = mayan_haab_ordinal(haab) + MAYAN_HAAB_EPOCH
-    tzolkin_count = mayan_tzolkin_ordinal(tzolkin) + MAYAN_TZOLKIN_EPOCH
+    haab_count = haab.to_ordinal() + MayanHaabDate.EPOCH
+    tzolkin_count = tzolkin.to_ordinal() + MayanTzolkinDate.EPOCH
     diff = tzolkin_count - haab_count
     if mod(diff, 5) == 0:
         return date - mod(date - haab_count(365 * diff), 18980)
     else:
-        return BOGUS
+        raise ValueError("Invalid date")
 
 
-# see lines 2170-2173 in calendrica-3.0.cl
-def aztec_xihuitl_date(month, day):
-    """Return an Aztec xihuitl date data structure."""
-    return [month, day]
+AZTEC_CORRELATION = JulianDate(1521, JulianMonth.August, 13).to_fixed()
 
-# see lines 2175-2177 in calendrica-3.0.cl
-def aztec_xihuitl_month(date):
-    """Return the month field of an Aztec xihuitl date = [month, day]."""
-    return date[0]
+class AztecXihuitlOrdinal(object):
 
-# see lines 2179-2181 in calendrica-3.0.cl
-def aztec_xihuitl_day(date):
-    """Return the day field of an Aztec xihuitl date = [month, day]."""
-    return date[1]
+    def __init__(self, month, day):
+        self.month = month
+        self.day = day 
+        
+    def to_ordinal(self):
+        """Return the number of elapsed days into cycle of Aztec xihuitl
+        date x_date."""
+        return  ((self.month - 1) * 20) + self.day - 1
 
-# see lines 2183-2186 in calendrica-3.0.cl
-def aztec_tonalpohualli_date(number, name):
-    """Return an Aztec tonalpohualli date data structure."""
-    return [number, name]
+class AztecXihuitlDate(AztecXihuitlOrdinal):
 
-# see lines 2188-2191 in calendrica-3.0.cl
-def aztec_tonalpohualli_number(date):
-    """Return the number field of an Aztec tonalpohualli
-    date = [number, name]."""
-    return date[0]
+    CORRELATION = AZTEC_CORRELATION - AztecXihuitlOrdinal(11, 2).to_ordinal()
+    
+    def __init__(self, month, day):
+        AztecXihuitlOrdinal.__init__(self, month, day)
+        
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Aztec xihuitl date of fixed date date."""
+        count = mod(date - cls.CORRELATION, 365)
+        day   = mod(count, 20) + 1
+        month = quotient(count, 20) + 1
+        return AztecXihuitlDate(month, day)
+    
+    # see lines 2239-2246 in calendrica-3.0.cl
+    def aztec_xihuitl_on_or_before(self, date):
+        """Return fixed date of latest date on or before fixed date date
+        that is Aztec xihuitl date xihuitl."""
+        return (date - mod(date - self.CORRELATION - self.to_ordinal(), 365))
 
-# see lines 2193-2195 in calendrica-3.0.cl
-def aztec_tonalpohualli_name(date):
-    """Return the name field of an Aztec tonalpohualli
-    date = [number, name]."""
-    return date[1]
+class AztecTonalpohuallOrdinal(object):
+    
+    def __init__(self, number, name):
+        self.number = number
+        self.name = name
 
-# see lines 2197-2200 in calendrica-3.0.cl
-def aztec_xiuhmolpilli_designation(number, name):
-    """Return an Aztec xiuhmolpilli date data structure."""
-    return [number, name]
+    def to_ordinal(self):
+        """Return the number of days into Aztec tonalpohualli cycle of t_date."""
+        return mod(self.number - 1 + 39 * (self.number - self.name), 260)
 
-# see lines 2202-2205 in calendrica-3.0.cl
-def aztec_xiuhmolpilli_number(date):
-    """Return the number field of an Aztec xiuhmolpilli
-    date = [number, name]."""
-    return date[0]
+class AztecTonalpohualliDate(AztecTonalpohuallOrdinal):
 
-# see lines 2207-2210 in calendrica-3.0.cl
-def aztec_xiuhmolpilli_name(date):
-    """Return the name field of an Aztec xiuhmolpilli
-    date = [number, name]."""
-    return date[1]
+    CORRELATION = AZTEC_CORRELATION - AztecTonalpohuallOrdinal(1, 5).to_ordinal()
+    
+    def __init__(self, number, name):
+        AztecTonalpohuallOrdinal.__init__(self, number, name)
 
-# see lines 2212-2215 in calendrica-3.0.cl
-AZTEC_CORRELATION = fixed_from_julian(julian_date(1521, AUGUST, 13))
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Aztec tonalpohualli date of fixed date date."""
+        count  = date - cls.CORRELATION + 1
+        number = amod(count, 13)
+        name   = amod(count, 20)
+        return AztecTonalpohualliDate(number, name)
 
-# see lines 2217-2223 in calendrica-3.0.cl
-def aztec_xihuitl_ordinal(x_date):
-    """Return the number of elapsed days into cycle of Aztec xihuitl
-    date x_date."""
-    day   = aztec_xihuitl_day(x_date)
-    month = aztec_xihuitl_month(x_date)
-    return  ((month - 1) * 20) + day - 1
+    def on_or_before(self, date):
+        """Return fixed date of latest date on or before fixed date date
+        that is Aztec tonalpohualli date tonalpohualli."""
+        return (date - mod(date - self.CORRELATION - self.to_ordinal(), 260))
 
-# see lines 2225-2229 in calendrica-3.0.cl
-AZTEC_XIHUITL_CORRELATION = (AZTEC_CORRELATION -
-                              aztec_xihuitl_ordinal(aztec_xihuitl_date(11, 2)))
+class AztecXiuhmolpilliDesignation(AztecTonalpohualliDate):
+    
+    def __init__(self, number, name):
+        AztecTonalpohualliDate.__init__(self, number, name)
 
-# see lines 2231-2237 in calendrica-3.0.cl
-def aztec_xihuitl_from_fixed(date):
-    """Return Aztec xihuitl date of fixed date date."""
-    count = mod(date - AZTEC_XIHUITL_CORRELATION, 365)
-    day   = mod(count, 20) + 1
-    month = quotient(count, 20) + 1
-    return aztec_xihuitl_date(month, day)
-
-# see lines 2239-2246 in calendrica-3.0.cl
-def aztec_xihuitl_on_or_before(xihuitl, date):
-    """Return fixed date of latest date on or before fixed date date
-    that is Aztec xihuitl date xihuitl."""
-    return (date -
-            mod(date -
-                AZTEC_XIHUITL_CORRELATION -
-                aztec_xihuitl_ordinal(xihuitl), 365))
-
-# see lines 2248-2255 in calendrica-3.0.cl
-def aztec_tonalpohualli_ordinal(t_date):
-    """Return the number of days into Aztec tonalpohualli cycle of t_date."""
-    number = aztec_tonalpohualli_number(t_date)
-    name   = aztec_tonalpohualli_name(t_date)
-    return mod(number - 1 + 39 * (number - name), 260)
-
-# see lines 2257-2262 in calendrica-3.0.cl
-AZTEC_TONALPOHUALLI_CORRELATION = (AZTEC_CORRELATION -
-                                    aztec_tonalpohualli_ordinal(
-                                        aztec_tonalpohualli_date(1, 5)))
-
-# see lines 2264-2270 in calendrica-3.0.cl
-def aztec_tonalpohualli_from_fixed(date):
-    """Return Aztec tonalpohualli date of fixed date date."""
-    count  = date - AZTEC_TONALPOHUALLI_CORRELATION + 1
-    number = amod(count, 13)
-    name   = amod(count, 20)
-    return aztec_tonalpohualli_date(number, name)
-
-# see lines 2272-2280 in calendrica-3.0.cl
-def aztec_tonalpohualli_on_or_before(tonalpohualli, date):
-    """Return fixed date of latest date on or before fixed date date
-    that is Aztec tonalpohualli date tonalpohualli."""
-    return (date -
-            mod(date -
-                AZTEC_TONALPOHUALLI_CORRELATION -
-                aztec_tonalpohualli_ordinal(tonalpohualli), 260))
+    @classmethod    
+    def from_fixed(cls, date):
+        """Return designation of year containing fixed date date.
+        Returns BOGUS for nemontemi."""
+        x = AztecXihuitlDate(18, 20).on_or_before(date + 364)
+        month = AztecXihuitlDate.from_fixed(date).month
+        if month == 19:
+            raise ValueError("nemontemi")
+        return AztecTonalpohualliDate.from_fixed(x)
 
 # see lines 2282-2303 in calendrica-3.0.cl
 def aztec_xihuitl_tonalpohualli_on_or_before(xihuitl, tonalpohualli, date):
@@ -1850,85 +1563,15 @@ def aztec_xihuitl_tonalpohualli_on_or_before(xihuitl, tonalpohualli, date):
     date date that is Aztec xihuitl date xihuitl and
     tonalpohualli date tonalpohualli.
     Returns BOGUS for impossible combinations."""
-    xihuitl_count = aztec_xihuitl_ordinal(xihuitl) + AZTEC_XIHUITL_CORRELATION
-    tonalpohualli_count = (aztec_tonalpohualli_ordinal(tonalpohualli) +
-                           AZTEC_TONALPOHUALLI_CORRELATION)
+    xihuitl_count = xihuitl.to_ordinal() + AztecXihuitlDate.CORRELATION
+    tonalpohualli_count = (tonalpohualli.to_ordinal() + AztecTonalpohualliDate.CORRELATION)
     diff = tonalpohualli_count - xihuitl_count
     if mod(diff, 5) == 0:
         return date - mod(date - xihuitl_count - (365 * diff), 18980)
     else:
-        return BOGUS
-
-# see lines 2305-2316 in calendrica-3.0.cl
-def aztec_xiuhmolpilli_from_fixed(date):
-    """Return designation of year containing fixed date date.
-    Returns BOGUS for nemontemi."""
-    x = aztec_xihuitl_on_or_before(aztec_xihuitl_date(18, 20), date + 364)
-    month = aztec_xihuitl_month(aztec_xihuitl_from_fixed(date))
-    return BOGUS if (month == 19) else aztec_tonalpohualli_from_fixed(x)
+        raise ValueError("impossible combination")
 
 
-
-##################################
-# old hindu calendars algorithms #
-##################################
-# see lines 2321-2325 in calendrica-3.0.cl
-def old_hindu_lunar_date(year, month, leap, day):
-    """Return an Old Hindu lunar date data structure."""
-    return [year, month, leap, day]
-
-# see lines 2327-2329 in calendrica-3.0.cl
-def old_hindu_lunar_month(date):
-    """Return the month field of an Old Hindu lunar
-    date = [year, month, leap, day]."""
-    return date[1]
-
-# see lines 2331-2333 in calendrica-3.0.cl
-def old_hindu_lunar_leap(date):
-    """Return the leap field of an Old Hindu lunar
-    date = [year, month, leap, day]."""
-    return date[2]
-
-# see lines 2335-2337 in calendrica-3.0.cl
-def old_hindu_lunar_day(date):
-    """Return the day field of an Old Hindu lunar
-    date = [year, month, leap, day]."""
-    return date[3]
-
-# see lines 2339-2341 in calendrica-3.0.cl
-def old_hindu_lunar_year(date):
-    """Return the year field of an Old Hindu lunar
-    date = [year, month, leap, day]."""
-    return date[0]
-
-# see lines 2343-2346 in calendrica-3.0.cl
-def hindu_solar_date(year, month, day):
-    """Return an Hindu solar date data structure."""
-    return [year, month, day]
-
-# see lines 2348-2351 in calendrica-3.0.cl
-HINDU_EPOCH = fixed_from_julian(julian_date(bce(3102), FEBRUARY, 18))
-
-# see lines 2353-2356 in calendrica-3.0.cl
-def hindu_day_count(date):
-    """Return elapsed days (Ahargana) to date date since Hindu epoch (KY)."""
-    return date - HINDU_EPOCH
-
-
-# see lines 2358-2361 in calendrica-3.0.cl
-ARYA_SOLAR_YEAR = 1577917500/4320000
-
-# see lines 2363-2366 in calendrica-3.0.cl
-ARYA_SOLAR_MONTH = ARYA_SOLAR_YEAR / 12
-
-# see lines 2368-2378 in calendrica-3.0.cl
-def old_hindu_solar_from_fixed(date):
-    """Return Old Hindu solar date equivalent to fixed date date."""
-    sun   = hindu_day_count(date) + days_from_hours(6)
-    year  = quotient(sun, ARYA_SOLAR_YEAR)
-    month = mod(quotient(sun, ARYA_SOLAR_MONTH), 12) + 1
-    day   = ifloor(mod(sun, ARYA_SOLAR_MONTH)) + 1
-    return hindu_solar_date(year, month, day)
 
 # see lines 2380-2390 in calendrica-3.0.cl
 # The following
@@ -1941,249 +1584,246 @@ def ceiling(n):
     from math import ceil
     return int(ceil(n))
 
-def fixed_from_old_hindu_solar(s_date):
-    """Return fixed date corresponding to Old Hindu solar date s_date."""
-    month = standard_month(s_date)
-    day   = standard_day(s_date)
-    year  = standard_year(s_date)
-    return ceiling(HINDU_EPOCH                 +
-                year * ARYA_SOLAR_YEAR         +
-                (month - 1) * ARYA_SOLAR_MONTH +
-                day + days_from_hours(-30))
+##################################
+# old hindu calendars algorithms #
+##################################
+class OldHindu(object):
+    
+    ARYA_SOLAR_YEAR = 1577917500/4320000
+    ARYA_SOLAR_MONTH = ARYA_SOLAR_YEAR / 12
 
-# see lines 2392-2395 in calendrica-3.0.cl
-ARYA_LUNAR_MONTH = 1577917500/53433336
+    HINDU_EPOCH = JulianDate(JulianDate.bce(3102), JulianMonth.February, 18).to_fixed()
 
-# see lines 2397-2400 in calendrica-3.0.cl
-ARYA_LUNAR_DAY =  ARYA_LUNAR_MONTH / 30
+    @classmethod    
+    def hindu_day_count(cls, date):
+        """Return elapsed days (Ahargana) to date date since Hindu epoch (KY)."""
+        return date - cls.HINDU_EPOCH
 
-# see lines 2402-2409 in calendrica-3.0.cl
-def is_old_hindu_lunar_leap_year(l_year):
-    """Return True if l_year is a leap year on the
-    old Hindu calendar."""
-    return mod(l_year * ARYA_SOLAR_YEAR - ARYA_SOLAR_MONTH,
-               ARYA_LUNAR_MONTH) >= 23902504679/1282400064
+    # see lines 2462-2466 in calendrica-3.0.cl
+    ARYA_JOVIAN_PERIOD =  1577917500/364224
+    
+    @classmethod
+    def jovian_year(cls, date):
+        """Return year of Jupiter cycle at fixed date date."""
+        return amod(quotient(cls.hindu_day_count(date), cls.ARYA_JOVIAN_PERIOD / 12) + 27, 60)
 
-# see lines 2411-2431 in calendrica-3.0.cl
-def old_hindu_lunar_from_fixed(date):
-    """Return Old Hindu lunar date equivalent to fixed date date."""
-    sun = hindu_day_count(date) + days_from_hours(6)
-    new_moon = sun - mod(sun, ARYA_LUNAR_MONTH)
-    leap = (((ARYA_SOLAR_MONTH - ARYA_LUNAR_MONTH)
-             >=
-             mod(new_moon, ARYA_SOLAR_MONTH))
-            and
-            (mod(new_moon, ARYA_SOLAR_MONTH) > 0))
-    month = mod(ceiling(new_moon / ARYA_SOLAR_MONTH), 12) + 1
-    day = mod(quotient(sun, ARYA_LUNAR_DAY), 30) + 1
-    year = ceiling((new_moon + ARYA_SOLAR_MONTH) / ARYA_SOLAR_YEAR) - 1
-    return old_hindu_lunar_date(year, month, leap, day)
+class OldHinduLunarDate(OldHindu):
+    
+    ARYA_LUNAR_MONTH = 1577917500/53433336
+    ARYA_LUNAR_DAY =  ARYA_LUNAR_MONTH / 30
 
-# see lines 2433-2460 in calendrica-3.0.cl
-def fixed_from_old_hindu_lunar(l_date):
-    """Return fixed date corresponding to Old Hindu lunar date l_date."""
-    year  = old_hindu_lunar_year(l_date)
-    month = old_hindu_lunar_month(l_date)
-    leap  = old_hindu_lunar_leap(l_date)
-    day   = old_hindu_lunar_day(l_date)
-    mina  = ((12 * year) - 1) * ARYA_SOLAR_MONTH
-    lunar_new_year = ARYA_LUNAR_MONTH * (quotient(mina, ARYA_LUNAR_MONTH) + 1)
+    def __init__(self, year, month, leap, day):
+        self.year = year
+        self.month = month
+        self.leap = leap
+        self.day = day
+        
+    # see lines 2433-2460 in calendrica-3.0.cl
+    def to_fixed(self):
+        """Return fixed date corresponding to Old Hindu lunar date l_date."""
+        mina  = ((12 * self.year) - 1) * self.ARYA_SOLAR_MONTH
+        lunar_new_year = self.ARYA_LUNAR_MONTH * (quotient(mina, self.ARYA_LUNAR_MONTH) + 1)
+    
+        if ((not self.leap) and 
+            (ceiling((lunar_new_year - mina) / (self.ARYA_SOLAR_MONTH - self.ARYA_LUNAR_MONTH))
+             <= self.month)):
+            temp = self.month
+        else:
+            temp = self.month - 1
+        temp = (self.HINDU_EPOCH    + 
+                lunar_new_year +
+                (self.ARYA_LUNAR_MONTH * temp) +
+                ((self.day - 1) * self.ARYA_LUNAR_DAY) +
+                days_from_hours(-6))
+        return ceiling(temp)
 
-    if ((not leap) and 
-        (ceiling((lunar_new_year - mina) / (ARYA_SOLAR_MONTH - ARYA_LUNAR_MONTH))
-         <= month)):
-        temp = month
-    else:
-        temp = month - 1
-    temp = (HINDU_EPOCH    + 
-            lunar_new_year +
-            (ARYA_LUNAR_MONTH * temp) +
-            ((day - 1) * ARYA_LUNAR_DAY) +
-            days_from_hours(-6))
-    return ceiling(temp)
+    @classmethod
+    def is_leap_year(cls, l_year):
+        """Return True if l_year is a leap year on the
+        old Hindu calendar."""
+        return mod(l_year * cls.ARYA_SOLAR_YEAR - cls.ARYA_SOLAR_MONTH,
+                   cls.ARYA_LUNAR_MONTH) >= 23902504679/1282400064
 
-# see lines 2462-2466 in calendrica-3.0.cl
-ARYA_JOVIAN_PERIOD =  1577917500/364224
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Old Hindu lunar date equivalent to fixed date date."""
+        sun = cls.hindu_day_count(date) + days_from_hours(6)
+        new_moon = sun - mod(sun, cls.ARYA_LUNAR_MONTH)
+        leap = (((cls.ARYA_SOLAR_MONTH - cls.ARYA_LUNAR_MONTH)
+                 >=
+                 mod(new_moon, cls.ARYA_SOLAR_MONTH))
+                and
+                (mod(new_moon, cls.ARYA_SOLAR_MONTH) > 0))
+        month = mod(ceiling(new_moon / cls.ARYA_SOLAR_MONTH), 12) + 1
+        day = mod(quotient(sun, cls.ARYA_LUNAR_DAY), 30) + 1
+        year = ceiling((new_moon + cls.ARYA_SOLAR_MONTH) / cls.ARYA_SOLAR_YEAR) - 1
+        return OldHinduLunarDate(year, month, leap, day)
 
-# see lines 2468-2473 in calendrica-3.0.cl
-def jovian_year(date):
-    """Return year of Jupiter cycle at fixed date date."""
-    return amod(quotient(hindu_day_count(date), ARYA_JOVIAN_PERIOD / 12) + 27,
-                60)
+class OldHinduSolarDate(OldHindu):
+
+    
+    def __init(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
+
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Old Hindu solar date equivalent to fixed date date."""
+        sun   = cls.hindu_day_count(date) + days_from_hours(6)
+        year  = quotient(sun, cls.ARYA_SOLAR_YEAR)
+        month = mod(quotient(sun, cls.ARYA_SOLAR_MONTH), 12) + 1
+        day   = ifloor(mod(sun, cls.ARYA_SOLAR_MONTH)) + 1
+        return OldHinduSolarDate(year, month, day)
+        
+    def to_fixed(self):
+        """Return fixed date corresponding to Old Hindu solar date s_date."""
+        return ceiling(self.HINDU_EPOCH                 +
+                    self.year * self.ARYA_SOLAR_YEAR         +
+                    (self.month - 1) * self.ARYA_SOLAR_MONTH +
+                    self.day + days_from_hours(-30))
+
 
 ################################
 # balinese calendar algorithms #
 ################################
-# see lines 2478-2481 in calendrica-3.0.cl
-def balinese_date(b1, b2, b3, b4, b5, b6, b7, b8, b9, b0):
-    """Return a Balinese date data structure."""
-    return [b1, b2, b3, b4, b5, b6, b7, b8, b9, b0]
-
-# see lines 2483-2485 in calendrica-3.0.cl
-def bali_luang(b_date):
-    return b_date[0]
-
-# see lines 2487-2489 in calendrica-3.0.cl
-def bali_dwiwara(b_date):
-    return b_date[1]
-
-# see lines 2491-2493 in calendrica-3.0.cl
-def bali_triwara(b_date):
-    return b_date[2]
-
-# see lines 2495-2497 in calendrica-3.0.cl
-def bali_caturwara(b_date):
-    return b_date[3]
-
-# see lines 2499-2501 in calendrica-3.0.cl
-def bali_pancawara(b_date):
-    return b_date[4]
-
-# see lines 2503-2505 in calendrica-3.0.cl
-def bali_sadwara(b_date):
-    return b_date[5]
-
-# see lines 2507-2509 in calendrica-3.0.cl
-def bali_saptawara(b_date):
-    return b_date[6]
-
-# see lines 2511-2513 in calendrica-3.0.cl
-def bali_asatawara(b_date):
-    return b_date[7]
-
-# see lines 2513-2517 in calendrica-3.0.cl
-def bali_sangawara(b_date):
-    return b_date[8]
-
-# see lines 2519-2521 in calendrica-3.0.cl
-def bali_dasawara(b_date):
-    return b_date[9]
-
-# see lines 2523-2526 in calendrica-3.0.cl
-BALI_EPOCH = fixed_from_jd(146)
-
-# see lines 2528-2531 in calendrica-3.0.cl
-def bali_day_from_fixed(date):
-    """Return the position of date date in 210_day Pawukon cycle."""
-    return mod(date - BALI_EPOCH, 210)
-
 def even(i):
     return mod(i, 2) == 0
 
 def odd(i):
     return not even(i)
 
-# see lines 2533-2536 in calendrica-3.0.cl
-def bali_luang_from_fixed(date):
-    """Check membership of date date in "1_day" Balinese cycle."""
-    return even(bali_dasawara_from_fixed(date))
+class BalineseDate(object):
 
-# see lines 2538-2541 in calendrica-3.0.cl
-def bali_dwiwara_from_fixed(date):
-    """Return the position of date date in 2_day Balinese cycle."""
-    return amod(bali_dasawara_from_fixed(date), 2)
+    EPOCH = JD.from_fixed(146)
+    
+    def __init__(self, luang, dwiwara, triwara, caturwara, pancawara, sadwara, saptawara, asatawara, sangawara, dasawara):
+        self.luang = luang
+        self.dwiwara = dwiwara
+        self.triwara = triwara
+        self.caturwara = caturwara
+        self.pancawara = pancawara
+        self.sadwara = sadwara
+        self.saptawara = saptawara
+        self.asatawara = asatawara
+        self.sangawara = sangawara
+        self.dasawara = dasawara
 
-# see lines 2543-2546 in calendrica-3.0.cl
-def bali_triwara_from_fixed(date):
-    """Return the position of date date in 3_day Balinese cycle."""
-    return mod(bali_day_from_fixed(date), 3) + 1
+    @classmethod
+    def bali_day_from_fixed(cls, date):
+        """Return the position of date date in 210_day Pawukon cycle."""
+        return mod(date - cls.EPOCH, 210)
 
-# see lines 2548-2551 in calendrica-3.0.cl
-def bali_caturwara_from_fixed(date):
-    """Return the position of date date in 4_day Balinese cycle."""
-    return amod(bali_asatawara_from_fixed(date), 4)
+    @classmethod
+    def luang_from_fixed(cls, date):
+        """Check membership of date date in "1_day" Balinese cycle."""
+        return even(cls.dasawara_from_fixed(date))
 
-# see lines 2553-2556 in calendrica-3.0.cl
-def bali_pancawara_from_fixed(date):
-    """Return the position of date date in 5_day Balinese cycle."""
-    return amod(bali_day_from_fixed(date) + 2, 5)
+    @classmethod
+    def dwiwara_from_fixed(cls, date):
+        """Return the position of date date in 2_day Balinese cycle."""
+        return amod(cls.dasawara_from_fixed(date), 2)
+    
+    @classmethod
+    def triwara_from_fixed(cls, date):
+        """Return the position of date date in 3_day Balinese cycle."""
+        return mod(cls.day_from_fixed(date), 3) + 1
+    
+    @classmethod
+    def caturwara_from_fixed(cls, date):
+        """Return the position of date date in 4_day Balinese cycle."""
+        return amod(cls.asatawara_from_fixed(date), 4)
+    
+    @classmethod
+    def pancawara_from_fixed(cls, date):
+        """Return the position of date date in 5_day Balinese cycle."""
+        return amod(cls.day_from_fixed(date) + 2, 5)
+    
+    @classmethod
+    def sadwara_from_fixed(cls, date):
+        """Return the position of date date in 6_day Balinese cycle."""
+        return mod(cls.day_from_fixed(date), 6) + 1
+    
+    @classmethod
+    def saptawara_from_fixed(cls, date):
+        """Return the position of date date in Balinese week."""
+        return mod(cls.day_from_fixed(date), 7) + 1
+    
+    @classmethod
+    def asatawara_from_fixed(cls, date):
+        """Return the position of date date in 8_day Balinese cycle."""
+        day = cls.day_from_fixed(date)
+        return mod(max(6, 4 + mod(day - 70, 210)), 8) + 1
+    
+    @classmethod
+    def sangawara_from_fixed(cls, date):
+        """Return the position of date date in 9_day Balinese cycle."""
+        return mod(max(0, cls.day_from_fixed(date) - 3), 9) + 1
+    
+    @classmethod
+    def dasawara_from_fixed(cls, date):
+        """Return the position of date date in 10_day Balinese cycle."""
+        i = cls.pancawara_from_fixed(date) - 1
+        j = cls.saptawara_from_fixed(date) - 1
+        return mod(1 + [5, 9, 7, 4, 8][i] + [5, 4, 3, 7, 8, 6, 9][j], 10)
+    
+    @classmethod
+    def pawukon_from_fixed(cls, date):
+        """Return the positions of date date in ten cycles of Balinese Pawukon
+        calendar."""
+        return BalineseDate(cls.luang_from_fixed(date),
+                             cls.dwiwara_from_fixed(date),
+                             cls.triwara_from_fixed(date),
+                             cls.caturwara_from_fixed(date),
+                             cls.pancawara_from_fixed(date),
+                             cls.sadwara_from_fixed(date),
+                             cls.saptawara_from_fixed(date),
+                             cls.asatawara_from_fixed(date),
+                             cls.sangawara_from_fixed(date),
+                             cls.dasawara_from_fixed(date))
+    
+    @classmethod
+    def week_from_fixed(cls, date):
+        """Return the  week number of date date in Balinese cycle."""
+        return quotient(cls.day_from_fixed(date), 7) + 1
+    
+    def bali_on_or_before(self, date):
+        """Return last fixed date on or before date with Pawukon date b_date."""
+        a5 = self.pancawara - 1
+        a6 = self.sadwara   - 1
+        b7 = self.saptawara - 1
+        b35 = mod(a5 + 14 + (15 * (b7 - a5)), 35)
+        days = a6 + (36 * (b35 - a6))
+        cap_Delta = self.day_from_fixed(0)
+        return date - mod(date + cap_Delta - days, 210)
 
-# see lines 2558-2561 in calendrica-3.0.cl
-def bali_sadwara_from_fixed(date):
-    """Return the position of date date in 6_day Balinese cycle."""
-    return mod(bali_day_from_fixed(date), 6) + 1
+    @classmethod    
+    def positions_in_range(cls, n, c, cap_Delta, range):
+        """Return the list of occurrences of n-th day of c-day cycle
+        in range.
+        cap_Delta is the position in cycle of RD 0."""
+        a = range[0]
+        b = range[1]
+        pos = a + mod(n - a - cap_Delta - 1, c)
+        return ([] if (pos > b) else
+                [pos].extend(
+                    cls.positions_in_range(n, c, cap_Delta, [pos + 1, b])))
 
-# see lines 2563-2566 in calendrica-3.0.cl
-def bali_saptawara_from_fixed(date):
-    """Return the position of date date in Balinese week."""
-    return mod(bali_day_from_fixed(date), 7) + 1
-
-# see lines 2568-2576 in calendrica-3.0.cl
-def bali_asatawara_from_fixed(date):
-    """Return the position of date date in 8_day Balinese cycle."""
-    day = bali_day_from_fixed(date)
-    return mod(max(6, 4 + mod(day - 70, 210)), 8) + 1
-
-# see lines 2578-2583 in calendrica-3.0.cl
-def bali_sangawara_from_fixed(date):
-    """Return the position of date date in 9_day Balinese cycle."""
-    return mod(max(0, bali_day_from_fixed(date) - 3), 9) + 1
-
-# see lines 2585-2594 in calendrica-3.0.cl
-def bali_dasawara_from_fixed(date):
-    """Return the position of date date in 10_day Balinese cycle."""
-    i = bali_pancawara_from_fixed(date) - 1
-    j = bali_saptawara_from_fixed(date) - 1
-    return mod(1 + [5, 9, 7, 4, 8][i] + [5, 4, 3, 7, 8, 6, 9][j], 10)
-
-# see lines 2596-2609 in calendrica-3.0.cl
-def bali_pawukon_from_fixed(date):
-    """Return the positions of date date in ten cycles of Balinese Pawukon
-    calendar."""
-    return balinese_date(bali_luang_from_fixed(date),
-                         bali_dwiwara_from_fixed(date),
-                         bali_triwara_from_fixed(date),
-                         bali_caturwara_from_fixed(date),
-                         bali_pancawara_from_fixed(date),
-                         bali_sadwara_from_fixed(date),
-                         bali_saptawara_from_fixed(date),
-                         bali_asatawara_from_fixed(date),
-                         bali_sangawara_from_fixed(date),
-                         bali_dasawara_from_fixed(date))
-
-# see lines 2611-2614 in calendrica-3.0.cl
-def bali_week_from_fixed(date):
-    """Return the  week number of date date in Balinese cycle."""
-    return quotient(bali_day_from_fixed(date), 7) + 1
-
-# see lines 2616-2630 in calendrica-3.0.cl
-def bali_on_or_before(b_date, date):
-    """Return last fixed date on or before date with Pawukon date b_date."""
-    a5 = bali_pancawara(b_date) - 1
-    a6 = bali_sadwara(b_date)   - 1
-    b7 = bali_saptawara(b_date) - 1
-    b35 = mod(a5 + 14 + (15 * (b7 - a5)), 35)
-    days = a6 + (36 * (b35 - a6))
-    cap_Delta = bali_day_from_fixed(0)
-    return date - mod(date + cap_Delta - days, 210)
-
-# see lines 2632-2646 in calendrica-3.0.cl
-def positions_in_range(n, c, cap_Delta, range):
-    """Return the list of occurrences of n-th day of c-day cycle
-    in range.
-    cap_Delta is the position in cycle of RD 0."""
-    a = start(range)
-    b = end(range)
-    pos = a + mod(n - a - cap_Delta - 1, c)
-    return ([] if (pos > b) else
-            [pos].extend(
-                positions_in_range(n, c, cap_Delta, interval(pos + 1, b))))
-
-# see lines 2648-2654 in calendrica-3.0.cl
-def kajeng_keliwon(g_year):
-    """Return the occurrences of Kajeng Keliwon (9th day of each
-    15_day subcycle of Pawukon) in Gregorian year g_year."""
-    year = gregorian_year_range(g_year)
-    cap_Delta = bali_day_from_fixed(0)
-    return positions_in_range(9, 15, cap_Delta, year)
-
-# see lines 2656-2662 in calendrica-3.0.cl
-def tumpek(g_year):
-    """Return the occurrences of Tumpek (14th day of Pawukon and every
-    35th subsequent day) within Gregorian year g_year."""
-    year = gregorian_year_range(g_year)
-    cap_Delta = bali_day_from_fixed(0)
-    return positions_in_range(14, 35, cap_Delta, year)
+    @classmethod    
+    def kajeng_keliwon(cls, g_year):
+        """Return the occurrences of Kajeng Keliwon (9th day of each
+        15_day subcycle of Pawukon) in Gregorian year g_year."""
+        year = GregorianDate.year_range(g_year)
+        cap_Delta = cls.day_from_fixed(0)
+        return cls.positions_in_range(9, 15, cap_Delta, year)
+    
+    @classmethod    
+    def tumpek(cls, g_year):
+        """Return the occurrences of Tumpek (14th day of Pawukon and every
+        35th subsequent day) within Gregorian year g_year."""
+        year = GregorianDate.year_range(g_year)
+        cap_Delta = cls.day_from_fixed(0)
+        return cls.positions_in_range(14, 35, cap_Delta, year)
 
 ######################
 # Time and Astronomy #
@@ -2377,130 +2017,6 @@ def arccos_degrees(x):
     #from math import acos
     return normalized_degrees_from_radians(acos(x))
 
-# see lines 2751-2753 in calendrica-3.0.cl
-def location(latitude, longitude, elevation, zone):
-    """Return a location data structure."""
-    return [latitude, longitude, elevation, zone]
-
-# see lines 2755-2757 in calendrica-3.0.cl
-def latitude(location):
-    """Return the latitude field of a location."""
-    return location[0]
-
-# see lines 2759-2761 in calendrica-3.0.cl
-def longitude(location):
-    """Return the longitude field of a location."""
-    return location[1]
-
-# see lines 2763-2765 in calendrica-3.0.cl
-def elevation(location):
-    """Return the elevation field of a location."""
-    return location[2]
-
-# see lines 2767-2769 in calendrica-3.0.cl
-def zone(location):
-    """Return the timezone field of a location."""
-    return location[3]
-
-# see lines 2771-2775 in calendrica-3.0.cl
-MECCA = location(angle(21, 25, 24), angle(39, 49, 24), mt(298), days_from_hours(3))
-
-# see lines 5898-5901 in calendrica-3.0.cl
-JERUSALEM = location(31.8, 35.2, mt(800), days_from_hours(2))
-
-BRUXELLES = location(angle(4, 21, 17), angle(50, 50, 47), mt(800), days_from_hours(1))
-
-URBANA = location(40.1,
-                  -88.2,
-                  mt(225),
-                  days_from_hours(-6))
-
-GREENWHICH = location(51.4777815,
-                      0,
-                      mt(46.9),
-                      days_from_hours(0))
-
-
-# see lines 2777-2797 in calendrica-3.0.cl
-def direction(location, focus):
-    """Return the angle (clockwise from North) to face focus when
-    standing in location, location.  Subject to errors near focus and
-    its antipode."""
-    phi = latitude(location)
-    phi_prime = latitude(focus)
-    psi = longitude(location)
-    psi_prime = longitude(focus)
-    y = sin_degrees(psi_prime - psi)
-    x = ((cosine_degrees(phi) * tangent_degrees(phi_prime)) -
-         (sin_degrees(phi)    * cosine_degrees(psi - psi_prime)))
-    if ((x == y == 0) or (phi_prime == deg(90))):
-        return deg(0)
-    elif (phi_prime == deg(-90)):
-        return deg(180)
-    else:
-        return arctan_degrees(y, x)
-
-# see lines 2799-2803 in calendrica-3.0.cl
-def standard_from_universal(tee_rom_u, location):
-    """Return standard time from tee_rom_u in universal time at location."""
-    return tee_rom_u + zone(location)
-
-# see lines 2805-2809 in calendrica-3.0.cl
-def universal_from_standard(tee_rom_s, location):
-    """Return universal time from tee_rom_s in standard time at location."""
-    return tee_rom_s - zone(location)
-
-# see lines 2811-2815 in calendrica-3.0.cl
-def zone_from_longitude(phi):
-    """Return the difference between UT and local mean time at longitude
-    'phi' as a fraction of a day."""
-    return phi / deg(360)
-
-# see lines 2817-2820 in calendrica-3.0.cl
-def local_from_universal(tee_rom_u, location):
-    """Return local time from universal tee_rom_u at location, location."""
-    return tee_rom_u + zone_from_longitude(longitude(location))
-
-# see lines 2822-2825 in calendrica-3.0.cl
-def universal_from_local(tee_ell, location):
-    """Return universal time from local tee_ell at location, location."""
-    return tee_ell - zone_from_longitude(longitude(location))
-
-# see lines 2827-2832 in calendrica-3.0.cl
-def standard_from_local(tee_ell, location):
-    """Return standard time from local tee_ell at locale, location."""
-    return standard_from_universal(universal_from_local(tee_ell, location),
-                                   location)
-
-# see lines 2834-2839 in calendrica-3.0.cl
-def local_from_standard(tee_rom_s, location):
-    """Return local time from standard tee_rom_s at location, location."""
-    return local_from_universal(universal_from_standard(tee_rom_s, location),
-                                location)
-
-# see lines 2841-2844 in calendrica-3.0.cl
-def apparent_from_local(tee, location):
-    """Return sundial time at local time tee at location, location."""
-    return tee + equation_of_time(universal_from_local(tee, location))
-
-# see lines 2846-2849 in calendrica-3.0.cl
-def local_from_apparent(tee, location):
-    """Return local time from sundial time tee at location, location."""
-    return tee - equation_of_time(universal_from_local(tee, location))
-
-# see lines 2851-2857 in calendrica-3.0.cl
-def midnight(date, location):
-    """Return standard time on fixed date, date, of true (apparent)
-    midnight at location, location."""
-    return standard_from_local(local_from_apparent(date, location), location)
-
-# see lines 2859-2864 in calendrica-3.0.cl
-def midday(date, location):
-    """Return standard time on fixed date, date, of midday
-    at location, location."""
-    return standard_from_local(local_from_apparent(date + days_from_hours(mpf(12)),
-                                                   location), location)
-
 # see lines 2866-2870 in calendrica-3.0.cl
 def julian_centuries(tee):
     """Return Julian centuries since 2000 at moment tee."""
@@ -2558,154 +2074,224 @@ def right_ascension(tee, beta, lam):
         (tangent_degrees(beta) * sin_degrees(varepsilon)),
         cosine_degrees(lam))
 
-# see lines 2905-2920 in calendrica-3.0.cl
-def sine_offset(tee, location, alpha):
-    """Return sine of angle between position of sun at 
-    local time tee and when its depression is alpha at location, location.
-    Out of range when it does not occur."""
-    phi = latitude(location)
-    tee_prime = universal_from_local(tee, location)
-    delta = declination(tee_prime, deg(mpf(0)), solar_longitude(tee_prime))
-    return ((tangent_degrees(phi) * tangent_degrees(delta)) +
-            (sin_degrees(alpha) / (cosine_degrees(delta) *
-                                   cosine_degrees(phi))))
+class Location(object):
 
-# see lines 2922-2947 in calendrica-3.0.cl
-def approx_moment_of_depression(tee, location, alpha, early):
-    """Return the moment in local time near tee when depression angle
-    of sun is alpha (negative if above horizon) at location;
-    early is true when MORNING event is sought and false for EVENING.
-    Returns BOGUS if depression angle is not reached."""
-    ttry  = sine_offset(tee, location, alpha)
-    date = fixed_from_moment(tee)
+    MORNING = True
+    EVENING = False
+    
+    def __init__(self, latitude, longitude, elevation, zone):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.elevation = elevation
+        self.zone = zone
 
-    if (alpha >= 0):
-        if early:
-            alt = date
+    def direction(self, focus):
+        """Return the angle (clockwise from North) to face focus when
+        standing in location, location.  Subject to errors near focus and
+        its antipode."""
+        phi = self.latitude
+        phi_prime = focus.latitude
+        psi = self.longitude
+        psi_prime = focus.longitude
+        y = sin_degrees(psi_prime - psi)
+        x = ((cosine_degrees(phi) * tangent_degrees(phi_prime)) -
+             (sin_degrees(phi)    * cosine_degrees(psi - psi_prime)))
+        if ((x == y == 0) or (phi_prime == deg(90))):
+            return deg(0)
+        elif (phi_prime == deg(-90)):
+            return deg(180)
         else:
-            alt = date + 1
-    else:
-        alt = date + days_from_hours(12)
+            return arctan_degrees(y, x)
 
-    if (abs(ttry) > 1):
-        value = sine_offset(alt, location, alpha)
-    else:
-        value = ttry
+    def standard_from_universal(self, tee_rom_u):
+        """Return standard time from tee_rom_u in universal time at location."""
+        return tee_rom_u + self.zone
+    
+    # see lines 2805-2809 in calendrica-3.0.cl
+    def universal_from_standard(self, tee_rom_s):
+        """Return universal time from tee_rom_s in standard time at location."""
+        return tee_rom_s - self.zone
 
+    @classmethod
+    def zone_from_longitude(cls, phi):
+        """Return the difference between UT and local mean time at longitude
+        'phi' as a fraction of a day."""
+        return phi / deg(360)
+    
+    def local_from_universal(self, tee_rom_u):
+        """Return local time from universal tee_rom_u at location, location."""
+        return tee_rom_u + self.zone_from_longitude(self.longitude)
+    
+    def universal_from_local(self, tee_ell):
+        """Return universal time from local tee_ell at location, location."""
+        return tee_ell - self.zone_from_longitude(self.longitude)
+    
+    def standard_from_local(self, tee_ell):
+        """Return standard time from local tee_ell at locale, location."""
+        return self.standard_from_universal(self.universal_from_local(tee_ell))
+    
+    def local_from_standard(self, tee_rom_s):
+        """Return local time from standard tee_rom_s at location, location."""
+        return self.local_from_universal(self.universal_from_standard(tee_rom_s))
+    
+    # see lines 2841-2844 in calendrica-3.0.cl
+    def apparent_from_local(self, tee):
+        """Return sundial time at local time tee at location, location."""
+        return tee + equation_of_time(self.universal_from_local(tee))
+    
+    # see lines 2846-2849 in calendrica-3.0.cl
+    def local_from_apparent(self, tee):
+        """Return local time from sundial time tee at location, location."""
+        return tee - equation_of_time(self.universal_from_local(tee))
+    
+    # see lines 2851-2857 in calendrica-3.0.cl
+    def midnight(self, date):
+        """Return standard time on fixed date, date, of true (apparent)
+        midnight at location, location."""
+        return self.standard_from_local(self.local_from_apparent(date))
+    
+    # see lines 2859-2864 in calendrica-3.0.cl
+    def midday(self, date):
+        """Return standard time on fixed date, date, of midday
+        at location, location."""
+        return self.standard_from_local(self.local_from_apparent(date + days_from_hours(mpf(12))))
 
-    if (abs(value) <= 1):
-        temp = -1 if early else 1
-        temp *= mod(days_from_hours(12) + arcsin_degrees(value) / deg(360), 1) - days_from_hours(6)
-        temp += date + days_from_hours(12)
-        return local_from_apparent(temp, location)
-    else:
-        return BOGUS
+    def sine_offset(self, tee, alpha):
+        """Return sine of angle between position of sun at 
+        local time tee and when its depression is alpha at location, location.
+        Out of range when it does not occur."""
+        phi = self.latitude
+        tee_prime = self.universal_from_local(tee)
+        delta = declination(tee_prime, deg(mpf(0)), solar_longitude(tee_prime))
+        return ((tangent_degrees(phi) * tangent_degrees(delta)) +
+                (sin_degrees(alpha) / (cosine_degrees(delta) *
+                                       cosine_degrees(phi))))
 
-# see lines 2949-2963 in calendrica-3.0.cl
-def moment_of_depression(approx, location, alpha, early):
-    """Return the moment in local time near approx when depression
-    angle of sun is alpha (negative if above horizon) at location;
-    early is true when MORNING event is sought, and false for EVENING.
-    Returns BOGUS if depression angle is not reached."""
-    tee = approx_moment_of_depression(approx, location, alpha, early)
-    if (tee == BOGUS):
-        return BOGUS
-    else:
-        if (abs(approx - tee) < days_from_seconds(30)):
+    # see lines 2922-2947 in calendrica-3.0.cl
+    def approx_moment_of_depression(self, tee, alpha, early):
+        """Return the moment in local time near tee when depression angle
+        of sun is alpha (negative if above horizon) at location;
+        early is true when MORNING event is sought and false for EVENING.
+        Returns BOGUS if depression angle is not reached."""
+        ttry  = self.sine_offset(tee, alpha)
+        date = fixed_from_moment(tee)
+    
+        if (alpha >= 0):
+            if early:
+                alt = date
+            else:
+                alt = date + 1
+        else:
+            alt = date + days_from_hours(12)
+    
+        if (abs(ttry) > 1):
+            value = self.sine_offset(alt, alpha)
+        else:
+            value = ttry
+    
+    
+        if (abs(value) <= 1):
+            temp = -1 if early else 1
+            temp *= mod(days_from_hours(12) + arcsin_degrees(value) / deg(360), 1) - days_from_hours(6)
+            temp += date + days_from_hours(12)
+            return self.local_from_apparent(temp)
+        else:
+            raise ValueError("Depression angle not reached")
+
+    def moment_of_depression(self, approx, alpha, early):
+        """Return the moment in local time near approx when depression
+        angle of sun is alpha (negative if above horizon) at location;
+        early is true when MORNING event is sought, and false for EVENING.
+        Returns BOGUS if depression angle is not reached."""
+        tee = self.approx_moment_of_depression(approx, alpha, early)
+        if abs(approx - tee) < days_from_seconds(30):
             return tee
         else:
-            return moment_of_depression(tee, location, alpha, early)
+            return self.moment_of_depression(tee, alpha, early)
 
-# see lines 2965-2968 in calendrica-3.0.cl
-MORNING = True
+    def dawn(self, date, alpha):
+        """Return standard time in morning on fixed date date at
+        location location when depression angle of sun is alpha.
+        Returns BOGUS if there is no dawn on date date."""
+        result = self.moment_of_depression(date + days_from_hours(6), alpha, self.MORNING)
+        return self.standard_from_local(result)
+    
+    def dusk(self, date, alpha):
+        """Return standard time in evening on fixed date 'date' at
+        location 'location' when depression angle of sun is alpha.
+        Return BOGUS if there is no dusk on date 'date'."""
+        result = self.moment_of_depression(date + days_from_hours(18), alpha, self.EVENING)
+        return self.standard_from_local(result)
 
-# see lines 2970-2973 in calendrica-3.0.cl
-EVENING = False
+    def refraction(self, tee):
+        """Return refraction angle at location 'location' and time 'tee'."""
+        from math import sqrt
+        h     = max(mt(0), self.elevation)
+        cap_R = mt(6.372E6)
+        dip   = arccos_degrees(cap_R / (cap_R + h))
+        return angle(0, 50, 0) + dip + secs(19) * sqrt(h)
 
-# see lines 2975-2984 in calendrica-3.0.cl
-def dawn(date, location, alpha):
-    """Return standard time in morning on fixed date date at
-    location location when depression angle of sun is alpha.
-    Returns BOGUS if there is no dawn on date date."""
-    result = moment_of_depression(date + days_from_hours(6), location, alpha, MORNING)
-    if (result == BOGUS):
-        return BOGUS
-    else:
-        return standard_from_local(result, location)
+    def sunrise(self, date):
+        """Return Standard time of sunrise on fixed date 'date' at
+        location 'location'."""
+        alpha = self.refraction(date)
+        return self.dawn(date, alpha)
+    
+    def sunset(self, date):
+        """Return standard time of sunset on fixed date 'date' at
+        location 'location'."""
+        alpha = self.refraction(date)
+        return self.dusk(date, alpha)
+    
+    def observed_lunar_altitude(self, tee):
+        """Return the observed altitude of moon at moment, tee, and
+        at location, location,  taking refraction into account."""
+        return self.topocentric_lunar_altitude(tee) + self.refraction(tee)
+    
+    def moonrise(self, date):
+        """Return the standard time of moonrise on fixed, date,
+        and location, location."""
+        t = self.universal_from_standard(date)
+        waning = (lunar_phase(t) > deg(180))
+        alt = self.observed_lunar_altitude(t)
+        offset = alt / 360
+        if (waning and (offset > 0)):
+            approx =  t + 1 - offset
+        elif waning:
+            approx = t - offset
+        else:
+            approx = t + (1 / 2) + offset
+        rise = binary_search(approx - days_from_hours(3),
+                             approx + days_from_hours(3),
+                             lambda u, l: ((u - l) < days_from_hours(1 / 60)),
+                             lambda x: self.observed_lunar_altitude(x) > deg(0))
+        return self.standard_from_universal(rise) if (rise < (t + 1)) else BOGUS
 
-# see lines 2986-2995 in calendrica-3.0.cl
-def dusk(date, location, alpha):
-    """Return standard time in evening on fixed date 'date' at
-    location 'location' when depression angle of sun is alpha.
-    Return BOGUS if there is no dusk on date 'date'."""
-    result = moment_of_depression(date + days_from_hours(18), location, alpha, EVENING)
-    if (result == BOGUS):
-        return BOGUS
-    else:
-        return standard_from_local(result, location)
+    def daytime_temporal_hour(self, date):
+        """Return the length of daytime temporal hour on fixed date, date
+        at location, location.
+        Return BOGUS if there no sunrise or sunset on date, date."""
+        return (self.sunset(date) - self.sunrise(date)) / 12
+    
+    def nighttime_temporal_hour(self, date):
+        """Return the length of nighttime temporal hour on fixed date, date,
+        at location, location.
+        Return BOGUS if there no sunrise or sunset on date, date."""
+        return (self.sunrise(date + 1) - self.sunset(date)) / 12
 
-# see lines 440-451 in calendrica-3.0.errata.cl
-def refraction(tee, location):
-    """Return refraction angle at location 'location' and time 'tee'."""
-    from math import sqrt
-    h     = max(mt(0), elevation(location))
-    cap_R = mt(6.372E6)
-    dip   = arccos_degrees(cap_R / (cap_R + h))
-    return angle(0, 50, 0) + dip + secs(19) * sqrt(h)
-
-# see lines 2997-3007 in calendrica-3.0.cl
-def sunrise(date, location):
-    """Return Standard time of sunrise on fixed date 'date' at
-    location 'location'."""
-    alpha = refraction(date, location)
-    return dawn(date, location, alpha)
-
-# see lines 3009-3019 in calendrica-3.0.cl
-def sunset(date, location):
-    """Return standard time of sunset on fixed date 'date' at
-    location 'location'."""
-    alpha = refraction(date, location)
-    return dusk(date, location, alpha)
-
-# see lines 453-458 in calendrica-3.0.errata.cl
-def observed_lunar_altitude(tee, location):
-    """Return the observed altitude of moon at moment, tee, and
-    at location, location,  taking refraction into account."""
-    return topocentric_lunar_altitude(tee, location) + refraction(tee, location)
-
-# see lines 460-467 in calendrica-3.0.errata.cl
-def moonrise(date, location):
-    """Return the standard time of moonrise on fixed, date,
-    and location, location."""
-    t = universal_from_standard(date, location)
-    waning = (lunar_phase(t) > deg(180))
-    alt = observed_lunar_altitude(t, location)
-    offset = alt / 360
-    if (waning and (offset > 0)):
-        approx =  t + 1 - offset
-    elif waning:
-        approx = t - offset
-    else:
-        approx = t + (1 / 2) + offset
-    rise = binary_search(approx - days_from_hours(3),
-                         approx + days_from_hours(3),
-                         lambda u, l: ((u - l) < days_from_hours(1 / 60)),
-                         lambda x: observed_lunar_altitude(x, location) > deg(0))
-    return standard_from_universal(rise, location) if (rise < (t + 1)) else BOGUS
-
+MECCA = Location(angle(21, 25, 24), angle(39, 49, 24), mt(298), days_from_hours(3))
+JERUSALEM = Location(31.8, 35.2, mt(800), days_from_hours(2))
+BRUXELLES = Location(angle(4, 21, 17), angle(50, 50, 47), mt(800), days_from_hours(1))
+URBANA = Location(40.1, -88.2, mt(225), days_from_hours(-6))
+GREENWHICH = Location(51.4777815, 0, mt(46.9), days_from_hours(0))
 
 def urbana_sunset(gdate):
     """Return sunset time in Urbana, Ill, on Gregorian date 'gdate'."""
-    return time_from_moment(sunset(fixed_from_gregorian(gdate), URBANA))
+    return time_from_moment(URBANA.sunset(gdate.to_fixed()))
 
-# from eq 13.38 pag. 191
 def urbana_winter(g_year):
     """Return standard time of the winter solstice in Urbana, Illinois, USA."""
-    return standard_from_universal(
-               solar_longitude_after(
-                   WINTER, 
-                   fixed_from_gregorian(gregorian_date(g_year, JANUARY, 1))),
-               URBANA)
+    return URBANA.standard_from_universal(solar_longitude_after(WINTER, GregorianDate(g_year, JulianMonth.January, 1).to_fixed()))
 
 ###########################################
 # astronomical lunar calendars algorithms #
@@ -2714,34 +2300,13 @@ def urbana_winter(g_year):
 def jewish_dusk(date, location):
     """Return standard time of Jewish dusk on fixed date, date,
     at location, location, (as per Vilna Gaon)."""
-    return dusk(date, location, angle(4, 40, 0))
+    return location.dusk(date, angle(4, 40, 0))
 
 # see lines 3027-3031 in calendrica-3.0.cl
 def jewish_sabbath_ends(date, location):
     """Return standard time of end of Jewish sabbath on fixed date, date,
     at location, location, (as per Berthold Cohn)."""
-    return dusk(date, location, angle(7, 5, 0)) 
-
-# see lines 3033-3042 in calendrica-3.0.cl
-def daytime_temporal_hour(date, location):
-    """Return the length of daytime temporal hour on fixed date, date
-    at location, location.
-    Return BOGUS if there no sunrise or sunset on date, date."""
-    if (sunrise(date, location) == BOGUS) or (sunset(date, location) == BOGUS):
-        return BOGUS
-    else:
-        return (sunset(date, location) - sunrise(date, location)) / 12
-
-# see lines 3044-3053 in calendrica-3.0.cl
-def nighttime_temporal_hour(date, location):
-    """Return the length of nighttime temporal hour on fixed date, date,
-    at location, location.
-    Return BOGUS if there no sunrise or sunset on date, date."""
-    if ((sunrise(date + 1, location) == BOGUS) or
-        (sunset(date, location) == BOGUS)):
-        return BOGUS
-    else:
-        return (sunrise(date + 1, location) - sunset(date, location)) / 12
+    return location.dusk(date, angle(7, 5, 0)) 
 
 # see lines 3055-3073 in calendrica-3.0.cl
 def standard_from_sundial(tee, location):
@@ -2750,21 +2315,21 @@ def standard_from_sundial(tee, location):
     date = fixed_from_moment(tee)
     hour = 24 * mod(tee, 1)
     if (6 <= hour <= 18):
-        h = daytime_temporal_hour(date, location)
+        h = location.daytime_temporal_hour(date)
     elif (hour < 6):
-        h = nighttime_temporal_hour(date - 1, location)
+        h = location.nighttime_temporal_hour(date - 1)
     else:
-        h = nighttime_temporal_hour(date, location)
+        h = location.nighttime_temporal_hour(date)
 
     # return
     if (h == BOGUS):
         return BOGUS
     elif (6 <= hour <= 18):
-        return sunrise(date, location) + ((hour - 6) * h)
+        return location.sunrise(date) + ((hour - 6) * h)
     elif (hour < 6):
-        return sunset(date - 1, location) + ((hour + 6) * h)
+        return location.sunset(date - 1) + ((hour + 6) * h)
     else:
-        return sunset(date, location) + ((hour - 18) * h)
+        return location.sunset(date) + ((hour - 18) * h)
 
 
 # see lines 3075-3079 in calendrica-3.0.cl
@@ -2777,8 +2342,8 @@ def jewish_morning_end(date, location):
 def asr(date, location):
     """Return standard time of asr on fixed date, date,
     at location, location."""
-    noon = universal_from_standard(midday(date, location), location)
-    phi = latitude(location)
+    noon = location.universal_from_standard(location.midday(date))
+    phi = location.latitude
     delta = declination(noon, deg(0), solar_longitude(noon))
     altitude = delta - phi - deg(90)
     h = arctan_degrees(tangent_degrees(altitude),
@@ -2786,7 +2351,7 @@ def asr(date, location):
     # For Shafii use instead:
     # tangent_degrees(altitude) + 1)
 
-    return dusk(date, location, -h)
+    return location.dusk(date, -h)
 
 ############ here start the code inspired by Meeus
 # see lines 3101-3104 in calendrica-3.0.cl
@@ -2801,7 +2366,7 @@ def dynamical_from_universal(tee):
 
 
 # see lines 3111-3114 in calendrica-3.0.cl
-J2000 = days_from_hours(mpf(12)) + gregorian_new_year(2000)
+J2000 = days_from_hours(mpf(12)) + GregorianDate.new_year(2000)
 
 # see lines 3116-3126 in calendrica-3.0.cl
 def sidereal_from_moment(tee):
@@ -2829,9 +2394,9 @@ def ephemeris_correction(tee):
     """Return Dynamical Time minus Universal Time (in days) for
     moment, tee.  Adapted from "Astronomical Algorithms"
     by Jean Meeus, Willmann_Bell, Inc., 1991."""
-    year = gregorian_year_from_fixed(ifloor(tee))
-    c = gregorian_date_difference(gregorian_date(1900, JANUARY, 1),
-                                  gregorian_date(year, JULY, 1)) / mpf(36525)
+    year = GregorianDate.to_year(ifloor(tee))
+    c = GregorianDate.date_difference(GregorianDate(1900, JulianMonth.January, 1),
+                                  GregorianDate(year, JulianMonth.July, 1)) / mpf(36525)
     if (1988 <= year <= 2019):
         return 1/86400 * (year - 1933)
     elif (1900 <= year <= 1987):
@@ -2853,8 +2418,8 @@ def ephemeris_correction(tee):
                      [mpf(196.58333), mpf(-4.0675), mpf(0.0219167)]))
     else:
         x = (days_from_hours(mpf(12)) +
-             gregorian_date_difference(gregorian_date(1810, JANUARY, 1),
-                                       gregorian_date(year, JANUARY, 1)))
+             GregorianDate.date_difference(GregorianDate(1810, JulianMonth.January, 1),
+                                       GregorianDate(year, JulianMonth.January, 1)))
         return 1/86400 * (((x * x) / mpf(41048480)) - 15)
 
 # see lines 3178-3207 in calendrica-3.0.cl
@@ -2864,11 +2429,8 @@ def equation_of_time(tee):
     Willmann_Bell, Inc., 1991."""
     c = julian_centuries(tee)
     lamb = poly(c, deg([mpf(280.46645), mpf(36000.76983), mpf(0.0003032)]))
-    anomaly = poly(c, deg([mpf(357.52910), mpf(35999.05030),
-                               mpf(-0.0001559), mpf(-0.00000048)]))
-    eccentricity = poly(c, [mpf(0.016708617),
-                            mpf(-0.000042037),
-                            mpf(-0.0000001236)])
+    anomaly = poly(c, deg([mpf(357.52910), mpf(35999.05030), mpf(-0.0001559), mpf(-0.00000048)]))
+    eccentricity = poly(c, [mpf(0.016708617), mpf(-0.000042037), mpf(-0.0000001236)])
     varepsilon = obliquity(tee)
     y = pow(tangent_degrees(varepsilon / 2), 2)
     equation = ((1/2 / pi) *
@@ -3416,8 +2978,8 @@ def lunar_altitude(tee, location):
     at location, location, as a small positive/negative angle in degrees,
     ignoring parallax and refraction.  Adapted from 'Astronomical
     Algorithms' by Jean Meeus, Willmann_Bell, Inc., 1998."""
-    phi = latitude(location)
-    psi = longitude(location)
+    phi = location.latitude
+    psi = location.longitude
     lamb = lunar_longitude(tee)
     beta = lunar_latitude(tee)
     alpha = right_ascension(tee, beta, lamb)
@@ -3524,8 +3086,7 @@ def visible_crescent(date, location):
     """Return S. K. Shaukat's criterion for likely
     visibility of crescent moon on eve of date 'date',
     at location 'location'."""
-    tee = universal_from_standard(dusk(date - 1, location, deg(mpf(4.5))),
-                                  location)
+    tee = location.universal_from_standard(location.dusk(date - 1, deg(mpf(4.5))))
     phase = lunar_phase(tee)
     altitude = lunar_altitude(tee, location)
     arc_of_light = arccos_degrees(cosine_degrees(lunar_latitude(tee)) *
@@ -3549,7 +3110,7 @@ def phasis_on_or_before(date, location):
 # see lines 220-221 in calendrica-3.0.errata.cl
 # Sample location for Observational Islamic calendar
 # (Cairo, Egypt).
-ISLAMIC_LOCATION = location(deg(mpf(30.1)), deg(mpf(31.3)), mt(200), days_from_hours(2))
+ISLAMIC_LOCATION = Location(deg(mpf(30.1)), deg(mpf(31.3)), mt(200), days_from_hours(2))
 
 # see lines 5868-5882 in calendrica-3.0.cl
 def fixed_from_observational_islamic(i_date):
@@ -3557,7 +3118,7 @@ def fixed_from_observational_islamic(i_date):
     month    = standard_month(i_date)
     day      = standard_day(i_date)
     year     = standard_year(i_date)
-    midmonth = ISLAMIC_EPOCH + ifloor((((year - 1) * 12) + month - 0.5) *
+    midmonth = IslamicDate.EPOCH + ifloor((((year - 1) * 12) + month - 0.5) *
                                       MEAN_SYNODIC_MONTH)
     return (phasis_on_or_before(midmonth, ISLAMIC_LOCATION) +
             day - 1)
@@ -3567,31 +3128,27 @@ def observational_islamic_from_fixed(date):
     """Return Observational Islamic date (year month day)
     corresponding to fixed date, date."""
     crescent = phasis_on_or_before(date, ISLAMIC_LOCATION)
-    elapsed_months = iround((crescent - ISLAMIC_EPOCH) / MEAN_SYNODIC_MONTH)
+    elapsed_months = iround((crescent - IslamicDate.EPOCH) / MEAN_SYNODIC_MONTH)
     year = quotient(elapsed_months, 12) + 1
     month = mod(elapsed_months, 12) + 1
     day = (date - crescent) + 1
-    return islamic_date(year, month, day)
+    return IslamicDate(year, month, day)
 
 # see lines 5898-5901 in calendrica-3.0.cl
-JERUSALEM = location(deg(mpf(31.8)), deg(mpf(35.2)), mt(800), days_from_hours(2))
+JERUSALEM = Location(deg(mpf(31.8)), deg(mpf(35.2)), mt(800), days_from_hours(2))
 
 # see lines 5903-5918 in calendrica-3.0.cl
 def astronomical_easter(g_year):
     """Return date of (proposed) astronomical Easter in Gregorian
     year, g_year."""
-    jan1 = gregorian_new_year(g_year)
+    jan1 = GregorianDate.new_year(g_year)
     equinox = solar_longitude_after(SPRING, jan1)
-    paschal_moon = ifloor(apparent_from_local(
-                             local_from_universal(
-                                lunar_phase_at_or_after(FULL, equinox),
-                                JERUSALEM),
-                             JERUSALEM))
+    paschal_moon = ifloor(JERUSALEM.apparent_from_local(JERUSALEM.local_from_universal(lunar_phase_at_or_after(FULL, equinox))))
     # Return the Sunday following the Paschal moon.
-    return kday_after(SUNDAY, paschal_moon)
+    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
 # see lines 5920-5923 in calendrica-3.0.cl
-JAFFA = location(angle(32, 1, 60), angle(34, 45, 0), mt(0), days_from_hours(2))
+JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), mt(0), days_from_hours(2))
 
 # see lines 5925-5938 in calendrica-3.0.cl
 def phasis_on_or_after(date, location):
@@ -3608,11 +3165,10 @@ def phasis_on_or_after(date, location):
 def observational_hebrew_new_year(g_year):
     """Return fixed date of Observational (classical)
     Nisan 1 occurring in Gregorian year, g_year."""
-    jan1 = gregorian_new_year(g_year)
+    jan1 = GregorianDate.new_year(g_year)
     equinox = solar_longitude_after(SPRING, jan1)
-    sset = universal_from_standard(sunset(ifloor(equinox), JAFFA), JAFFA)
-    return phasis_on_or_after(ifloor(equinox) - (14 if (equinox < sset) else 13),
-                              JAFFA)
+    sset = JAFFA.universal_from_standard(JAFFA.sunset(ifloor(equinox)))
+    return phasis_on_or_after(ifloor(equinox) - (14 if (equinox < sset) else 13), JAFFA)
 
 # see lines 5957-5973 in calendrica-3.0.cl
 def fixed_from_observational_hebrew(h_date):
@@ -3620,9 +3176,9 @@ def fixed_from_observational_hebrew(h_date):
     month = standard_month(h_date)
     day = standard_day(h_date)
     year = standard_year(h_date)
-    year1 = (year - 1) if (month >= TISHRI) else year
-    start = fixed_from_hebrew(hebrew_date(year1, NISAN, 1))
-    g_year = gregorian_year_from_fixed(start + 60)
+    year1 = (year - 1) if (month >= HebrewMonth.TISHRI) else year
+    start = HebrewDate(year1, HebrewMonth.NISAN, 1).to_fixed()
+    g_year = GregorianDate.to_year(start + 60)
     new_year = observational_hebrew_new_year(g_year)
     midmonth = new_year + iround(29.5 * (month - 1)) + 15
     return phasis_on_or_before(midmonth, JAFFA) + day - 1
@@ -3632,14 +3188,14 @@ def observational_hebrew_from_fixed(date):
     """Return Observational Hebrew date (year month day)
     corresponding to fixed date, date."""
     crescent = phasis_on_or_before(date, JAFFA)
-    g_year = gregorian_year_from_fixed(date)
+    g_year = GregorianDate.to_year(date)
     ny = observational_hebrew_new_year(g_year)
     new_year = observational_hebrew_new_year(g_year - 1) if (date < ny) else ny
     month = iround((crescent - new_year) / 29.5) + 1
-    year = (standard_year(hebrew_from_fixed(new_year)) +
-            (1 if (month >= TISHRI) else 0))
+    year = (HebrewDate.from_fixed(new_year).year +
+            (1 if (month >= HebrewMonth.TISHRI) else 0))
     day = date - crescent + 1
-    return hebrew_date(year, month, day)
+    return HebrewDate(year, month, day)
 
 # see lines 5993-5997 in calendrica-3.0.cl
 def classical_passover_eve(g_year):
@@ -3651,387 +3207,308 @@ def classical_passover_eve(g_year):
 ###############################
 # persian calendar algorithms #
 ###############################
-# see lines 3844-3847 in calendrica-3.0.cl
-def persian_date(year, month, day):
-    """Return a Persian date data structure."""
-    return [year, month, day]
 
-# see lines 3849-3852 in calendrica-3.0.cl
-PERSIAN_EPOCH = fixed_from_julian(julian_date(ce(622), MARCH, 19))
+class PersianDate(object):
 
-# see lines 3854-3858 in calendrica-3.0.cl
-TEHRAN = location(deg(mpf(35.68)),
-                  deg(mpf(51.42)),
-                  mt(1100),
-                  days_from_hours(3 + 1/2))
+    EPOCH = JulianDate(JulianDate.ce(622), JulianMonth.March, 19).to_fixed()
+    TEHRAN = Location(deg(mpf(35.68)), deg(mpf(51.42)), mt(1100), days_from_hours(3 + 1/2))
+    
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
-# see lines 3860-3865 in calendrica-3.0.cl
-def midday_in_tehran(date):
-    """Return  Universal time of midday on fixed date, date, in Tehran."""
-    return universal_from_standard(midday(date, TEHRAN), TEHRAN)
+    @classmethod        
+    def midday_in_tehran(cls, date):
+        """Return  Universal time of midday on fixed date, date, in Tehran."""
+        return cls.TEHRAN.universal_from_standard(cls.TEHRAN.midday(date))
+    
+    @classmethod        
+    def new_year_on_or_before(cls, date):
+        """Return the fixed date of Astronomical Persian New Year on or
+        before fixed date, date."""
+        approx = estimate_prior_solar_longitude(SPRING, cls.midday_in_tehran(date))
+        return next(ifloor(approx) - 1, lambda day: (solar_longitude(cls.midday_in_tehran(day)) <= (SPRING + deg(2))))
 
-# see lines 3867-3876 in calendrica-3.0.cl
-def persian_new_year_on_or_before(date):
-    """Return the fixed date of Astronomical Persian New Year on or
-    before fixed date, date."""
-    approx = estimate_prior_solar_longitude(SPRING, midday_in_tehran(date))
-    return next(ifloor(approx) - 1,
-                lambda day: (solar_longitude(midday_in_tehran(day)) <=
-                             (SPRING + deg(2))))
+    def to_fixed(self):
+        """Return fixed date of Astronomical Persian date, p_date."""
+        temp = (self.year - 1) if (0 < self.year) else self.year
+        new_year = self.new_year_on_or_before(self.EPOCH + 180 + ifloor(MEAN_TROPICAL_YEAR * temp))
+        return ((new_year - 1) +
+                ((31 * (self.month - 1)) if (self.month <= 7) else (30 * (self.month - 1) + 6)) +
+                self.day)
 
-# see lines 3880-3898 in calendrica-3.0.cl
-def fixed_from_persian(p_date):
-    """Return fixed date of Astronomical Persian date, p_date."""
-    month = standard_month(p_date)
-    day = standard_day(p_date)
-    year = standard_year(p_date)
-    temp = (year - 1) if (0 < year) else year
-    new_year = persian_new_year_on_or_before(PERSIAN_EPOCH + 180 +
-                                             ifloor(MEAN_TROPICAL_YEAR * temp))
-    return ((new_year - 1) +
-            ((31 * (month - 1)) if (month <= 7) else (30 * (month - 1) + 6)) +
-            day)
+    @classmethod        
+    def from_fixed(cls, date):
+        """Return Astronomical Persian date (year month day)
+        corresponding to fixed date, date."""
+        new_year = cls.new_year_on_or_before(date)
+        y = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR) + 1
+        year = y if (0 < y) else (y - 1)
+        day_of_year = date - PersianDate(year, 1, 1).to_fixed() + 1
+        month = (ceiling(day_of_year / 31)
+                 if (day_of_year <= 186)
+                 else ceiling((day_of_year - 6) / 30))
+        day = date - (PersianDate(year, month, 1).to_fixed() - 1)
+        return PersianDate(year, month, day)
+    
+    @classmethod
+    def is_arithmetic_leap_year(cls, p_year):
+        """Return True if p_year is a leap year on the Persian calendar."""
+        y    = (p_year - 474) if (0 < p_year) else (p_year - 473)
+        year =  mod(y, 2820) + 474
+        return  mod((year + 38) * 31, 128) < 31
 
-# see lines 3898-3918 in calendrica-3.0.cl
-def persian_from_fixed(date):
-    """Return Astronomical Persian date (year month day)
-    corresponding to fixed date, date."""
-    new_year = persian_new_year_on_or_before(date)
-    y = iround((new_year - PERSIAN_EPOCH) / MEAN_TROPICAL_YEAR) + 1
-    year = y if (0 < y) else (y - 1)
-    day_of_year = date - fixed_from_persian(persian_date(year, 1, 1)) + 1
-    month = (ceiling(day_of_year / 31)
-             if (day_of_year <= 186)
-             else ceiling((day_of_year - 6) / 30))
-    day = date - (fixed_from_persian(persian_date(year, month, 1)) - 1)
-    return persian_date(year, month, day)
+    # see lines 3934-3958 in calendrica-3.0.cl
+    def to_fixed_arithmetic(self):
+        """Return fixed date equivalent to Persian date p_date."""
+        y      = (self.year - 474) if (0 < self.year) else (self.year - 473)
+        year   = mod(y, 2820) + 474
+        temp   = (31 * (self.month - 1)) if (self.month <= 7) else ((30 * (self.month - 1)) + 6)
+    
+        return ((self.EPOCH - 1) 
+                + (1029983 * quotient(y, 2820))
+                + (365 * (year - 1))
+                + quotient((31 * year) - 5, 128)
+                + temp
+                + self.day)
 
-# see lines 3920-3932 in calendrica-3.0.cl
-def is_arithmetic_persian_leap_year(p_year):
-    """Return True if p_year is a leap year on the Persian calendar."""
-    y    = (p_year - 474) if (0 < p_year) else (p_year - 473)
-    year =  mod(y, 2820) + 474
-    return  mod((year + 38) * 31, 128) < 31
+    @classmethod
+    def to_arithmetic_year(cls, date):
+        """Return Persian year corresponding to the fixed date, date."""
+        d0    = date - PersianDate(475, 1, 1).to_fixed_arithmetic()
+        n2820 = quotient(d0, 1029983)
+        d1    = mod(d0, 1029983)
+        y2820 = 2820 if (d1 == 1029982) else (quotient((128 * d1) + 46878, 46751))
+        year  = 474 + (2820 * n2820) + y2820
+    
+        return year if (0 < year) else (year - 1)
 
-# see lines 3934-3958 in calendrica-3.0.cl
-def fixed_from_arithmetic_persian(p_date):
-    """Return fixed date equivalent to Persian date p_date."""
-    day    = standard_day(p_date)
-    month  = standard_month(p_date)
-    p_year = standard_year(p_date)
-    y      = (p_year - 474) if (0 < p_year) else (p_year - 473)
-    year   = mod(y, 2820) + 474
-    temp   = (31 * (month - 1)) if (month <= 7) else ((30 * (month - 1)) + 6)
-
-    return ((PERSIAN_EPOCH - 1) 
-            + (1029983 * quotient(y, 2820))
-            + (365 * (year - 1))
-            + quotient((31 * year) - 5, 128)
-            + temp
-            + day)
-
-# see lines 3960-3986 in calendrica-3.0.cl
-def arithmetic_persian_year_from_fixed(date):
-    """Return Persian year corresponding to the fixed date, date."""
-    d0    = date - fixed_from_arithmetic_persian(persian_date(475, 1, 1))
-    n2820 = quotient(d0, 1029983)
-    d1    = mod(d0, 1029983)
-    y2820 = 2820 if (d1 == 1029982) else (quotient((128 * d1) + 46878, 46751))
-    year  = 474 + (2820 * n2820) + y2820
-
-    return year if (0 < year) else (year - 1)
-
-# see lines 3988-4001 in calendrica-3.0.cl
-def arithmetic_persian_from_fixed(date):
-    """Return the Persian date corresponding to fixed date, date."""
-    year        = arithmetic_persian_year_from_fixed(date)
-    day_of_year = 1 + date - fixed_from_arithmetic_persian(
-                                  persian_date(year, 1, 1))
-    month       = (ceiling(day_of_year / 31)
-                   if (day_of_year <= 186)
-                   else ceiling((day_of_year - 6) / 30))
-    day = date - fixed_from_arithmetic_persian(persian_date(year, month, 1)) +1
-    return persian_date(year, month, day)
-
-# see lines 4003-4015 in calendrica-3.0.cl
-def naw_ruz(g_year):
-    """Return the Fixed date of Persian New Year (Naw-Ruz) in Gregorian
-       year g_year."""
-    persian_year = g_year - gregorian_year_from_fixed(PERSIAN_EPOCH) + 1
-    y = (persian_year - 1) if (persian_year <= 0) else persian_year
-    return fixed_from_persian(persian_date(y, 1, 1))
+    @classmethod
+    def from_arithmetic_fixed(cls, date):
+        """Return the Persian date corresponding to fixed date, date."""
+        year        = cls.to_arithmetic_year(date)
+        day_of_year = 1 + date - PersianDate(year, 1, 1).to_fixed_arithmetic()
+        month       = (ceiling(day_of_year / 31)
+                       if (day_of_year <= 186)
+                       else ceiling((day_of_year - 6) / 30))
+        day = date - PersianDate(year, month, 1).to_fixed_arithmetic() +1
+        return PersianDate(year, month, day)
+    
+    @classmethod
+    def naw_ruz(cls, g_year):
+        """Return the Fixed date of Persian New Year (Naw-Ruz) in Gregorian
+           year g_year."""
+        persian_year = g_year - GregorianDate.to_year(cls.EPOCH) + 1
+        y = (persian_year - 1) if (persian_year <= 0) else persian_year
+        return PersianDate(y, 1, 1).to_fixed()
 
 #############################
 # bahai calendar algorithms #
 #############################
-# see lines 4020-4023 in calendrica-3.0.cl
-def bahai_date(major, cycle, year, month, day):
-    """Return a Bahai date data structure."""
-    return [major, cycle, year, month, day]
+class BahaiDate(object):
 
-# see lines 4025-4027 in calendrica-3.0.cl
-def bahai_major(date):
-    """Return 'major' element of a  Bahai date, date."""
-    return date[0]
-
-# see lines 4029-4031 in calendrica-3.0.cl
-def bahai_cycle(date):
-    """Return 'cycle' element of a  Bahai date, date."""
-    return date[1]
-
-# see lines 4033-4035 in calendrica-3.0.cl
-def bahai_year(date):
-    """Return 'year' element of a  Bahai date, date."""
-    return date[2]
-
-# see lines 4037-4039 in calendrica-3.0.cl
-def bahai_month(date):
-    """Return 'month' element of a  Bahai date, date."""
-    return date[3]
-
-# see lines 4041-4043 in calendrica-3.0.cl
-def bahai_day(date):
-    """Return 'day' element of a  Bahai date, date."""
-    return date[4]
-
-# see lines 4045-4048 in calendrica-3.0.cl
-BAHAI_EPOCH = fixed_from_gregorian(gregorian_date(1844, MARCH, 21))
-
-# see lines 4050-4053 in calendrica-3.0.cl
-AYYAM_I_HA = 0
-
-# see lines 4055-4076 in calendrica-3.0.cl
-def fixed_from_bahai(b_date):
-    """Return fixed date equivalent to the Bahai date, b_date."""
-    major = bahai_major(b_date)
-    cycle = bahai_cycle(b_date)
-    year  = bahai_year(b_date)
-    month = bahai_month(b_date)
-    day   = bahai_day(b_date)
-    g_year = (361 * (major - 1) +
-              19 * (cycle - 1)  +
-              year - 1 +
-              gregorian_year_from_fixed(BAHAI_EPOCH))
-    if (month == AYYAM_I_HA):
-        elapsed_months = 342
-    elif (month == 19):
-        if (is_gregorian_leap_year(g_year + 1)):
-            elapsed_months = 347
+    EPOCH = GregorianDate(1844, JulianMonth.March, 21).to_fixed()
+    AYYAM_I_HA = 0
+    
+    def __init(self, major, cycle, year, month, day):
+        self.major = major
+        self.cycle = cycle
+        self.year = year
+        self.month = month
+        self.day = day
+        
+    def to_fixed(self):
+        """Return fixed date equivalent to the Bahai date, b_date."""
+        g_year = (361 * (self.major - 1) +
+                  19 * (self.cycle - 1)  +
+                  self.year - 1 +
+                  GregorianDate.to_year(self.EPOCH))
+        if (self.month == self.AYYAM_I_HA):
+            elapsed_months = 342
+        elif (self.month == 19):
+            if (GregorianDate.is_leap_year(g_year + 1)):
+                elapsed_months = 347
+            else:
+                elapsed_months = 346
         else:
-            elapsed_months = 346
-    else:
-        elapsed_months = 19 * (month - 1)
+            elapsed_months = 19 * (self.month - 1)
+    
+        return GregorianDate(g_year, JulianMonth.March, 20).to_fixed() + elapsed_months + self.day
 
-    return (fixed_from_gregorian(gregorian_date(g_year, MARCH, 20)) +
-            elapsed_months +
-            day)
+    @classmethod
+    def from_fixed(cls, date):
+        """Return Bahai date [major, cycle, year, month, day] corresponding
+        to fixed date, date."""
+        g_year = GregorianDate.to_year(date)
+        start  = GregorianDate.to_year(cls.EPOCH)
+        years  = (g_year - start -
+                  (1 if (date <= 
+                      GregorianDate(g_year, JulianMonth.March, 20).to_fixed()) else 0))
+        major  = 1 + quotient(years, 361)
+        cycle  = 1 + quotient(mod(years, 361), 19)
+        year   = 1 + mod(years, 19)
+        days   = date - BahaiDate(major, cycle, year, 1, 1).to_fixed()
 
-# see lines 4078-4111 in calendrica-3.0.cl
-def bahai_from_fixed(date):
-    """Return Bahai date [major, cycle, year, month, day] corresponding
-    to fixed date, date."""
-    g_year = gregorian_year_from_fixed(date)
-    start  = gregorian_year_from_fixed(BAHAI_EPOCH)
-    years  = (g_year - start -
-              (1 if (date <= fixed_from_gregorian(
-                  gregorian_date(g_year, MARCH, 20))) else 0))
-    major  = 1 + quotient(years, 361)
-    cycle  = 1 + quotient(mod(years, 361), 19)
-    year   = 1 + mod(years, 19)
-    days   = date - fixed_from_bahai(bahai_date(major, cycle, year, 1, 1))
+        # month
+        if (date >= BahaiDate(major, cycle, year, 19, 1).to_fixed()):
+            month = 19
+        elif (date >= BahaiDate(major, cycle, year, cls.AYYAM_I_HA, 1).to_fixed()):
+            month = cls.AYYAM_I_HA
+        else:
+            month = 1 + quotient(days, 19)
+    
+        day = date + 1 - BahaiDate(major, cycle, year, month, 1).to_fixed()
+    
+        return BahaiDate(major, cycle, year, month, day)
 
-    # month
-    if (date >= fixed_from_bahai(bahai_date(major, cycle, year, 19, 1))):
-        month = 19
-    elif (date >= fixed_from_bahai(
-        bahai_date(major, cycle, year, AYYAM_I_HA, 1))):
-        month = AYYAM_I_HA
-    else:
-        month = 1 + quotient(days, 19)
+    @classmethod    
+    def new_year(cls, g_year):
+        """Return fixed date of Bahai New Year in Gregorian year, g_year."""
+        return GregorianDate(g_year, JulianMonth.March, 21).to_fixed()
+    
+    HAIFA = Location(deg(mpf(32.82)), deg(35), mt(0), days_from_hours(2))
 
-    day = date + 1 - fixed_from_bahai(bahai_date(major, cycle, year, month, 1))
+    @classmethod    
+    def sunset_in_haifa(cls, date):
+        """Return universal time of sunset of evening
+        before fixed date, date in Haifa."""
+        return cls.HAIFA.universal_from_standard(cls.HAIFA.sunset(date))
 
-    return bahai_date(major, cycle, year, month, day)
+    @classmethod    
+    def future_new_year_on_or_before(cls, date):
+        """Return fixed date of Future Bahai New Year on or
+        before fixed date, date."""
+        approx = estimate_prior_solar_longitude(SPRING, cls.sunset_in_haifa(date))
+        return next(ifloor(approx) - 1,
+                    lambda day: (solar_longitude(cls.sunset_in_haifa(day)) <=
+                                 (SPRING + deg(2))))
 
-
-# see lines 4113-4117 in calendrica-3.0.cl
-def bahai_new_year(g_year):
-    """Return fixed date of Bahai New Year in Gregorian year, g_year."""
-    return fixed_from_gregorian(gregorian_date(g_year, MARCH, 21))
-
-# see lines 4119-4122 in calendrica-3.0.cl
-HAIFA = location(deg(mpf(32.82)), deg(35), mt(0), days_from_hours(2))
-
-
-# see lines 4124-4130 in calendrica-3.0.cl
-def sunset_in_haifa(date):
-    """Return universal time of sunset of evening
-    before fixed date, date in Haifa."""
-    return universal_from_standard(sunset(date, HAIFA), HAIFA)
-
-# see lines 4132-4141 in calendrica-3.0.cl
-def future_new_year_on_or_before(date):
-    """Return fixed date of Future Bahai New Year on or
-    before fixed date, date."""
-    approx = estimate_prior_solar_longitude(SPRING, sunset_in_haifa(date))
-    return next(ifloor(approx) - 1,
-                lambda day: (solar_longitude(sunset_in_haifa(day)) <=
-                             (SPRING + deg(2))))
-
-# see lines 4143-4173 in calendrica-3.0.cl
-def to_future_fixed(b_date):
-    """Return fixed date of Bahai date, b_date."""
-    major = bahai_major(b_date)
-    cycle = bahai_cycle(b_date)
-    year  = bahai_year(b_date)
-    month = bahai_month(b_date)
-    day   = bahai_day(b_date)
-    years = (361 * (major - 1)) + (19 * (cycle - 1)) + year
-    if (month == 19):
-        return (future_new_year_on_or_before(
-            BAHAI_EPOCH +
-            ifloor(MEAN_TROPICAL_YEAR * (years + 1/2))) -
-                20 + day)
-    elif (month == AYYAM_I_HA):
-        return (future_new_year_on_or_before(
-            BAHAI_EPOCH +
-            ifloor(MEAN_TROPICAL_YEAR * (years - 1/2))) +
-                341 + day)
-    else:
-        return (future_new_year_on_or_before(
-            BAHAI_EPOCH +
-            ifloor(MEAN_TROPICAL_YEAR * (years - 1/2))) +
-                (19 * (month - 1)) + day - 1)
-
-
-# see lines 4175-4201 in calendrica-3.0.cl
-def from_future_fixed(date):
-    """Return Future Bahai date corresponding to fixed date, date."""
-    new_year = future_new_year_on_or_before(date)
-    years    = iround((new_year - BAHAI_EPOCH) / MEAN_TROPICAL_YEAR)
-    major    = 1 + quotient(years, 361)
-    cycle    = 1 + quotient(mod(years, 361), 19)
-    year     = 1 + mod(years, 19)
-    days     = date - new_year
-
-    if (date >= to_future_fixed(bahai_date(major, cycle, year, 19, 1))):
-        month = 19
-    elif(date >= to_future_fixed(
-        bahai_date(major, cycle, year, AYYAM_I_HA, 1))):
-        month = AYYAM_I_HA
-    else:
-        month = 1 + quotient(days, 19)
-
-    day  = date + 1 - to_future_fixed(
-        bahai_date(major, cycle, year, month, 1))
-
-    return bahai_date(major, cycle, year, month, day)
-
-
-# see lines 4203-4213 in calendrica-3.0.cl
-def feast_of_ridvan(g_year):
-    """Return Fixed date of Feast of Ridvan in Gregorian year year, g_year."""
-    years = g_year - gregorian_year_from_fixed(BAHAI_EPOCH)
-    major = 1 + quotient(years, 361)
-    cycle = 1 + quotient(mod(years, 361), 19)
-    year = 1 + mod(years, 19)
-    return to_future_fixed(bahai_date(major, cycle, year, 2, 13))
+    def to_future_fixed(self):
+        """Return fixed date of Bahai date, b_date."""
+        years = (361 * (self.major - 1)) + (19 * (self.cycle - 1)) + self.year
+        if (self.month == 19):
+            return (self.future_new_year_on_or_before(
+                self.EPOCH +
+                ifloor(MEAN_TROPICAL_YEAR * (years + 1/2))) -
+                    20 + self.day)
+        elif (self.month == self.AYYAM_I_HA):
+            return (self.future_new_year_on_or_before(
+                self.EPOCH +
+                ifloor(MEAN_TROPICAL_YEAR * (years - 1/2))) +
+                    341 + self.day)
+        else:
+            return (self.future_new_year_on_or_before(
+                self.EPOCH +
+                ifloor(MEAN_TROPICAL_YEAR * (years - 1/2))) +
+                    (19 * (self.month - 1)) + self.day - 1)
+    
+    @classmethod
+    def from_future_fixed(cls, date):
+        """Return Future Bahai date corresponding to fixed date, date."""
+        new_year = cls.future_new_year_on_or_before(date)
+        years    = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR)
+        major    = 1 + quotient(years, 361)
+        cycle    = 1 + quotient(mod(years, 361), 19)
+        year     = 1 + mod(years, 19)
+        days     = date - new_year
+    
+        if (date >= BahaiDate(major, cycle, year, 19, 1)).to_future_fixed():
+            month = 19
+        elif(date >= BahaiDate(major, cycle, year, cls.AYYAM_I_HA, 1).to_future_fixed()):
+            month = cls.AYYAM_I_HA
+        else:
+            month = 1 + quotient(days, 19)
+    
+        day  = date + 1 - BahaiDate(major, cycle, year, month, 1).to_future_fixed()
+    
+        return BahaiDate(major, cycle, year, month, day)
+    
+    @classmethod    
+    def feast_of_ridvan(cls, g_year):
+        """Return Fixed date of Feast of Ridvan in Gregorian year year, g_year."""
+        years = g_year - GregorianDate.to_year(cls.EPOCH)
+        major = 1 + quotient(years, 361)
+        cycle = 1 + quotient(mod(years, 361), 19)
+        year = 1 + mod(years, 19)
+        return BahaiDate(major, cycle, year, 2, 13).to_future_fixed()
 
 
 ############################################
 # french revolutionary calendar algorithms #
 ############################################
-# see lines 4218-4220 in calendrica-3.0.cl
-def french_date(year, month, day):
-    """Return a French Revolutionary date data structure."""
-    return [year, month, day]
+class FrenchDate(object):
 
-# see lines 4222-4226 in calendrica-3.0.cl
-#"""Fixed date of start of the French Revolutionary calendar."""
-FRENCH_EPOCH = fixed_from_gregorian(gregorian_date(1792, SEPTEMBER, 22))
+    #"""Fixed date of start of the French Revolutionary calendar."""
+    FRENCH_EPOCH = GregorianDate(1792, JulianMonth.September, 22).to_fixed()
+    PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), mt(27), days_from_hours(1))
+    
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
 
-# see lines 4228-4233 in calendrica-3.0.cl
-PARIS = location(angle(48, 50, 11),
-                  angle(2, 20, 15),
-                  mt(27),
-                  days_from_hours(1))
+    @classmethod        
+    def midnight_in_paris(cls, date):
+        """Return Universal Time of true midnight at the end of
+           fixed date, date."""
+        # tricky bug: I was using midDAY!!! So French Revolutionary was failing...
+        return cls.PARIS.universal_from_standard(cls.PARIS.midnight(date + 1))
 
-# see lines 4235-4241 in calendrica-3.0.cl
-def midnight_in_paris(date):
-    """Return Universal Time of true midnight at the end of
-       fixed date, date."""
-    # tricky bug: I was using midDAY!!! So French Revolutionary was failing...
-    return universal_from_standard(midnight(date + 1, PARIS), PARIS)
+    @classmethod    
+    def new_year_on_or_before(cls, date):
+        """Return fixed date of French Revolutionary New Year on or
+           before fixed date, date."""
+        approx = estimate_prior_solar_longitude(AUTUMN, cls.midnight_in_paris(date))
+        return next(ifloor(approx) - 1, lambda day: AUTUMN <= solar_longitude(cls.midnight_in_paris(day)))
 
+    def to_fixed(self):
+        """Return fixed date of French Revolutionary date, f_date"""
+        new_year = self.new_year_on_or_before(
+                      ifloor(self.EPOCH + 
+                            180 + 
+                            MEAN_TROPICAL_YEAR * (self.year - 1)))
+        return new_year - 1 + 30 * (self.month - 1) + self.day
 
+    @classmethod
+    def from_fixed(cls, date):
+        """Return French Revolutionary date of fixed date, date."""
+        new_year = cls.new_year_on_or_before(date)
+        year  = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR) + 1
+        month = quotient(date - new_year, 30) + 1
+        day   = mod(date - new_year, 30) + 1
+        return FrenchDate(year, month, day)
+    
+    @classmethod
+    def is_arithmetic_leap_year(cls, f_year):
+        """Return True if year, f_year, is a leap year on the French
+           Revolutionary calendar."""
+        return ((mod(f_year, 4) == 0)                        and 
+                (mod(f_year, 400) not in [100, 200, 300])  and
+                (mod(f_year, 4000) != 0))
+    
+    def to_fixed_arithmetic(self):
+        """Return fixed date of French Revolutionary date, f_date."""
+        return (self.EPOCH - 1         +
+                365 * (self.year - 1)         +
+                quotient(self.year - 1, 4)    -
+                quotient(self.year - 1, 100)  +
+                quotient(self.year - 1, 400)  -
+                quotient(self.year - 1, 4000) +
+                30 * (self.month - 1)         +
+                self.day)
 
-# see lines 4243-4252 in calendrica-3.0.cl
-def french_new_year_on_or_before(date):
-    """Return fixed date of French Revolutionary New Year on or
-       before fixed date, date."""
-    approx = estimate_prior_solar_longitude(AUTUMN, midnight_in_paris(date))
-    return next(ifloor(approx) - 1, 
-                lambda day: AUTUMN <= solar_longitude(midnight_in_paris(day)))
-
-# see lines 4254-4267 in calendrica-3.0.cl
-def fixed_from_french(f_date):
-    """Return fixed date of French Revolutionary date, f_date"""
-    month = standard_month(f_date)
-    day   = standard_day(f_date)
-    year  = standard_year(f_date)
-    new_year = french_new_year_on_or_before(
-                  ifloor(FRENCH_EPOCH + 
-                        180 + 
-                        MEAN_TROPICAL_YEAR * (year - 1)))
-    return new_year - 1 + 30 * (month - 1) + day
-
-# see lines 4269-4278 in calendrica-3.0.cl
-def french_from_fixed(date):
-    """Return French Revolutionary date of fixed date, date."""
-    new_year = french_new_year_on_or_before(date)
-    year  = iround((new_year - FRENCH_EPOCH) / MEAN_TROPICAL_YEAR) + 1
-    month = quotient(date - new_year, 30) + 1
-    day   = mod(date - new_year, 30) + 1
-    return french_date(year, month, day)
-
-# see lines 4280-4286 in calendrica-3.0.cl
-def is_arithmetic_french_leap_year(f_year):
-    """Return True if year, f_year, is a leap year on the French
-       Revolutionary calendar."""
-    return ((mod(f_year, 4) == 0)                        and 
-            (mod(f_year, 400) not in [100, 200, 300])  and
-            (mod(f_year, 4000) != 0))
-
-# see lines 4288-4302 in calendrica-3.0.cl
-def fixed_from_arithmetic_french(f_date):
-    """Return fixed date of French Revolutionary date, f_date."""
-    month = standard_month(f_date)
-    day   = standard_day(f_date)
-    year  = standard_year(f_date)
-
-    return (FRENCH_EPOCH - 1         +
-            365 * (year - 1)         +
-            quotient(year - 1, 4)    -
-            quotient(year - 1, 100)  +
-            quotient(year - 1, 400)  -
-            quotient(year - 1, 4000) +
-            30 * (month - 1)         +
-            day)
-
-# see lines 4304-4325 in calendrica-3.0.cl
-def arithmetic_french_from_fixed(date):
-    """Return French Revolutionary date [year, month, day] of fixed
-       date, date."""
-    approx = quotient(date - FRENCH_EPOCH + 2, 1460969/4000) + 1
-    year   = ((approx - 1)
-              if (date <
-                  fixed_from_arithmetic_french(french_date(approx, 1, 1)))
-              else approx)
-    month  = 1 + quotient(date - 
-                     fixed_from_arithmetic_french(french_date(year, 1, 1)), 30)
-    day    = date - fixed_from_arithmetic_french(
-                           french_date(year, month, 1)) + 1
-    return french_date(year, month, day)
+    @classmethod    
+    def from_fixed_arithmetic(cls, date):
+        """Return French Revolutionary date [year, month, day] of fixed
+           date, date."""
+        approx = quotient(date - cls.EPOCH + 2, 1460969/4000) + 1
+        year   = ((approx - 1)
+                  if (date < FrenchDate(approx, 1, 1).to_fixed_arithmetic())
+                  else approx)
+        month  = 1 + quotient(date - FrenchDate(year, 1, 1).to_fixed_arithmetic(), 30)
+        day    = date -  FrenchDate(year, month, 1).to_fixed_arithmetic() + 1
+        return FrenchDate(year, month, day)
 
 
 ###############################
@@ -4070,12 +3547,12 @@ def chinese_day(date):
 # see lines 4355-4363 in calendrica-3.0.cl
 def chinese_location(tee):
     """Return location of Beijing; time zone varies with time, tee."""
-    year = gregorian_year_from_fixed(ifloor(tee))
+    year = GregorianDate.to_year(ifloor(tee))
     if (year < 1929):
-        return location(angle(39, 55, 0), angle(116, 25, 0),
+        return Location(angle(39, 55, 0), angle(116, 25, 0),
                         mt(43.5), days_from_hours(1397/180))
     else:
-        return location(angle(39, 55, 0), angle(116, 25, 0),
+        return Location(angle(39, 55, 0), angle(116, 25, 0),
                         mt(43.5), days_from_hours(8))
 
 
@@ -4084,17 +3561,14 @@ def chinese_solar_longitude_on_or_after(lam, date):
     """Return moment (Beijing time) of the first date on or after
     fixed date, date, (Beijing time) when the solar longitude
     will be 'lam' degrees."""
-    tee = solar_longitude_after(lam,
-                                universal_from_standard(date,
-                                                        chinese_location(date)))
-    return standard_from_universal(tee, chinese_location(tee))
+    tee = solar_longitude_after(lam, chinese_location(date).universal_from_standard(date))
+    return chinese_location(tee).standard_from_universal(tee)
 
 # see lines 4379-4387 in calendrica-3.0.cl
 def current_major_solar_term(date):
     """Return last Chinese major solar term (zhongqi) before
     fixed date, date."""
-    s = solar_longitude(universal_from_standard(date,
-                                                chinese_location(date)))
+    s = solar_longitude(chinese_location(date).universal_from_standard(date))
     return amod(2 + quotient(int(s), deg(30)), 12)
 
 # see lines 4389-4397 in calendrica-3.0.cl
@@ -4110,8 +3584,7 @@ def major_solar_term_on_or_after(date):
 # see lines 4399-4407 in calendrica-3.0.cl
 def current_minor_solar_term(date):
     """Return last Chinese minor solar term (jieqi) before date, date."""
-    s = solar_longitude(universal_from_standard(date,
-                                                chinese_location(date)))
+    s = solar_longitude(chinese_location(date).universal_from_standard(date))
     return amod(3 + quotient(s - deg(15), deg(30)), 12)
 
 # see lines 4409-4422 in calendrica-3.0.cl
@@ -4127,17 +3600,17 @@ def minor_solar_term_on_or_after(date):
 def chinese_new_moon_before(date):
     """Return fixed date (Beijing) of first new moon before fixed date, date."""
     tee = new_moon_before(midnight_in_china(date))
-    return ifloor(standard_from_universal(tee, chinese_location(tee)))
+    return ifloor(chinese_location(tee).standard_from_universal(tee))
 
 # see lines 4435-4444 in calendrica-3.0.cl
 def chinese_new_moon_on_or_after(date):
     """Return fixed date (Beijing) of first new moon on or after
     fixed date, date."""
     tee = new_moon_at_or_after(midnight_in_china(date))
-    return ifloor(standard_from_universal(tee, chinese_location(tee)))
+    return ifloor(chinese_location(tee).standard_from_universal(tee))
 
 # see lines 4446-4449 in calendrica-3.0.cl
-CHINESE_EPOCH = fixed_from_gregorian(gregorian_date(-2636, FEBRUARY, 15))
+CHINESE_EPOCH = GregorianDate(-2636, JulianMonth.February, 15).to_fixed()
 
 # see lines 4451-4457 in calendrica-3.0.cl
 def is_chinese_no_major_solar_term(date):
@@ -4150,7 +3623,7 @@ def is_chinese_no_major_solar_term(date):
 def midnight_in_china(date):
     """Return Universal time of (clock) midnight at start of fixed
     date, date, in China."""
-    return universal_from_standard(date, chinese_location(date))
+    return chinese_location(date).universal_from_standard(date)
 
 # see lines 4465-4474 in calendrica-3.0.cl
 def chinese_winter_solstice_on_or_before(date):
@@ -4192,8 +3665,7 @@ def chinese_new_year_on_or_before(date):
 # see lines 4513-4518 in calendrica-3.0.cl
 def chinese_new_year(g_year):
     """Return fixed date of Chinese New Year in Gregorian year, g_year."""
-    return chinese_new_year_on_or_before(
-        fixed_from_gregorian(gregorian_date(g_year, JULY, 1)))
+    return chinese_new_year_on_or_before(GregorianDate(g_year, JulianMonth.July, 1).to_fixed())
 
 # see lines 4520-4565 in calendrica-3.0.cl
 def chinese_from_fixed(date):
@@ -4333,7 +3805,7 @@ def chinese_day_name_on_or_before(name, date):
 def dragon_festival(g_year):
     """Return fixed date of the Dragon Festival occurring in Gregorian
     year g_year."""
-    elapsed_years = 1 + g_year - gregorian_year_from_fixed(CHINESE_EPOCH)
+    elapsed_years = 1 + g_year - GregorianDate.to_year(CHINESE_EPOCH)
     cycle = 1 + quotient(elapsed_years - 1, 60)
     year = amod(elapsed_years, 60)
     return fixed_from_chinese(chinese_date(cycle, year, 5, False, 5))
@@ -4343,7 +3815,7 @@ def dragon_festival(g_year):
 def qing_ming(g_year):
     """Return fixed date of Qingming occurring in Gregorian year, g_year."""
     return ifloor(minor_solar_term_on_or_after(
-        fixed_from_gregorian(gregorian_date(g_year, MARCH, 30))))
+        GregorianDate(g_year, JulianMonth.March, 30).to_fixed()))
 
 
 # see lines 4710-4722 in calendrica-3.0.cl
@@ -4386,14 +3858,14 @@ def chinese_year_marriage_augury(cycle, year):
 # see lines 4760-4769 in calendrica-3.0.cl
 def japanese_location(tee):
     """Return the location for Japanese calendar; varies with moment, tee."""
-    year = gregorian_year_from_fixed(ifloor(tee))
+    year = GregorianDate.to_year(ifloor(tee))
     if (year < 1888):
         # Tokyo (139 deg 46 min east) local time
-        loc = location(deg(mpf(35.7)), angle(139, 46, 0),
+        loc = Location(deg(mpf(35.7)), angle(139, 46, 0),
                            mt(24), days_from_hours(9 + 143/450))
     else:
         # Longitude 135 time zone
-        loc = location(deg(35), deg(135), mt(0), days_from_hours(9))
+        loc = Location(deg(35), deg(135), mt(0), days_from_hours(9))
     return loc
 
 
@@ -4401,18 +3873,18 @@ def japanese_location(tee):
 def korean_location(tee):
     """Return the location for Korean calendar; varies with moment, tee."""
     # Seoul city hall at a varying time zone.
-    if (tee < fixed_from_gregorian(gregorian_date(1908, APRIL, 1))):
+    if (tee < GregorianDate(1908, JulianMonth.April, 1).to_fixed()):
         #local mean time for longitude 126 deg 58 min
         z = 3809/450
-    elif (tee < fixed_from_gregorian(gregorian_date(1912, JANUARY, 1))):
+    elif (tee < GregorianDate(1912, JulianMonth.January, 1).to_fixed()):
         z = 8.5
-    elif (tee < fixed_from_gregorian(gregorian_date(1954, MARCH, 21))):
+    elif (tee < GregorianDate(1954, JulianMonth.March, 21).to_fixed()):
         z = 9
-    elif (tee < fixed_from_gregorian(gregorian_date(1961, AUGUST, 10))):
+    elif (tee < GregorianDate(1961, JulianMonth.August, 10).to_fixed()):
         z = 8.5
     else:
         z = 9
-    return location(angle(37, 34, 0), angle(126, 58, 0),
+    return Location(angle(37, 34, 0), angle(126, 58, 0),
                     mt(0), days_from_hours(z))
 
 
@@ -4426,11 +3898,11 @@ def korean_year(cycle, year):
 def vietnamese_location(tee):
     """Return the location for Vietnamese calendar is Hanoi;
     varies with moment, tee. Time zone has changed over the years."""
-    if (tee < gregorian_new_year(1968)):
+    if (tee < GregorianDate.new_year(1968)):
         z = 8
     else:
         z =7
-        return location(angle(21, 2, 0), angle(105, 51, 0),
+        return Location(angle(21, 2, 0), angle(105, 51, 0),
                         mt(12), days_from_hours(z))
 
 
@@ -4504,7 +3976,7 @@ def hindu_arcsin(amp):
 HINDU_SIDEREAL_YEAR = 365 + 279457/1080000
 
 # see lines 4880-4883 in calendrica-3.0.cl
-HINDU_CREATION = HINDU_EPOCH - 1955880000 * HINDU_SIDEREAL_YEAR
+HINDU_CREATION = OldHindu.EPOCH - 1955880000 * HINDU_SIDEREAL_YEAR
 
 # see lines 4885-4889 in calendrica-3.0.cl
 def hindu_mean_position(tee, period):
@@ -4609,7 +4081,7 @@ def hindu_lunar_day_at_or_after(k, tee):
 # see lines 4990-4996 in calendrica-3.0.cl
 def hindu_calendar_year(tee):
     """Return the solar year at given moment, tee."""
-    return iround(((tee - HINDU_EPOCH) / HINDU_SIDEREAL_YEAR) -
+    return iround(((tee - OldHindu.EPOCH) / HINDU_SIDEREAL_YEAR) -
                  (hindu_solar_longitude(tee) / deg(360)))
 
 
@@ -4626,7 +4098,7 @@ def hindu_solar_from_fixed(date):
     begin    = next(approx,
                     lambda i: (hindu_zodiac(hindu_sunrise(i + 1)) ==  month))
     day      = date - begin + 1
-    return hindu_solar_date(year, month, day)
+    return OldHinduSolarDate(year, month, day)
 
 
 # see lines 5022-5039 in calendrica-3.0.cl
@@ -4637,7 +4109,7 @@ def fixed_from_hindu_solar(s_date):
     day   = standard_day(s_date)
     year  = standard_year(s_date)
     begin = ifloor((year + HINDU_SOLAR_ERA + ((month - 1)/12)) *
-                  HINDU_SIDEREAL_YEAR + HINDU_EPOCH)
+                  HINDU_SIDEREAL_YEAR + OldHindu.EPOCH)
     return (day - 1 +
             next(begin - 3,
                  lambda d: (hindu_zodiac(hindu_sunrise(d + 1)) == month)))
@@ -4671,7 +4143,7 @@ def fixed_from_hindu_lunar(l_date):
     leap_month = hindu_lunar_leap_month(l_date)
     day        = hindu_lunar_day(l_date)
     leap_day   = hindu_lunar_leap_day(l_date)
-    approx = HINDU_EPOCH + (HINDU_SIDEREAL_YEAR *
+    approx = OldHindu.EPOCH + (HINDU_SIDEREAL_YEAR *
                             (year + HINDU_LUNAR_ERA + ((month - 1) / 12)))
     s = ifloor(approx - ((1/deg(360)) *
                         HINDU_SIDEREAL_YEAR *
@@ -4716,7 +4188,7 @@ def hindu_ascensional_difference(date, location):
     """Return the difference between right and oblique ascension
     of sun on date, date, at loacel, location."""
     sin_delta = (1397/3438) * hindu_sine(hindu_tropical_longitude(date))
-    phi = latitude(location)
+    phi = location.latitude
     diurnal_radius = hindu_sine(deg(90) + hindu_arcsin(sin_delta))
     tan_phi = hindu_sine(phi) / hindu_sine(deg(90) + phi)
     earth_sine = sin_delta * tan_phi
@@ -4728,7 +4200,7 @@ def hindu_tropical_longitude(date):
     """Return the Hindu tropical longitude on fixed date, date.
     Assumes precession with maximum of 27 degrees
     and period of 7200 sidereal years (= 1577917828/600 days)."""
-    days = ifloor(date - HINDU_EPOCH)
+    days = ifloor(date - OldHindu.EPOCH)
     precession = (deg(27) -
                   (abs(deg(54) -
                        mod(deg(27) +
@@ -4765,7 +4237,7 @@ def hindu_solar_sidereal_difference(date):
 
 
 # see lines 5207-5211 in calendrica-3.0.cl
-UJJAIN = location(angle(23, 9, 0), angle(75, 46, 6),
+UJJAIN = Location(angle(23, 9, 0), angle(75, 46, 6),
                   mt(0), days_from_hours(5 + 461/9000))
 
 # see lines 5213-5216 in calendrica-3.0.cl
@@ -4776,7 +4248,7 @@ HINDU_LOCATION = UJJAIN
 def hindu_sunrise(date):
     """Return the sunrise at hindu_location on date, date."""
     return (date + days_from_hours(6) + 
-            ((longitude(UJJAIN) - longitude(HINDU_LOCATION)) / deg(360)) -
+            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / deg(360)) -
             hindu_equation_of_time(date) +
             ((1577917828/1582237828 / deg(360)) *
              (hindu_ascensional_difference(date, HINDU_LOCATION) +
@@ -4833,7 +4305,7 @@ def fixed_from_hindu_fullmoon(l_date):
 def alt_hindu_sunrise(date):
     """Return the astronomical sunrise at Hindu location on date, date,
     per Lahiri, rounded to nearest minute, as a rational number."""
-    rise = dawn(date, HINDU_LOCATION, angle(0, 47, 0))
+    rise = HINDU_LOCATION.dawn(date, angle(0, 47, 0))
     return 1/24 * 1/60 * iround(rise * 24 * 60)
 
 
@@ -4841,7 +4313,7 @@ def alt_hindu_sunrise(date):
 def hindu_sunset(date):
     """Return sunset at HINDU_LOCATION on date, date."""
     return (date + days_from_hours(18) + 
-            ((longitude(UJJAIN) - longitude(HINDU_LOCATION)) / deg(360)) -
+            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / deg(360)) -
             hindu_equation_of_time(date) +
             (((1577917828/1582237828) / deg(360)) *
              (- hindu_ascensional_difference(date, HINDU_LOCATION) +
@@ -4878,7 +4350,7 @@ def ayanamsha(tee):
 # see lines 5320-5323 in calendrica-3.0.cl
 def astro_hindu_sunset(date):
     """Return the geometrical sunset at Hindu location on date, date."""
-    return dusk(date, HINDU_LOCATION, deg(0))
+    return HINDU_LOCATION.dusk(date, deg(0))
 
 
 # see lines 5325-5329 in calendrica-3.0.cl
@@ -4891,7 +4363,7 @@ def sidereal_zodiac(tee):
 # see lines 5331-5337 in calendrica-3.0.cl
 def astro_hindu_calendar_year(tee):
     """Return the astronomical Hindu solar year KY at given moment, tee."""
-    return iround(((tee - HINDU_EPOCH) / MEAN_SIDEREAL_YEAR) -
+    return iround(((tee - OldHindu.EPOCH) / MEAN_SIDEREAL_YEAR) -
                  (sidereal_solar_longitude(tee) / deg(360)))
 
 
@@ -4907,7 +4379,7 @@ def astro_hindu_solar_from_fixed(date):
     begin    = next(approx,
                     lambda i: (sidereal_zodiac(astro_hindu_sunset(i)) == month))
     day      = date - begin + 1
-    return hindu_solar_date(year, month, day)
+    return OldHinduSolarDate(year, month, day)
 
 
 # see lines 5359-5375 in calendrica-3.0.cl
@@ -4917,7 +4389,7 @@ def fixed_from_astro_hindu_solar(s_date):
     month = standard_month(s_date)
     day   = standard_day(s_date)
     year  = standard_year(s_date)
-    approx = (HINDU_EPOCH - 3 +
+    approx = (OldHindu.EPOCH - 3 +
               ifloor(((year + HINDU_SOLAR_ERA) + ((month - 1) / 12)) *
                     MEAN_SIDEREAL_YEAR))
     begin = next(approx,
@@ -4959,7 +4431,7 @@ def fixed_from_astro_hindu_lunar(l_date):
     leap_month = hindu_lunar_leap_month(l_date)
     day   = hindu_lunar_day(l_date)
     leap_day = hindu_lunar_leap_day(l_date)
-    approx = (HINDU_EPOCH +
+    approx = (OldHindu.EPOCH +
               MEAN_SIDEREAL_YEAR *
               (year + HINDU_LUNAR_ERA + ((month - 1) / 12)))
     s = ifloor(approx -
@@ -5009,19 +4481,18 @@ def hindu_solar_longitude_at_or_after(lam, tee):
 def mesha_samkranti(g_year):
     """Return the fixed moment of Mesha samkranti (Vernal equinox)
     in Gregorian year, g_year."""
-    jan1 = gregorian_new_year(g_year)
+    jan1 = GregorianDate.new_year(g_year)
     return hindu_solar_longitude_at_or_after(deg(0), jan1)
 
 
 # see lines 5489-5493 in calendrica-3.0.cl
-SIDEREAL_START = precession(universal_from_local(mesha_samkranti(ce(285)),
-                                                 HINDU_LOCATION))
+SIDEREAL_START = precession(HINDU_LOCATION.universal_from_local(mesha_samkranti(JulianDate.ce(285))))
 
 # see lines 5495-5513 in calendrica-3.0.cl
 def hindu_lunar_new_year(g_year):
     """Return the fixed date of Hindu lunisolar new year in
     Gregorian year, g_year."""
-    jan1     = gregorian_new_year(g_year)
+    jan1     = GregorianDate.new_year(g_year)
     mina     = hindu_solar_longitude_at_or_after(deg(330), jan1)
     new_moon = hindu_lunar_day_at_or_after(1, mina)
     h_day    = ifloor(new_moon)
@@ -5089,10 +4560,10 @@ def hindu_lunar_holiday(l_month, l_day, g_year):
     """Return the list of fixed dates of occurrences of Hindu lunar
     month, month, day, day, in Gregorian year, g_year."""
     l_year = hindu_lunar_year(
-        hindu_lunar_from_fixed(gregorian_new_year(g_year)))
+        hindu_lunar_from_fixed(GregorianDate.new_year(g_year)))
     date1  = hindu_date_occur(l_month, l_day, l_year)
     date2  = hindu_date_occur(l_month, l_day, l_year + 1)
-    return list_range([date1, date2], gregorian_year_range(g_year))
+    return list_range([date1, date2], GregorianDate.year_range(g_year))
 
 
 # see lines 5582-5586 in calendrica-3.0.cl
@@ -5124,11 +4595,11 @@ def hindu_lunar_event(l_month, tithi, tee, g_year):
     prior to sundial time, tee, in Hindu lunar month, l_month,
     in Gregorian year, g_year."""
     l_year = hindu_lunar_year(
-        hindu_lunar_from_fixed(gregorian_new_year(g_year)))
+        hindu_lunar_from_fixed(GregorianDate.new_year(g_year)))
     date1  = hindu_tithi_occur(l_month, tithi, tee, l_year)
     date2  = hindu_tithi_occur(l_month, tithi, tee, l_year + 1)
     return list_range([date1, date2],
-                      gregorian_year_range(g_year))
+                      GregorianDate.year_range(g_year))
 
 
 # see lines 5622-5626 in calendrica-3.0.cl
@@ -5168,20 +4639,20 @@ def yoga(date):
 def sacred_wednesdays(g_year):
     """Return the list of Wednesdays in Gregorian year, g_year,
     that are day 8 of Hindu lunar months."""
-    return sacred_wednesdays_in_range(gregorian_year_range(g_year))
+    return sacred_wednesdays_in_range(GregorianDate.year_range(g_year))
 
 
 # see lines 5657-5672 in calendrica-3.0.cl
 def sacred_wednesdays_in_range(range):
     """Return the list of Wednesdays within range of dates
     that are day 8 of Hindu lunar months."""
-    a      = start(range)
-    b      = end(range)
-    wed    = kday_on_or_after(WEDNESDAY, a)
+    a      = range[0]
+    b      = range[1]
+    wed    = DayOfWeek(DayOfWeek.Wednesday).on_or_after(a)
     h_date = hindu_lunar_from_fixed(wed)
     ell  = [wed] if (hindu_lunar_day(h_date) == 8) else []
     if is_in_range(wed, range):
-        ell[:0] = sacred_wednesdays_in_range(interval(wed + 1, b))
+        ell[:0] = sacred_wednesdays_in_range([wed + 1, b])
         return ell
     else:
         return []
@@ -5190,159 +4661,108 @@ def sacred_wednesdays_in_range(range):
 # tibetan calendar algorithms #
 ###############################
 # see lines 5677-5681 in calendrica-3.0.cl
-def tibetan_date(year, month, leap_month, day, leap_day):
-    """Return a Tibetan date data structure."""
-    return [year, month, leap_month, day, leap_day]
-
-
-# see lines 5683-5685 in calendrica-3.0.cl
-def tibetan_month(date):
-    """Return 'month' element of a Tibetan date, date."""
-    return date[1]
-
-
-# see lines 5687-5689 in calendrica-3.0.cl
-def tibetan_leap_month(date):
-    """Return 'leap month' element of a Tibetan date, date."""
-    return date[2]
-
-# see lines 5691-5693 in calendrica-3.0.cl
-def tibetan_day(date):
-    """Return 'day' element of a Tibetan date, date."""
-    return date[3]
-
-# see lines 5695-5697 in calendrica-3.0.cl
-def tibetan_leap_day(date):
-    """Return 'leap day' element of a Tibetan date, date."""
-    return date[4]
-
-# see lines 5699-5701 in calendrica-3.0.cl
-def tibetan_year(date):
-    """Return 'year' element of a Tibetan date, date."""
-    return date[0]
-
-# see lines 5703-5705 in calendrica-3.0.cl
-TIBETAN_EPOCH = fixed_from_gregorian(gregorian_date(-127, DECEMBER, 7))
-
-# see lines 5707-5717 in calendrica-3.0.cl
-def tibetan_sun_equation(alpha):
-    """Return the interpolated tabular sine of solar anomaly, alpha."""
-    if (alpha > 6):
-        return -tibetan_sun_equation(alpha - 6)
-    elif (alpha > 3):
-        return tibetan_sun_equation(6 - alpha)
-    elif isinstance(alpha, int):
-        return [0, 6/60, 10/60, 11/60][alpha]
-    else:
-        return ((mod(alpha, 1) * tibetan_sun_equation(ceiling(alpha))) +
-                (mod(-alpha, 1) * tibetan_sun_equation(ifloor(alpha))))
-
-
-# see lines 5719-5731 in calendrica-3.0.cl
-def tibetan_moon_equation(alpha):
-    """Return the interpolated tabular sine of lunar anomaly, alpha."""
-    if (alpha > 14):
-        return -tibetan_moon_equation(alpha - 14)
-    elif (alpha > 7):
-        return tibetan_moon_equation(14 -alpha)
-    elif isinstance(alpha, int):
-        return [0, 5/60, 10/60, 15/60,
-                19/60, 22/60, 24/60, 25/60][alpha]
-    else:
-        return ((mod(alpha, 1) * tibetan_moon_equation(ceiling(alpha))) +
-                (mod(-alpha, 1) * tibetan_moon_equation(ifloor(alpha))))
+class TibetanDate(object):
     
+    EPOCH = GregorianDate(-127, JulianMonth.December, 7).to_fixed()
 
-# see lines 5733-5755 in calendrica-3.0.cl
-def fixed_from_tibetan(t_date):
-    """Return the fixed date corresponding to Tibetan lunar date, t_date."""
-    year       = tibetan_year(t_date)
-    month      = tibetan_month(t_date)
-    leap_month = tibetan_leap_month(t_date)
-    day        = tibetan_day(t_date)
-    leap_day   = tibetan_leap_day(t_date)
-    months = ifloor((804/65 * (year - 1)) +
-                   (67/65 * month) +
-                   (-1 if leap_month else 0) +
-                   64/65)
-    days = (30 * months) + day
-    mean = ((days * 11135/11312) -30 +
-            (0 if leap_day else -1) +
-            1071/1616)
-    solar_anomaly = mod((days * 13/4824) + 2117/4824, 1)
-    lunar_anomaly = mod((days * 3781/105840) +
-                        2837/15120, 1)
-    sun  = -tibetan_sun_equation(12 * solar_anomaly)
-    moon = tibetan_moon_equation(28 * lunar_anomaly)
-    return ifloor(TIBETAN_EPOCH + mean + sun + moon)
+    def __init__(self, year, month, leap_month, day, leap_day):
+        self.year = year
+        self.month = month
+        self.leap_month = leap_month
+        self.day = day
+        self.leap_day = leap_day
 
+    @classmethod        
+    def sun_equation(cls, alpha):
+        """Return the interpolated tabular sine of solar anomaly, alpha."""
+        if (alpha > 6):
+            return -cls.sun_equation(alpha - 6)
+        elif (alpha > 3):
+            return cls.sun_equation(6 - alpha)
+        elif isinstance(alpha, int):
+            return [0, 6/60, 10/60, 11/60][alpha]
+        else:
+            return ((mod(alpha, 1) * cls.sun_equation(ceiling(alpha))) +
+                    (mod(-alpha, 1) * cls.sun_equation(ifloor(alpha))))
 
-# see lines 5757-5796 in calendrica-3.0.cl
-def tibetan_from_fixed(date):
-    """Return the Tibetan lunar date corresponding to fixed date, date."""
-    cap_Y = 365 + 4975/18382
-    years = ceiling((date - TIBETAN_EPOCH) / cap_Y)
-    year0 = final(years,
-                  lambda y:(date >=
-                            fixed_from_tibetan(
-                                tibetan_date(y, 1, False, 1, False))))
-    month0 = final(1,
-                   lambda m: (date >=
-                              fixed_from_tibetan(
-                                  tibetan_date(year0, m, False, 1, False))))
-    est = date - fixed_from_tibetan(
-        tibetan_date(year0, month0, False, 1, False))
-    day0 = final(est -2,
-                 lambda d: (date >=
-                            fixed_from_tibetan(
-                                tibetan_date(year0, month0, False, d, False))))
-    leap_month = (day0 > 30)
-    day = amod(day0, 30)
-    if (day > day0):
-        temp = month0 - 1
-    elif leap_month:
-        temp = month0 + 1
-    else:
-        temp = month0
-    month = amod(temp, 12)
+    @classmethod
+    def moon_equation(cls, alpha):
+        """Return the interpolated tabular sine of lunar anomaly, alpha."""
+        if (alpha > 14):
+            return -cls.moon_equation(alpha - 14)
+        elif (alpha > 7):
+            return cls.moon_equation(14 -alpha)
+        elif isinstance(alpha, int):
+            return [0, 5/60, 10/60, 15/60,
+                    19/60, 22/60, 24/60, 25/60][alpha]
+        else:
+            return ((mod(alpha, 1) * cls.moon_equation(ceiling(alpha))) +
+                    (mod(-alpha, 1) * cls.moon_equation(ifloor(alpha))))
     
-    if ((day > day0) and (month0 == 1)):
-        year = year0 - 1
-    elif (leap_month and (month0 == 12)):
-        year = year0 + 1
-    else:
-        year = year0
-    leap_day = date == fixed_from_tibetan(
-        tibetan_date(year, month, leap_month, day, True))
-    return tibetan_date(year, month, leap_month, day, leap_day)
+    def to_fixed(self):
+        """Return the fixed date corresponding to Tibetan lunar date, t_date."""
+        months = ifloor((804/65 * (self.year - 1)) +
+                       (67/65 * self.month) +
+                       (-1 if self.leap_month else 0) +
+                       64/65)
+        days = (30 * months) + self.day
+        mean = ((days * 11135/11312) -30 +
+                (0 if self.leap_day else -1) +
+                1071/1616)
+        solar_anomaly = mod((days * 13/4824) + 2117/4824, 1)
+        lunar_anomaly = mod((days * 3781/105840) +
+                            2837/15120, 1)
+        sun  = -self.sun_equation(12 * solar_anomaly)
+        moon = self.moon_equation(28 * lunar_anomaly)
+        return ifloor(self.EPOCH + mean + sun + moon)
 
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the Tibetan lunar date corresponding to fixed date, date."""
+        cap_Y = 365 + 4975/18382
+        years = ceiling((date - cls.EPOCH) / cap_Y)
+        year0 = final(years, lambda y:(date >= TibetanDate(y, 1, False, 1, False).to_fixed()))
+        month0 = final(1, lambda m: (date >= TibetanDate(year0, m, False, 1, False).to_fixed()))
+        est = date - TibetanDate(year0, month0, False, 1, False).to_fixed()
+        day0 = final(est -2, lambda d: (date >= TibetanDate(year0, month0, False, d, False).to_fixed()))
+        leap_month = (day0 > 30)
+        day = amod(day0, 30)
+        if (day > day0):
+            temp = month0 - 1
+        elif leap_month:
+            temp = month0 + 1
+        else:
+            temp = month0
+        month = amod(temp, 12)
+        
+        if ((day > day0) and (month0 == 1)):
+            year = year0 - 1
+        elif (leap_month and (month0 == 12)):
+            year = year0 + 1
+        else:
+            year = year0
+        leap_day = date == TibetanDate(year, month, leap_month, day, True).to_fixed()
+        return TibetanDate(year, month, leap_month, day, leap_day)
 
-# see lines 5798-5805 in calendrica-3.0.cl
-def is_tibetan_leap_month(t_month, t_year):
-    """Return True if t_month is leap in Tibetan year, t_year."""
-    return (t_month ==
-            tibetan_month(tibetan_from_fixed(
-                fixed_from_tibetan(
-                    tibetan_date(t_year, t_month, True, 2, False)))))
+    @classmethod
+    def is_leap_month(cls, t_month, t_year):
+        """Return True if t_month is leap in Tibetan year, t_year."""
+        return t_month == TibetanDate.from_fixed(TibetanDate(t_year, t_month, True, 2, False).to_fixed()).month
 
+    @classmethod
+    def losar(cls, t_year):
+        """Return the  fixed date of Tibetan New Year (Losar)
+        in Tibetan year, t_year."""
+        t_leap = cls.is_leap_month(1, t_year)
+        return TibetanDate(t_year, 1, t_leap, 1, False).to_fixed()
 
-# see lines 5807-5813 in calendrica-3.0.cl
-def losar(t_year):
-    """Return the  fixed date of Tibetan New Year (Losar)
-    in Tibetan year, t_year."""
-    t_leap = is_tibetan_leap_month(1, t_year)
-    return fixed_from_tibetan(tibetan_date(t_year, 1, t_leap, 1, False))
-
-
-# see lines 5815-5824 in calendrica-3.0.cl
-def tibetan_new_year(g_year):
-    """Return the list of fixed dates of Tibetan New Year in
-    Gregorian year, g_year."""
-    dec31  = gregorian_year_end(g_year)
-    t_year = tibetan_year(tibetan_from_fixed(dec31))
-    return list_range([losar(t_year - 1), losar(t_year)],
-                      gregorian_year_range(g_year))
-
+    @classmethod
+    def new_year(cls, g_year):
+        """Return the list of fixed dates of Tibetan New Year in
+        Gregorian year, g_year."""
+        dec31  = GregorianDate.year_end(g_year)
+        t_year = cls.from_fixed(dec31).year
+        return list_range([cls.losar(t_year - 1), cls.losar(t_year)], GregorianDate.year_range(g_year))
 
 
 # That's all folks!

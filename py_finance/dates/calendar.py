@@ -2,7 +2,8 @@ from datetime import date, timedelta
 from py_finance.dates.day_of_week import DayOfWeek
 from py_finance.dates.business_day_convention import BusinessDayConvention
 from py_finance.dates.time_unit import TimeUnit
-    
+from py_cal_cal import pycalcal
+
 class Calendar(object):
     
     def is_holiday(self, value):
@@ -243,3 +244,7 @@ class Calendar(object):
             day = n;
        
         return date(year, month, day)
+
+    @classmethod
+    def march_equinox(cls, year):
+        return pycalcal.standard_from_universal(pycalcal.solar_longitude_after(pycalcal.AUTUMN, date(year, pycalcal.July, 1).fixed), location)

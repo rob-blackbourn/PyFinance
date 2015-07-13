@@ -3,7 +3,7 @@ from datetime import date
 from py_finance.dates.calendar import Calendar
 from py_finance.dates.simple_calendar import SimpleCalendar
 from py_finance.dates.business_day_convention import BusinessDayConvention
-from py_finance.dates.calendar_month import CalendarMonth
+from py_finance.dates.calendar_month import JulianMonth
 from py_finance.dates.day_of_week import DayOfWeek
 
 class TestCalendar(unittest.TestCase):

@@ -757,8 +757,8 @@ class BahaiAppendixCTestCase(AppendixCTable2TestCaseBase,
             self.assertEqual(bahai_from_fixed(self.rd[i]), self.bd[i])
             self.assertEqual(fixed_from_bahai(self.bd[i]), self.rd[i])
             # bahai future
-            self.assertEqual(future_bahai_from_fixed(self.rd[i]), self.bf[i])
-            self.assertEqual(fixed_from_future_bahai(self.bf[i]), self.rd[i])
+            self.assertEqual(from_future_fixed(self.rd[i]), self.bf[i])
+            self.assertEqual(to_future_fixed(self.bf[i]), self.rd[i])
 
 
 def testMidnightInParis(self):
