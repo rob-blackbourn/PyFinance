@@ -85,10 +85,10 @@ class GregorianDate(YearMonthDay):
         return [cls.new_year(year), cls.year_end(year)]
 
     @classmethod    
-    def date_difference(cls, date1, date2):
+    def date_difference(cls, gregorian_date1, gregorian_date2):
         """Return the number of days from date 'date1'
         till date 'date2'."""
-        return date2.to_fixed() - date1.to_fixed()
+        return gregorian_date2.to_fixed() - gregorian_date1.to_fixed()
     
     def day_number(self):
         """Return the day number in the year."""
@@ -186,54 +186,54 @@ def pentecost(year):
     """Return fixed date of Pentecost in Gregorian year g_year."""
     return easter(year) + 49
 
-def eastern_orthodox_christmas(g_year):
+def eastern_orthodox_christmas(year):
     """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
-    in Gregorian year 'g_year'."""
-    return JulianDate.julian_in_gregorian(JulianMonth.December, 25, g_year)
+    in Gregorian year 'year'."""
+    return JulianDate.julian_in_gregorian(JulianMonth.December, 25, year)
 
-def labor_day(g_year):
+def labor_day(year):
     """Return the fixed date of United States Labor Day in Gregorian
     year 'g_year' (the first Monday in September)."""
-    return GregorianDate(g_year, JulianMonth.September, 1).first_day_of_week(DayOfWeek.Monday)
+    return GregorianDate(year, JulianMonth.September, 1).first_day_of_week(DayOfWeek.Monday)
 
-def memorial_day(g_year):
+def memorial_day(year):
     """Return the fixed date of United States' Memorial Day in Gregorian
-    year 'g_year' (the last Monday in May)."""
-    return GregorianDate(g_year, JulianMonth.May, 31).last_day_of_week(DayOfWeek.Monday)
+    year 'year' (the last Monday in May)."""
+    return GregorianDate(year, JulianMonth.May, 31).last_day_of_week(DayOfWeek.Monday)
 
-def election_day(g_year):
+def election_day(year):
     """Return the fixed date of United States' Election Day in Gregorian
-    year 'g_year' (the Tuesday after the first Monday in November)."""
-    return GregorianDate(g_year, JulianMonth.November, 2).first_day_of_week(DayOfWeek.Tuesday)
+    year 'year' (the Tuesday after the first Monday in November)."""
+    return GregorianDate(year, JulianMonth.November, 2).first_day_of_week(DayOfWeek.Tuesday)
 
-def daylight_saving_start(g_year):
+def daylight_saving_start(year):
     """Return the fixed date of the start of United States daylight
-    saving time in Gregorian year 'g_year' (the second Sunday in March)."""
-    return GregorianDate(g_year, JulianMonth.March, 1).nth_day_of_week(2, DayOfWeek.Sunday)
+    saving time in Gregorian year 'year' (the second Sunday in March)."""
+    return GregorianDate(year, JulianMonth.March, 1).nth_day_of_week(2, DayOfWeek.Sunday)
 
-def daylight_saving_end(g_year):
+def daylight_saving_end(year):
     """Return the fixed date of the end of United States daylight saving
-    time in Gregorian year 'g_year' (the first Sunday in November)."""
-    return GregorianDate(g_year, JulianMonth.November, 1).first_day_of_week(DayOfWeek.Sunday)
+    time in Gregorian year 'year' (the first Sunday in November)."""
+    return GregorianDate(year, JulianMonth.November, 1).first_day_of_week(DayOfWeek.Sunday)
 
-def christmas(g_year):
-    """Return the fixed date of Christmas in Gregorian year 'g_year'."""
-    return GregorianDate(g_year, JulianMonth.December, 25).to_fixed()
+def christmas(year):
+    """Return the fixed date of Christmas in Gregorian year 'year'."""
+    return GregorianDate(year, JulianMonth.December, 25).to_fixed()
 
 @classmethod    
-def advent(g_year):
-    """Return the fixed date of Advent in Gregorian year 'g_year'
+def advent(year):
+    """Return the fixed date of Advent in Gregorian year 'year'
     (the Sunday closest to November 30)."""
-    return DayOfWeek.Sunday.nearest(GregorianDate(g_year, JulianMonth.November, 30).to_fixed())
+    return DayOfWeek.Sunday.nearest(GregorianDate(year, JulianMonth.November, 30).to_fixed())
 
-def epiphany(g_year):
-    """Return the fixed date of Epiphany in U.S. in Gregorian year 'g_year'
+def epiphany(year):
+    """Return the fixed date of Epiphany in U.S. in Gregorian year 'year'
     (the first Sunday after January 1)."""
-    return GregorianDate(g_year, JulianMonth.January, 2).first_day_of_week(DayOfWeek.Sunday)
+    return GregorianDate(year, JulianMonth.January, 2).first_day_of_week(DayOfWeek.Sunday)
 
-def epiphany_it(g_year):
-    """Return fixed date of Epiphany in Italy in Gregorian year 'g_year'."""
-    return GregorianDate(g_year, JulianMonth.January, 6)
+def epiphany_it(year):
+    """Return fixed date of Epiphany in Italy in Gregorian year 'year'."""
+    return GregorianDate(year, JulianMonth.January, 6)
 
 def orthodox_easter(year):
     """Return fixed date of Orthodox Easter in Gregorian year g_year."""
