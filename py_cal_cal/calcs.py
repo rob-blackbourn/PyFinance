@@ -86,6 +86,24 @@ def amod(x, y):
     """Return the same as a % b with b instead of 0."""
     return y + (mod(x, -y))
 
+def signum(a):
+    if a > 0:
+        return 1
+    elif a == 0:
+        return 0
+    else:
+        return -1
+
+# see lines 2380-2390 in calendrica-3.0.cl
+# The following
+#      from math import ceil as ceiling
+# is not ok, the corresponding CL code
+# uses CL ceiling which always returns and integer, while
+# ceil from math module always returns a float...so I redefine it
+def ceiling(n):
+    """Return the integer rounded towards +infinitum of n."""
+    return int(math.ceil(n))
+
 def next_int(i, p):
     """Return first integer greater or equal to initial index, i,
     such that condition, p, holds."""
@@ -1538,17 +1556,6 @@ def aztec_xihuitl_tonalpohualli_on_or_before(xihuitl, tonalpohualli, date):
 
 
 
-# see lines 2380-2390 in calendrica-3.0.cl
-# The following
-#      from math import ceil as ceiling
-# is not ok, the corresponding CL code
-# uses CL ceiling which always returns and integer, while
-# ceil from math module always returns a float...so I redefine it
-def ceiling(n):
-    """Return the integer rounded towards +infinitum of n."""
-    from math import ceil
-    return int(ceil(n))
-
 ##################################
 # old hindu calendars algorithms #
 ##################################
@@ -1865,86 +1872,54 @@ def equatorial_from_horizontal(A, h, phi):
                            cos_degrees(phi) * cos_degrees(h) * cos_degrees(A))
     return [H, delta]
 
-# see lines 2667-2670 in calendrica-3.0.cl
 def days_from_hours(x):
     """Return the number of days given x hours."""
     return x / 24
 
-# see lines 2672-2675 in calendrica-3.0.cl
 def days_from_seconds(x):
     """Return the number of days given x seconds."""
     return x / 24 / 60 / 60
 
-# see lines 2677-2680 in calendrica-3.0.cl
-def mt(x):
-    """Return x as meters."""
-    return x
-
-# see lines 2682-2686 in calendrica-3.0.cl
-def deg(x):
-    """Return the degrees in angle x."""
-    return x
-
-# see lines 2688-2690 in calendrica-3.0.cl
 def secs(x):
     """Return the seconds in angle x."""
     return x / 3600
 
-# see lines 2692-2696 in calendrica-3.0.cl
 def angle(d, m, s):
     """Return an angle data structure
     from d degrees, m arcminutes and s arcseconds.
     This assumes that negative angles specifies negative d, m and s."""
     return d + ((m + (s / 60)) / 60)
 
-# see lines 2698-2701 in calendrica-3.0.cl
 def normalized_degrees(theta):
     """Return a normalize angle theta to range [0,360) degrees."""
     return mod(theta, 360)
 
-# see lines 2703-2706 in calendrica-3.0.cl
 def normalized_degrees_from_radians(theta):
     """Return normalized degrees from radians, theta.
     Function 'degrees' comes from mpmath."""
     return normalized_degrees(degrees(theta))
 
-# see lines 2708-2711 in calendrica-3.0.cl
 def radians_from_degrees(theta):
     pass
 from mpmath import radians as radians_from_degrees
 
-# see lines 2713-2716 in calendrica-3.0.cl
 def sin_degrees(theta):
     """Return sine of theta (given in degrees)."""
     #from math import sin
     return sin(radians_from_degrees(theta))
 
-# see lines 2718-2721 in calendrica-3.0.cl
 def cosine_degrees(theta):
     """Return cosine of theta (given in degrees)."""
     #from math import cos
     return cos(radians_from_degrees(theta))
 
-# from errata20091230.pdf entry 112
 cos_degrees=cosine_degrees
 
-
-# see lines 2723-2726 in calendrica-3.0.cl
 def tangent_degrees(theta):
     """Return tangent of theta (given in degrees)."""
     return tan(radians_from_degrees(theta))
 
-# from errata20091230.pdf entry 112
 tan_degrees=tangent_degrees
-
-
-def signum(a):
-    if a > 0:
-        return 1
-    elif a == 0:
-        return 0
-    else:
-        return -1
 
 #-----------------------------------------------------------
 # NOTE: arc[tan|sin|cos] casted with degrees given CL code
@@ -1959,35 +1934,32 @@ def signum(a):
 #     return normalized_degrees_from_radians(atan2(x, y))
 
 def arctan_degrees(y, x):
-   """ Arctangent of y/x in degrees."""
-   if (x == 0) and (y != 0):
-       return mod(signum(y) * deg(mpf(90)), 360)
-   else:
-       alpha = normalized_degrees_from_radians(atan(y / x))
-       if x >= 0:
-           return alpha
-       else:
-           return mod(alpha + deg(mpf(180)), 360)
+    """ Arctangent of y/x in degrees."""
+    if (x == 0) and (y != 0):
+        return mod(signum(y) * mpf(90), 360)
+    else:
+        alpha = normalized_degrees_from_radians(atan(y / x))
+        if x >= 0:
+            return alpha
+        else:
+            return mod(alpha + mpf(180), 360)
 
-
-# see lines 2741-2744 in calendrica-3.0.cl
 def arcsin_degrees(x):
     """Return arcsine of x in degrees."""
-    #from math import asin
     return normalized_degrees_from_radians(asin(x))
 
-# see lines 2746-2749 in calendrica-3.0.cl
 def arccos_degrees(x):
     """Return arccosine of x in degrees."""
-    #from math import acos
     return normalized_degrees_from_radians(acos(x))
 
-# see lines 2866-2870 in calendrica-3.0.cl
+
+
+
+
 def julian_centuries(tee):
     """Return Julian centuries since 2000 at moment tee."""
     return (dynamical_from_universal(tee) - J2000) / mpf(36525)
 
-# see lines 2872-2880 in calendrica-3.0.cl
 def obliquity(tee):
     """Return (mean) obliquity of ecliptic at moment tee."""
     c = julian_centuries(tee)
@@ -2061,10 +2033,10 @@ class Location(object):
         y = sin_degrees(psi_prime - psi)
         x = ((cosine_degrees(phi) * tangent_degrees(phi_prime)) -
              (sin_degrees(phi)    * cosine_degrees(psi - psi_prime)))
-        if ((x == y == 0) or (phi_prime == deg(90))):
-            return deg(0)
-        elif (phi_prime == deg(-90)):
-            return deg(180)
+        if ((x == y == 0) or (phi_prime == 90)):
+            return 0
+        elif (phi_prime == -90):
+            return 180
         else:
             return arctan_degrees(y, x)
 
@@ -2081,7 +2053,7 @@ class Location(object):
     def zone_from_longitude(cls, phi):
         """Return the difference between UT and local mean time at longitude
         'phi' as a fraction of a day."""
-        return phi / deg(360)
+        return phi / 360
     
     def local_from_universal(self, tee_rom_u):
         """Return local time from universal tee_rom_u at location, location."""
@@ -2127,7 +2099,7 @@ class Location(object):
         Out of range when it does not occur."""
         phi = self.latitude
         tee_prime = self.universal_from_local(tee)
-        delta = declination(tee_prime, deg(mpf(0)), solar_longitude(tee_prime))
+        delta = declination(tee_prime, mpf(0), solar_longitude(tee_prime))
         return ((tangent_degrees(phi) * tangent_degrees(delta)) +
                 (sin_degrees(alpha) / (cosine_degrees(delta) *
                                        cosine_degrees(phi))))
@@ -2157,7 +2129,7 @@ class Location(object):
     
         if (abs(value) <= 1):
             temp = -1 if early else 1
-            temp *= mod(days_from_hours(12) + arcsin_degrees(value) / deg(360), 1) - days_from_hours(6)
+            temp *= mod(days_from_hours(12) + arcsin_degrees(value) / 360, 1) - days_from_hours(6)
             temp += date + days_from_hours(12)
             return self.local_from_apparent(temp)
         else:
@@ -2187,11 +2159,10 @@ class Location(object):
 
     def refraction(self, tee):
         """Return refraction angle at location 'location' and time 'tee'."""
-        from math import sqrt
-        h     = max(mt(0), self.elevation)
-        cap_R = mt(6.372E6)
+        h     = max(0, self.elevation)
+        cap_R = 6.372E6
         dip   = arccos_degrees(cap_R / (cap_R + h))
-        return angle(0, 50, 0) + dip + secs(19) * sqrt(h)
+        return angle(0, 50, 0) + dip + secs(19) * math.sqrt(h)
 
     def sunrise(self, date):
         """Return Standard time of sunrise on fixed date 'date' at
@@ -2214,7 +2185,7 @@ class Location(object):
         """Return the standard time of moonrise on fixed, date,
         and location, location."""
         t = self.universal_from_standard(date)
-        waning = (lunar_phase(t) > deg(180))
+        waning = (lunar_phase(t) > 180)
         alt = self.observed_lunar_altitude(t)
         offset = alt / 360
         if (waning and (offset > 0)):
@@ -2226,7 +2197,7 @@ class Location(object):
         rise = binary_search(approx - days_from_hours(3),
                              approx + days_from_hours(3),
                              lambda u, l: ((u - l) < days_from_hours(1 / 60)),
-                             lambda x: self.observed_lunar_altitude(x) > deg(0))
+                             lambda x: self.observed_lunar_altitude(x) > 0)
         if (rise < (t + 1)):
             return self.standard_from_universal(rise)
         
@@ -2242,11 +2213,11 @@ class Location(object):
         at location, location."""
         return (self.sunrise(date + 1) - self.sunset(date)) / 12
 
-MECCA = Location(angle(21, 25, 24), angle(39, 49, 24), mt(298), days_from_hours(3))
-JERUSALEM = Location(31.8, 35.2, mt(800), days_from_hours(2))
-BRUXELLES = Location(angle(4, 21, 17), angle(50, 50, 47), mt(800), days_from_hours(1))
-URBANA = Location(40.1, -88.2, mt(225), days_from_hours(-6))
-GREENWHICH = Location(51.4777815, 0, mt(46.9), days_from_hours(0))
+MECCA = Location(angle(21, 25, 24), angle(39, 49, 24), 298, days_from_hours(3))
+JERUSALEM = Location(31.8, 35.2, 800, days_from_hours(2))
+BRUXELLES = Location(angle(4, 21, 17), angle(50, 50, 47), 800, days_from_hours(1))
+URBANA = Location(40.1, -88.2, 225, days_from_hours(-6))
+GREENWHICH = Location(51.4777815, 0, 46.9, days_from_hours(0))
 
 def urbana_sunset(gdate):
     """Return sunset time in Urbana, Ill, on Gregorian date 'gdate'."""
@@ -2304,8 +2275,8 @@ def asr(date, location):
     at location, location."""
     noon = location.universal_from_standard(location.midday(date))
     phi = location.latitude
-    delta = declination(noon, deg(0), solar_longitude(noon))
-    altitude = delta - phi - deg(90)
+    delta = declination(noon, 0, solar_longitude(noon))
+    altitude = delta - phi - 90
     h = arctan_degrees(tangent_degrees(altitude),
                        2 * tangent_degrees(altitude) + 1)
     # For Shafii use instead:
@@ -2334,10 +2305,10 @@ def sidereal_from_moment(tee):
     as hour angle.  Adapted from "Astronomical Algorithms"
     by Jean Meeus, Willmann_Bell, Inc., 1991."""
     c = (tee - J2000) / mpf(36525)
-    return mod(poly(c, deg([mpf(280.46061837),
+    return mod(poly(c, [mpf(280.46061837),
                             mpf(36525) * mpf(360.98564736629),
                             mpf(0.000387933),
-                            mpf(-1)/mpf(38710000)])),
+                            mpf(-1)/mpf(38710000)]),
                360)
 
 # see lines 3128-3130 in calendrica-3.0.cl
@@ -2388,8 +2359,8 @@ def equation_of_time(tee):
     Adapted from "Astronomical Algorithms" by Jean Meeus,
     Willmann_Bell, Inc., 1991."""
     c = julian_centuries(tee)
-    lamb = poly(c, deg([mpf(280.46645), mpf(36000.76983), mpf(0.0003032)]))
-    anomaly = poly(c, deg([mpf(357.52910), mpf(35999.05030), mpf(-0.0001559), mpf(-0.00000048)]))
+    lamb = poly(c, [mpf(280.46645), mpf(36000.76983), mpf(0.0003032)])
+    anomaly = poly(c, [mpf(357.52910), mpf(35999.05030), mpf(-0.0001559), mpf(-0.00000048)])
     eccentricity = poly(c, [mpf(0.016708617), mpf(-0.000042037), mpf(-0.0000001236)])
     varepsilon = obliquity(tee)
     y = pow(tangent_degrees(varepsilon / 2), 2)
@@ -2440,9 +2411,9 @@ def solar_longitude(tee):
                mpf(110.0), mpf(5.2), mpf(342.6), mpf(230.9), mpf(256.1),
                mpf(45.3), mpf(242.9), mpf(115.2), mpf(151.8), mpf(285.3),
                mpf(53.3), mpf(126.6), mpf(205.7), mpf(85.9), mpf(146.1)]
-    lam = (deg(mpf(282.7771834)) +
-           deg(mpf(36000.76953744)) * c +
-           deg(mpf(0.000005729577951308232)) *
+    lam = (mpf(282.7771834) +
+           mpf(36000.76953744) * c +
+           mpf(0.000005729577951308232) *
            sigma([coefficients, addends, multipliers],
                  lambda x, y, z:  x * sin_degrees(y + (z * c))))
     return mod(lam + aberration(tee) + nutation(tee), 360)
@@ -2452,7 +2423,7 @@ def geometric_solar_mean_longitude(tee):
     """Return the geometric mean longitude of the Sun at moment, tee,
     referred to mean equinox of the date."""
     c = julian_centuries(tee)
-    return poly(c, deg([mpf(280.46646), mpf(36000.76983), mpf(0.0003032)]))
+    return poly(c, [mpf(280.46646), mpf(36000.76983), mpf(0.0003032)])
 
 def solar_latitude(tee):
     """Return the latitude of Sun (in degrees) at moment, tee.
@@ -2478,40 +2449,33 @@ def solar_position(tee):
 def nutation(tee):
     """Return the longitudinal nutation at moment, tee."""
     c = julian_centuries(tee)
-    cap_A = poly(c, deg([mpf(124.90), mpf(-1934.134), mpf(0.002063)]))
-    cap_B = poly(c, deg([mpf(201.11), mpf(72001.5377), mpf(0.00057)]))
-    return (deg(mpf(-0.004778))  * sin_degrees(cap_A) + 
-            deg(mpf(-0.0003667)) * sin_degrees(cap_B))
+    cap_A = poly(c, [mpf(124.90), mpf(-1934.134), mpf(0.002063)])
+    cap_B = poly(c, [mpf(201.11), mpf(72001.5377), mpf(0.00057)])
+    return (mpf(-0.004778)  * sin_degrees(cap_A) + 
+            mpf(-0.0003667) * sin_degrees(cap_B))
 
 # see lines 3273-3281 in calendrica-3.0.cl
 def aberration(tee):
     """Return the aberration at moment, tee."""
     c = julian_centuries(tee)
-    return ((deg(mpf(0.0000974)) *
-             cosine_degrees(deg(mpf(177.63)) + deg(mpf(35999.01848)) * c)) -
-            deg(mpf(0.005575)))
+    return ((mpf(0.0000974) *
+             cosine_degrees(mpf(177.63) + mpf(35999.01848) * c)) -
+            mpf(0.005575))
 
 # see lines 3283-3295 in calendrica-3.0.cl
 def solar_longitude_after(lam, tee):
     """Return the moment UT of the first time at or after moment, tee,
     when the solar longitude will be lam degrees."""
-    rate = MEAN_TROPICAL_YEAR / deg(360)
+    rate = MEAN_TROPICAL_YEAR / 360
     tau = tee + rate * mod(lam - solar_longitude(tee), 360)
     a = max(tee, tau - 5)
     b = tau + 5
     return invert_angular(solar_longitude, lam, a, b)
 
-# see lines 3297-3300 in calendrica-3.0.cl
-SPRING = deg(0)
-
-# see lines 3302-3305 in calendrica-3.0.cl
-SUMMER = deg(90)
-
-# see lines 3307-3310 in calendrica-3.0.cl
-AUTUMN = deg(180)
-
-# see lines 3312-3315 in calendrica-3.0.cl
-WINTER = deg(270)
+SPRING = 0
+SUMMER = 90
+AUTUMN = 180
+WINTER = 270
 
 # see lines 3317-3339 in calendrica-3.0.cl
 def precession(tee):
@@ -2524,7 +2488,7 @@ def precession(tee):
                        secs(mpf(-0.03302)),
                        secs(mpf(0.000060))]),
               360)
-    cap_P = mod(poly(c, [deg(mpf(174.876384)), 
+    cap_P = mod(poly(c, [mpf(174.876384), 
                          secs(mpf(-869.8089)), 
                          secs(mpf(0.03536))]),
                 360)
@@ -2548,9 +2512,9 @@ def sidereal_solar_longitude(tee):
 def estimate_prior_solar_longitude(lam, tee):
     """Return approximate moment at or before tee
     when solar longitude just exceeded lam degrees."""
-    rate = MEAN_TROPICAL_YEAR / deg(360)
+    rate = MEAN_TROPICAL_YEAR / 360
     tau = tee - (rate * mod(solar_longitude(tee) - lam, 360))
-    cap_Delta = mod(solar_longitude(tau) - lam + deg(180), 360) - deg(180)
+    cap_Delta = mod(solar_longitude(tau) - lam + 180, 360) - 180
     return min(tee, tau - (rate * cap_Delta))
 
 # see lines 3367-3376 in calendrica-3.0.cl
@@ -2560,9 +2524,9 @@ def mean_lunar_longitude(c):
     effect of the light-time (-0".70).
     Adapted from eq. 47.1 in "Astronomical Algorithms" by Jean Meeus,
     Willmann_Bell, Inc., 2nd ed. with corrections, 2005."""
-    return normalized_degrees(poly(c,deg([mpf(218.3164477), mpf(481267.88123421),
+    return normalized_degrees(poly(c, [mpf(218.3164477), mpf(481267.88123421),
                                mpf(-0.0015786), mpf(1/538841),
-                               mpf(-1/65194000)])))
+                               mpf(-1/65194000)]))
 
 # see lines 3378-3387 in calendrica-3.0.cl
 def lunar_elongation(c):
@@ -2570,9 +2534,9 @@ def lunar_elongation(c):
     given in Julian centuries c.
     Adapted from eq. 47.2 in "Astronomical Algorithms" by Jean Meeus,
     Willmann_Bell, Inc., 2nd ed. with corrections, 2005."""
-    return normalized_degrees(poly(c, deg([mpf(297.8501921), mpf(445267.1114034),
+    return normalized_degrees(poly(c, [mpf(297.8501921), mpf(445267.1114034),
                                 mpf(-0.0018819), mpf(1/545868),
-                                mpf(-1/113065000)])))
+                                mpf(-1/113065000)]))
 
 # see lines 3389-3398 in calendrica-3.0.cl
 def solar_anomaly(c):
@@ -2580,8 +2544,7 @@ def solar_anomaly(c):
     given in Julian centuries c.
     Adapted from eq. 47.3 in "Astronomical Algorithms" by Jean Meeus,
     Willmann_Bell, Inc., 2nd ed. with corrections, 2005."""
-    return normalized_degrees(poly(c,deg([mpf(357.5291092), mpf(35999.0502909),
-                               mpf(-0.0001536), mpf(1/24490000)])))
+    return normalized_degrees(poly(c, [mpf(357.5291092), mpf(35999.0502909), mpf(-0.0001536), mpf(1/24490000)]))
 
 # see lines 3400-3409 in calendrica-3.0.cl
 def lunar_anomaly(c):
@@ -2589,9 +2552,7 @@ def lunar_anomaly(c):
     given in Julian centuries c.
     Adapted from eq. 47.4 in "Astronomical Algorithms" by Jean Meeus,
     Willmann_Bell, Inc., 2nd ed. with corrections, 2005."""
-    return normalized_degrees(poly(c, deg([mpf(134.9633964), mpf(477198.8675055),
-                                mpf(0.0087414), mpf(1/69699),
-                                mpf(-1/14712000)])))
+    return normalized_degrees(poly(c, [mpf(134.9633964), mpf(477198.8675055), mpf(0.0087414), mpf(1/69699), mpf(-1/14712000)]))
 
 
 # see lines 3411-3420 in calendrica-3.0.cl
@@ -2600,9 +2561,7 @@ def moon_node(c):
     given in Julian centuries 'c'.
     Adapted from eq. 47.5 in "Astronomical Algorithms" by Jean Meeus,
     Willmann_Bell, Inc., 2nd ed. with corrections, 2005."""
-    return normalized_degrees(poly(c, deg([mpf(93.2720950), mpf(483202.0175233),
-                                mpf(-0.0036539), mpf(-1/3526000),
-                                mpf(1/863310000)])))
+    return normalized_degrees(poly(c, [mpf(93.2720950), mpf(483202.0175233), mpf(-0.0036539), mpf(-1/3526000), mpf(1/863310000)]))
 
 # see lines 3422-3485 in calendrica-3.0.cl
 def lunar_longitude(tee):
@@ -2643,7 +2602,7 @@ def lunar_longitude(tee):
              -1595,1215,-1110,-892,-810,759,-713,-700,691,
              596,549,537,520,-487,-399,-381,351,-340,330,
              327,-323,299,294]
-    correction = (deg(1/1000000) *
+    correction = ((1/1000000) *
                   sigma([sine_coefficients, args_lunar_elongation,
                          args_solar_anomaly, args_lunar_anomaly,
                          args_moon_node],
@@ -2653,11 +2612,11 @@ def lunar_longitude(tee):
                                     (x * cap_M) +
                                     (y * cap_M_prime) +
                                     (z * cap_F))))
-    A1 = deg(mpf(119.75)) + (c * deg(mpf(131.849)))
-    venus = (deg(3958/1000000) * sin_degrees(A1))
-    A2 = deg(mpf(53.09)) + c * deg(mpf(479264.29))
-    jupiter = (deg(318/1000000) * sin_degrees(A2))
-    flat_earth = (deg(1962/1000000) * sin_degrees(cap_L_prime - cap_F))
+    A1 = mpf(119.75) + (c * mpf(131.849))
+    venus = ((3958/1000000) * sin_degrees(A1))
+    A2 = mpf(53.09) + c * mpf(479264.29)
+    jupiter = ((318/1000000) * sin_degrees(A2))
+    flat_earth = ((1962/1000000) * sin_degrees(cap_L_prime - cap_F))
 
     return mod(cap_L_prime + correction + venus +
                jupiter + flat_earth + nutation(tee), 360)
@@ -2700,7 +2659,7 @@ def lunar_latitude(tee):
              596, 491, -451, 439, 422, 421, -366, -351, 331, 315,
              302, -283, -229, 223, 223, -220, -220, -185, 181,
              -177, 176, 166, -164, 132, -119, 115, 107]
-    beta = (deg(1/1000000) *
+    beta = ((1/1000000) *
             sigma([sine_coefficients, 
                    args_lunar_elongation,
                    args_solar_anomaly,
@@ -2712,14 +2671,14 @@ def lunar_latitude(tee):
                                                      (x * cap_M) +
                                                      (y * cap_M_prime) +
                                                      (z * cap_F)))))
-    venus = (deg(175/1000000) *
-             (sin_degrees(deg(mpf(119.75)) + c * deg(mpf(131.849)) + cap_F) +
-              sin_degrees(deg(mpf(119.75)) + c * deg(mpf(131.849)) - cap_F)))
-    flat_earth = (deg(-2235/1000000) *  sin_degrees(cap_L_prime) +
-                  deg(127/1000000) * sin_degrees(cap_L_prime - cap_M_prime) +
-                  deg(-115/1000000) * sin_degrees(cap_L_prime + cap_M_prime))
-    extra = (deg(382/1000000) *
-             sin_degrees(deg(mpf(313.45)) + c * deg(mpf(481266.484))))
+    venus = ((175/1000000) *
+             (sin_degrees(mpf(119.75) + c * mpf(131.849) + cap_F) +
+              sin_degrees(mpf(119.75) + c * mpf(131.849) - cap_F)))
+    flat_earth = ((-2235/1000000) *  sin_degrees(cap_L_prime) +
+                  (127/1000000) * sin_degrees(cap_L_prime - cap_M_prime) +
+                  (-115/1000000) * sin_degrees(cap_L_prime + cap_M_prime))
+    extra = ((382/1000000) *
+             sin_degrees(mpf(313.45) + c * mpf(481266.484)))
     return beta + venus + flat_earth + extra
 
 
@@ -2730,7 +2689,7 @@ def lunar_node(tee):
     Adapted from eq. 47.7 in "Astronomical Algorithms"
     by Jean Meeus, Willmann_Bell, Inc., 2nd ed., 1998
     with corrections June 2005."""
-    return mod(moon_node(julian_centuries(tee)) + deg(90), 180) - 90
+    return mod(moon_node(julian_centuries(tee)) + 90, 180) - 90
 
 def alt_lunar_node(tee):
     """Return Angular distance of the node from the equinoctal point
@@ -2738,11 +2697,7 @@ def alt_lunar_node(tee):
     Adapted from eq. 47.7 in "Astronomical Algorithms"
     by Jean Meeus, Willmann_Bell, Inc., 2nd ed., 1998
     with corrections June 2005."""
-    return normalized_degrees(poly(julian_centuries(tee), deg([mpf(125.0445479),
-                                                     mpf(-1934.1362891),
-                                                     mpf(0.0020754),
-                                                     mpf(1/467441),
-                                                     mpf(-1/60616000)])))
+    return normalized_degrees(poly(julian_centuries(tee), [mpf(125.0445479), mpf(-1934.1362891), mpf(0.0020754), mpf(1/467441), mpf(-1/60616000)]))
 
 def lunar_true_node(tee):
     """Return Angular distance of the true node (the node of the instantaneus
@@ -2755,11 +2710,11 @@ def lunar_true_node(tee):
     cap_M = solar_anomaly(c)
     cap_M_prime = lunar_anomaly(c)
     cap_F = moon_node(c)
-    periodic_terms = (deg(-1.4979) * sin_degrees(2 * (cap_D - cap_F)) +
-                      deg(-0.1500) * sin_degrees(cap_M) +
-                      deg(-0.1226) * sin_degrees(2 * cap_D) +
-                      deg(0.1176)  * sin_degrees(2 * cap_F) +
-                      deg(-0.0801) * sin_degrees(2 * (cap_M_prime - cap_F)))
+    periodic_terms = (-1.4979 * sin_degrees(2 * (cap_D - cap_F)) +
+                      -0.1500 * sin_degrees(cap_M) +
+                      -0.1226 * sin_degrees(2 * cap_D) +
+                      0.1176  * sin_degrees(2 * cap_F) +
+                      -0.0801 * sin_degrees(2 * (cap_M_prime - cap_F)))
     return alt_lunar_node(tee) + periodic_terms
 
 def lunar_perigee(tee):
@@ -2768,11 +2723,7 @@ def lunar_perigee(tee):
     Adapted from eq. 47.7 in "Astronomical Algorithms"
     by Jean Meeus, Willmann_Bell, Inc., 2nd ed., 1998
     with corrections June 2005."""
-    return normalized_degrees(poly(julian_centuries(tee), deg([mpf(83.3532465),
-                                                     mpf(4069.0137287),
-                                                     mpf(-0.0103200),
-                                                     mpf(-1/80053),
-                                                     mpf(1/18999000)])))
+    return normalized_degrees(poly(julian_centuries(tee), [mpf(83.3532465), mpf(4069.0137287), mpf(-0.0103200), mpf(-1/80053), mpf(1/18999000)]))
 
 
 # see lines 199-206 in calendrica-3.0.errata.cl
@@ -2796,20 +2747,10 @@ def nth_new_moon(n):
                        mpf(-0.000000150),
                        mpf(0.00000000073)]))
     cap_E = poly(c, [1, mpf(-0.002516), mpf(-0.0000074)])
-    solar_anomaly = poly(c, deg([mpf(2.5534),
-                                 (mpf(1236.85) * mpf(29.10535669)),
-                                 mpf(-0.0000014), mpf(-0.00000011)]))
-    lunar_anomaly = poly(c, deg([mpf(201.5643),
-                                 (mpf(385.81693528) * mpf(1236.85)),
-                                 mpf(0.0107582), mpf(0.00001238),
-                                 mpf(-0.000000058)]))
-    moon_argument = poly(c, deg([mpf(160.7108),
-                                 (mpf(390.67050284) * mpf(1236.85)),
-                                 mpf(-0.0016118), mpf(-0.00000227),
-                                 mpf(0.000000011)]))
-    cap_omega = poly(c, [mpf(124.7746),
-                         (mpf(-1.56375588) * mpf(1236.85)),
-                         mpf(0.0020672), mpf(0.00000215)])
+    solar_anomaly = poly(c, [mpf(2.5534), (mpf(1236.85) * mpf(29.10535669)), mpf(-0.0000014), mpf(-0.00000011)])
+    lunar_anomaly = poly(c, [mpf(201.5643), (mpf(385.81693528) * mpf(1236.85)), mpf(0.0107582), mpf(0.00001238), mpf(-0.000000058)])
+    moon_argument = poly(c, [mpf(160.7108), (mpf(390.67050284) * mpf(1236.85)), mpf(-0.0016118), mpf(-0.00000227), mpf(0.000000011)])
+    cap_omega = poly(c, [mpf(124.7746), (mpf(-1.56375588) * mpf(1236.85)), mpf(0.0020672), mpf(0.00000215)])
     E_factor = [0, 1, 0, 0, 1, 1, 2, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0]
     solar_coeff = [0, 1, 0, 0, -1, 1, 2, 0, 0, 1, 0, 1, 1, -1, 2,
@@ -2826,7 +2767,7 @@ def nth_new_moon(n):
                   mpf(0.00004), mpf(0.00004), mpf(0.00003),
                   mpf(0.00003), mpf(-0.00003), mpf(0.00003),
                   mpf(-0.00002), mpf(-0.00002), mpf(0.00002)]
-    correction = ((deg(mpf(-0.00017)) * sin_degrees(cap_omega)) +
+    correction = ((mpf(-0.00017) * sin_degrees(cap_omega)) +
                   sigma([sine_coeff, E_factor, solar_coeff,
                          lunar_coeff, moon_coeff],
                         lambda v, w, x, y, z: (v *
@@ -2848,9 +2789,7 @@ def nth_new_moon(n):
                   mpf(0.000056), mpf(0.000047), mpf(0.000042),
                   mpf(0.000040), mpf(0.000037), mpf(0.000035),
                   mpf(0.000023)]
-    extra = (deg(mpf(0.000325)) *
-             sin_degrees(poly(c, deg([mpf(299.77), mpf(132.8475848),
-                                      mpf(-0.009173)]))))
+    extra = (mpf(0.000325) * sin_degrees(poly(c, [mpf(299.77), mpf(132.8475848), mpf(-0.009173)])))
     additional = sigma([add_const, add_coeff, add_factor],
                        lambda i, j, l: l * sin_degrees(i + j * k))
 
@@ -2862,7 +2801,7 @@ def new_moon_before(tee):
     """Return the moment UT of last new moon before moment tee."""
     t0 = nth_new_moon(0)
     phi = lunar_phase(tee)
-    n = iround(((tee - t0) / MEAN_SYNODIC_MONTH) - (phi / deg(360)))
+    n = iround(((tee - t0) / MEAN_SYNODIC_MONTH) - (phi / 360))
     return nth_new_moon(final_int(n - 1, lambda k: nth_new_moon(k) < tee))
 
 
@@ -2871,7 +2810,7 @@ def new_moon_at_or_after(tee):
     """Return the moment UT of first new moon at or after moment, tee."""
     t0 = nth_new_moon(0)
     phi = lunar_phase(tee)
-    n = iround((tee - t0) / MEAN_SYNODIC_MONTH - phi / deg(360))
+    n = iround((tee - t0) / MEAN_SYNODIC_MONTH - phi / 360)
     return nth_new_moon(next_int(n, lambda k: nth_new_moon(k) >= tee))
 
 
@@ -2884,9 +2823,9 @@ def lunar_phase(tee):
     phi = mod(lunar_longitude(tee) - solar_longitude(tee), 360)
     t0 = nth_new_moon(0)
     n = iround((tee - t0) / MEAN_SYNODIC_MONTH)
-    phi_prime = (deg(360) *
+    phi_prime = (360 *
                  mod((tee - nth_new_moon(n)) / MEAN_SYNODIC_MONTH, 1))
-    if abs(phi - phi_prime) > deg(180):
+    if abs(phi - phi_prime) > 180:
         return phi_prime
     else:
         return phi
@@ -2898,7 +2837,7 @@ def lunar_phase_at_or_before(phi, tee):
     when the lunar_phase was phi degrees."""
     tau = (tee -
            (MEAN_SYNODIC_MONTH  *
-            (1/deg(360)) *
+            (1/360) *
             mod(lunar_phase(tee) - phi, 360)))
     a = tau - 2
     b = min(tee, tau +2)
@@ -2906,16 +2845,16 @@ def lunar_phase_at_or_before(phi, tee):
 
 
 # see lines 3627-3631 in calendrica-3.0.cl
-NEW = deg(0)
+NEW = 0
 
 # see lines 3633-3637 in calendrica-3.0.cl
-FIRST_QUARTER = deg(90)
+FIRST_QUARTER = 90
 
 # see lines 3639-3643 in calendrica-3.0.cl
-FULL = deg(180)
+FULL = 180
 
 # see lines 3645-3649 in calendrica-3.0.cl
-LAST_QUARTER = deg(270)
+LAST_QUARTER = 270
 
 # see lines 3651-3661 in calendrica-3.0.cl
 def lunar_phase_at_or_after(phi, tee):
@@ -2923,7 +2862,7 @@ def lunar_phase_at_or_after(phi, tee):
     when the lunar_phase is phi degrees."""
     tau = (tee +
            (MEAN_SYNODIC_MONTH    *
-            (1/deg(360)) *
+            (1/360) *
             mod(phi - lunar_phase(tee), 360)))
     a = max(tee, tau - 2)
     b = tau + 2
@@ -2949,7 +2888,7 @@ def lunar_altitude(tee, location):
     altitude = arcsin_degrees(
         (sin_degrees(phi) * sin_degrees(delta)) +
         (cosine_degrees(phi) * cosine_degrees(delta) * cosine_degrees(cap_H)))
-    return mod(altitude + deg(180), 360) - deg(180)
+    return mod(altitude + 180, 360) - 180
  
 
 # see lines 3764-3813 in calendrica-3.0.cl
@@ -3000,7 +2939,7 @@ def lunar_distance(tee):
                                                    (x * cap_M) +
                                                    (y * cap_M_prime) +
                                                    (z * cap_F))))
-    return mt(385000560) + correction
+    return 385000560 + correction
 
 
 def lunar_position(tee):
@@ -3017,7 +2956,7 @@ def lunar_parallax(tee, location):
     Willmann_Bell, Inc., 1998."""
     geo = lunar_altitude(tee, location)
     Delta = lunar_distance(tee)
-    alt = mt(6378140) / Delta
+    alt = 6378140 / Delta
     arg = alt * cosine_degrees(geo)
     return arcsin_degrees(arg)
 
@@ -3035,7 +2974,7 @@ def lunar_diameter(tee):
     """Return the geocentric apparent lunar diameter of the moon (in
     degrees) at moment, tee.  Adapted from 'Astronomical
     Algorithms' by Jean Meeus, Willmann_Bell, Inc., 2nd ed."""
-    return deg(1792367000/9) / lunar_distance(tee)
+    return (1792367000/9) / lunar_distance(tee)
 
 
 ###########################################
@@ -3046,20 +2985,20 @@ def visible_crescent(date, location):
     """Return S. K. Shaukat's criterion for likely
     visibility of crescent moon on eve of date 'date',
     at location 'location'."""
-    tee = location.universal_from_standard(location.dusk(date - 1, deg(mpf(4.5))))
+    tee = location.universal_from_standard(location.dusk(date - 1, mpf(4.5)))
     phase = lunar_phase(tee)
     altitude = lunar_altitude(tee, location)
     arc_of_light = arccos_degrees(cosine_degrees(lunar_latitude(tee)) *
                                   cosine_degrees(phase))
     return ((NEW < phase < FIRST_QUARTER) and
-            (deg(mpf(10.6)) <= arc_of_light <= deg(90)) and
-            (altitude > deg(mpf(4.1))))
+            (mpf(10.6) <= arc_of_light <= 90) and
+            (altitude > mpf(4.1)))
 
 # see lines 5847-5860 in calendrica-3.0.cl
 def phasis_on_or_before(date, location):
     """Return the closest fixed date on or before date 'date', when crescent
     moon first became visible at location 'location'."""
-    mean = date - ifloor(lunar_phase(date + 1) / deg(360) *
+    mean = date - ifloor(lunar_phase(date + 1) / 360 *
                          MEAN_SYNODIC_MONTH)
     tau = ((mean - 30)
            if (((date - mean) <= 3) and (not visible_crescent(date, location)))
@@ -3070,7 +3009,7 @@ def phasis_on_or_before(date, location):
 # see lines 220-221 in calendrica-3.0.errata.cl
 # Sample location for Observational Islamic calendar
 # (Cairo, Egypt).
-ISLAMIC_LOCATION = Location(deg(mpf(30.1)), deg(mpf(31.3)), mt(200), days_from_hours(2))
+ISLAMIC_LOCATION = Location(mpf(30.1), mpf(31.3), 200, days_from_hours(2))
 
 # see lines 5868-5882 in calendrica-3.0.cl
 def fixed_from_observational_islamic(i_date):
@@ -3078,10 +3017,8 @@ def fixed_from_observational_islamic(i_date):
     month    = standard_month(i_date)
     day      = standard_day(i_date)
     year     = standard_year(i_date)
-    midmonth = IslamicDate.EPOCH + ifloor((((year - 1) * 12) + month - 0.5) *
-                                      MEAN_SYNODIC_MONTH)
-    return (phasis_on_or_before(midmonth, ISLAMIC_LOCATION) +
-            day - 1)
+    midmonth = IslamicDate.EPOCH + ifloor((((year - 1) * 12) + month - 0.5) * MEAN_SYNODIC_MONTH)
+    return (phasis_on_or_before(midmonth, ISLAMIC_LOCATION) + day - 1)
 
 # see lines 5884-5896 in calendrica-3.0.cl
 def observational_islamic_from_fixed(date):
@@ -3095,7 +3032,7 @@ def observational_islamic_from_fixed(date):
     return IslamicDate(year, month, day)
 
 # see lines 5898-5901 in calendrica-3.0.cl
-JERUSALEM = Location(deg(mpf(31.8)), deg(mpf(35.2)), mt(800), days_from_hours(2))
+JERUSALEM = Location(mpf(31.8), mpf(35.2), 800, days_from_hours(2))
 
 # see lines 5903-5918 in calendrica-3.0.cl
 def astronomical_easter(g_year):
@@ -3108,13 +3045,13 @@ def astronomical_easter(g_year):
     return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
 # see lines 5920-5923 in calendrica-3.0.cl
-JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), mt(0), days_from_hours(2))
+JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, days_from_hours(2))
 
 # see lines 5925-5938 in calendrica-3.0.cl
 def phasis_on_or_after(date, location):
     """Return closest fixed date on or after date, date, on the eve
     of which crescent moon first became visible at location, location."""
-    mean = date - ifloor(lunar_phase(date + 1) / deg(mpf(360)) *
+    mean = date - ifloor(lunar_phase(date + 1) / mpf(360) *
                         MEAN_SYNODIC_MONTH)
     tau = (date if (((date - mean) <= 3) and
                     (not visible_crescent(date - 1, location)))
@@ -3171,7 +3108,7 @@ def classical_passover_eve(g_year):
 class PersianDate(object):
 
     EPOCH = JulianDate(JulianDate.ce(622), JulianMonth.March, 19).to_fixed()
-    TEHRAN = Location(deg(mpf(35.68)), deg(mpf(51.42)), mt(1100), days_from_hours(3 + 1/2))
+    TEHRAN = Location(mpf(35.68), mpf(51.42), 1100, days_from_hours(3 + 1/2))
     
     def __init__(self, year, month, day):
         self.year = year
@@ -3188,7 +3125,7 @@ class PersianDate(object):
         """Return the fixed date of Astronomical Persian New Year on or
         before fixed date, date."""
         approx = estimate_prior_solar_longitude(SPRING, cls.midday_in_tehran(date))
-        return next_int(ifloor(approx) - 1, lambda day: (solar_longitude(cls.midday_in_tehran(day)) <= (SPRING + deg(2))))
+        return next_int(ifloor(approx) - 1, lambda day: (solar_longitude(cls.midday_in_tehran(day)) <= (SPRING + 2)))
 
     def to_fixed(self):
         """Return fixed date of Astronomical Persian date, p_date."""
@@ -3327,7 +3264,7 @@ class BahaiDate(object):
         """Return fixed date of Bahai New Year in Gregorian year, g_year."""
         return GregorianDate(g_year, JulianMonth.March, 21).to_fixed()
     
-    HAIFA = Location(deg(mpf(32.82)), deg(35), mt(0), days_from_hours(2))
+    HAIFA = Location(mpf(32.82), 35, 0, days_from_hours(2))
 
     @classmethod    
     def sunset_in_haifa(cls, date):
@@ -3342,7 +3279,7 @@ class BahaiDate(object):
         approx = estimate_prior_solar_longitude(SPRING, cls.sunset_in_haifa(date))
         return next_int(ifloor(approx) - 1,
                     lambda day: (solar_longitude(cls.sunset_in_haifa(day)) <=
-                                 (SPRING + deg(2))))
+                                 (SPRING + 2)))
 
     def to_future_fixed(self):
         """Return fixed date of Bahai date, b_date."""
@@ -3401,7 +3338,7 @@ class FrenchDate(object):
 
     #"""Fixed date of start of the French Revolutionary calendar."""
     FRENCH_EPOCH = GregorianDate(1792, JulianMonth.September, 22).to_fixed()
-    PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), mt(27), days_from_hours(1))
+    PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), 27, days_from_hours(1))
     
     def __init__(self, year, month, day):
         self.year = year
@@ -3510,10 +3447,10 @@ def chinese_location(tee):
     year = GregorianDate.to_year(ifloor(tee))
     if (year < 1929):
         return Location(angle(39, 55, 0), angle(116, 25, 0),
-                        mt(43.5), days_from_hours(1397/180))
+                        43.5, days_from_hours(1397/180))
     else:
         return Location(angle(39, 55, 0), angle(116, 25, 0),
-                        mt(43.5), days_from_hours(8))
+                        43.5, days_from_hours(8))
 
 
 # see lines 4365-4377 in calendrica-3.0.cl
@@ -3529,7 +3466,7 @@ def current_major_solar_term(date):
     """Return last Chinese major solar term (zhongqi) before
     fixed date, date."""
     s = solar_longitude(chinese_location(date).universal_from_standard(date))
-    return amod(2 + quotient(int(s), deg(30)), 12)
+    return amod(2 + quotient(int(s), 30), 12)
 
 # see lines 4389-4397 in calendrica-3.0.cl
 def major_solar_term_on_or_after(date):
@@ -3545,7 +3482,7 @@ def major_solar_term_on_or_after(date):
 def current_minor_solar_term(date):
     """Return last Chinese minor solar term (jieqi) before date, date."""
     s = solar_longitude(chinese_location(date).universal_from_standard(date))
-    return amod(3 + quotient(s - deg(15), deg(30)), 12)
+    return amod(3 + quotient(s - 15, 30), 12)
 
 # see lines 4409-4422 in calendrica-3.0.cl
 def minor_solar_term_on_or_after(date):
@@ -3553,7 +3490,7 @@ def minor_solar_term_on_or_after(date):
     term (jieqi) on or after fixed date, date.  The minor terms
     begin when the sun's longitude is an odd multiple of 15 degrees."""
     s = solar_longitude(midnight_in_china(date))
-    l = mod(30 * ceiling((s - deg(15)) / 30) + deg(15), 360)
+    l = mod(30 * ceiling((s - 15) / 30) + 15, 360)
     return chinese_solar_longitude_on_or_after(l, date)
 
 # see lines 4424-4433 in calendrica-3.0.cl
@@ -3821,11 +3758,11 @@ def japanese_location(tee):
     year = GregorianDate.to_year(ifloor(tee))
     if (year < 1888):
         # Tokyo (139 deg 46 min east) local time
-        loc = Location(deg(mpf(35.7)), angle(139, 46, 0),
-                           mt(24), days_from_hours(9 + 143/450))
+        loc = Location(mpf(35.7), angle(139, 46, 0),
+                           24, days_from_hours(9 + 143/450))
     else:
         # Longitude 135 time zone
-        loc = Location(deg(35), deg(135), mt(0), days_from_hours(9))
+        loc = Location(35, 135, 0, days_from_hours(9))
     return loc
 
 
@@ -3845,7 +3782,7 @@ def korean_location(tee):
     else:
         z = 9
     return Location(angle(37, 34, 0), angle(126, 58, 0),
-                    mt(0), days_from_hours(z))
+                    0, days_from_hours(z))
 
 
 # see lines 4797-4800 in calendrica-3.0.cl
@@ -3863,7 +3800,7 @@ def vietnamese_location(tee):
     else:
         z =7
         return Location(angle(21, 2, 0), angle(105, 51, 0),
-                        mt(12), days_from_hours(z))
+                        12, days_from_hours(z))
 
 
 #####################################
@@ -3942,7 +3879,7 @@ HINDU_CREATION = OldHindu.EPOCH - 1955880000 * HINDU_SIDEREAL_YEAR
 def hindu_mean_position(tee, period):
     """Return the position in degrees at moment, tee, in uniform circular
     orbit of period days."""
-    return deg(360) * mod((tee - HINDU_CREATION) / period, 1)
+    return 360 * mod((tee - HINDU_CREATION) / period, 1)
 
 # see lines 4891-4894 in calendrica-3.0.cl
 HINDU_SIDEREAL_MONTH = 27 + 4644439/14438334
@@ -3984,7 +3921,7 @@ def hindu_solar_longitude(tee):
 def hindu_zodiac(tee):
     """Return the zodiacal sign of the sun, as integer in range 1..12,
     at moment tee."""
-    return quotient(float(hindu_solar_longitude(tee)), deg(30)) + 1
+    return quotient(float(hindu_solar_longitude(tee)), 30) + 1
 
 
 # see lines 4940-4944 in calendrica-3.0.cl
@@ -4008,7 +3945,7 @@ def hindu_lunar_phase(tee):
 def hindu_lunar_day_from_moment(tee):
     """Return the phase of moon (tithi) at moment, tee, as an integer in
     the range 1..30."""
-    return quotient(hindu_lunar_phase(tee), deg(12)) + 1
+    return quotient(hindu_lunar_phase(tee), 12) + 1
 
 
 # see lines 4960-4973 in calendrica-3.0.cl
@@ -4016,21 +3953,21 @@ def hindu_new_moon_before(tee):
     """Return the approximate moment of last new moon preceding moment, tee,
     close enough to determine zodiacal sign."""
     varepsilon = pow(2, -1000)
-    tau = tee - ((1/deg(360))   *
+    tau = tee - ((1/360)   *
                  hindu_lunar_phase(tee) *
                  HINDU_SYNODIC_MONTH)
     return binary_search(tau - 1, min(tee, tau + 1),
                          lambda l, u: ((hindu_zodiac(l) == hindu_zodiac(u)) or
                                        ((u - l) < varepsilon)),
-                         lambda x: hindu_lunar_phase(x) < deg(180))
+                         lambda x: hindu_lunar_phase(x) < 180)
 
 
 # see lines 4975-4988 in calendrica-3.0.cl
 def hindu_lunar_day_at_or_after(k, tee):
     """Return the time lunar_day (tithi) number, k, begins at or after
     moment, tee.  k can be fractional (for karanas)."""
-    phase = (k - 1) * deg(12)
-    tau   = tee + ((1/deg(360)) *
+    phase = (k - 1) * 12
+    tau   = tee + ((1/360) *
                    mod(phase - hindu_lunar_phase(tee), 360) *
                    HINDU_SYNODIC_MONTH)
     a = max(tee, tau - 2)
@@ -4042,7 +3979,7 @@ def hindu_lunar_day_at_or_after(k, tee):
 def hindu_calendar_year(tee):
     """Return the solar year at given moment, tee."""
     return iround(((tee - OldHindu.EPOCH) / HINDU_SIDEREAL_YEAR) -
-                 (hindu_solar_longitude(tee) / deg(360)))
+                 (hindu_solar_longitude(tee) / 360))
 
 
 # see lines 4998-5001 in calendrica-3.0.cl
@@ -4054,7 +3991,7 @@ def hindu_solar_from_fixed(date):
     critical = hindu_sunrise(date + 1)
     month    = hindu_zodiac(critical)
     year     = hindu_calendar_year(critical) - HINDU_SOLAR_ERA
-    approx   = date - 3 - mod(ifloor(hindu_solar_longitude(critical)), deg(30))
+    approx   = date - 3 - mod(ifloor(hindu_solar_longitude(critical)), 30)
     begin    = next_int(approx,
                     lambda i: (hindu_zodiac(hindu_sunrise(i + 1)) ==  month))
     day      = date - begin + 1
@@ -4105,12 +4042,12 @@ def fixed_from_hindu_lunar(l_date):
     leap_day   = hindu_lunar_leap_day(l_date)
     approx = OldHindu.EPOCH + (HINDU_SIDEREAL_YEAR *
                             (year + HINDU_LUNAR_ERA + ((month - 1) / 12)))
-    s = ifloor(approx - ((1/deg(360)) *
+    s = ifloor(approx - ((1/360) *
                         HINDU_SIDEREAL_YEAR *
                         mod(hindu_solar_longitude(approx) -
-                            ((month - 1) * deg(30)) +
-                            deg(180), 360) -
-                        deg(180)))
+                            ((month - 1) * 30) +
+                            180, 360) -
+                        180))
     k = hindu_lunar_day_from_moment(s + days_from_hours(6))
     if (3 < k < 27):
         temp = k
@@ -4138,8 +4075,8 @@ def hindu_equation_of_time(date):
     equation_sun = (offset *
                     angle(57, 18, 0) *
                     (14/360 - (abs(offset) / 1080)))
-    return ((hindu_daily_motion(date) / deg(360)) *
-            (equation_sun / deg(360)) *
+    return ((hindu_daily_motion(date) / 360) *
+            (equation_sun / 360) *
             HINDU_SIDEREAL_YEAR)
 
 
@@ -4149,8 +4086,8 @@ def hindu_ascensional_difference(date, location):
     of sun on date, date, at loacel, location."""
     sin_delta = (1397/3438) * hindu_sine(hindu_tropical_longitude(date))
     phi = location.latitude
-    diurnal_radius = hindu_sine(deg(90) + hindu_arcsin(sin_delta))
-    tan_phi = hindu_sine(phi) / hindu_sine(deg(90) + phi)
+    diurnal_radius = hindu_sine(90 + hindu_arcsin(sin_delta))
+    tan_phi = hindu_sine(phi) / hindu_sine(90 + phi)
     earth_sine = sin_delta * tan_phi
     return hindu_arcsin(-earth_sine / diurnal_radius)
 
@@ -4161,10 +4098,10 @@ def hindu_tropical_longitude(date):
     Assumes precession with maximum of 27 degrees
     and period of 7200 sidereal years (= 1577917828/600 days)."""
     days = ifloor(date - OldHindu.EPOCH)
-    precession = (deg(27) -
-                  (abs(deg(54) -
-                       mod(deg(27) +
-                           (deg(108) * 600/1577917828 * days),
+    precession = (27 -
+                  (abs(54 -
+                       mod(27 +
+                           (108 * 600/1577917828 * days),
                            108))))
     return mod(hindu_solar_longitude(date) - precession, 360)
 
@@ -4173,7 +4110,7 @@ def hindu_tropical_longitude(date):
 def hindu_rising_sign(date):
     """Return the tabulated speed of rising of current zodiacal sign on
     date, date."""
-    i = quotient(float(hindu_tropical_longitude(date)), deg(30))
+    i = quotient(float(hindu_tropical_longitude(date)), 30)
     return [1670/1800, 1795/1800, 1935/1800, 1935/1800,
             1795/1800, 1670/1800][mod(i, 6)]
 
@@ -4181,7 +4118,7 @@ def hindu_rising_sign(date):
 # see lines 5185-5200 in calendrica-3.0.cl
 def hindu_daily_motion(date):
     """Return the sidereal daily motion of sun on date, date."""
-    mean_motion = deg(360) / HINDU_SIDEREAL_YEAR
+    mean_motion = 360 / HINDU_SIDEREAL_YEAR
     anomaly     = hindu_mean_position(date, HINDU_ANOMALISTIC_YEAR)
     epicycle    = 14/360 - abs(hindu_sine(anomaly)) / 1080
     entry       = quotient(float(anomaly), angle(0, 225, 0))
@@ -4198,7 +4135,7 @@ def hindu_solar_sidereal_difference(date):
 
 # see lines 5207-5211 in calendrica-3.0.cl
 UJJAIN = Location(angle(23, 9, 0), angle(75, 46, 6),
-                  mt(0), days_from_hours(5 + 461/9000))
+                  0, days_from_hours(5 + 461/9000))
 
 # see lines 5213-5216 in calendrica-3.0.cl
 # see lines 217-218 in calendrica-3.0.errata.cl
@@ -4208,9 +4145,9 @@ HINDU_LOCATION = UJJAIN
 def hindu_sunrise(date):
     """Return the sunrise at hindu_location on date, date."""
     return (date + days_from_hours(6) + 
-            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / deg(360)) -
+            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / 360) -
             hindu_equation_of_time(date) +
-            ((1577917828/1582237828 / deg(360)) *
+            ((1577917828/1582237828 / 360) *
              (hindu_ascensional_difference(date, HINDU_LOCATION) +
               (1/4 * hindu_solar_sidereal_difference(date)))))
 
@@ -4273,9 +4210,9 @@ def alt_hindu_sunrise(date):
 def hindu_sunset(date):
     """Return sunset at HINDU_LOCATION on date, date."""
     return (date + days_from_hours(18) + 
-            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / deg(360)) -
+            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / 360) -
             hindu_equation_of_time(date) +
-            (((1577917828/1582237828) / deg(360)) *
+            (((1577917828/1582237828) / 360) *
              (- hindu_ascensional_difference(date, HINDU_LOCATION) +
               (3/4 * hindu_solar_sidereal_difference(date)))))
 
@@ -4310,21 +4247,21 @@ def ayanamsha(tee):
 # see lines 5320-5323 in calendrica-3.0.cl
 def astro_hindu_sunset(date):
     """Return the geometrical sunset at Hindu location on date, date."""
-    return HINDU_LOCATION.dusk(date, deg(0))
+    return HINDU_LOCATION.dusk(date, 0)
 
 
 # see lines 5325-5329 in calendrica-3.0.cl
 def sidereal_zodiac(tee):
     """Return the sidereal zodiacal sign of the sun, as integer in range
     1..12, at moment, tee."""
-    return quotient(int(sidereal_solar_longitude(tee)), deg(30)) + 1
+    return quotient(int(sidereal_solar_longitude(tee)), 30) + 1
 
 
 # see lines 5331-5337 in calendrica-3.0.cl
 def astro_hindu_calendar_year(tee):
     """Return the astronomical Hindu solar year KY at given moment, tee."""
     return iround(((tee - OldHindu.EPOCH) / MEAN_SIDEREAL_YEAR) -
-                 (sidereal_solar_longitude(tee) / deg(360)))
+                 (sidereal_solar_longitude(tee) / 360))
 
 
 # see lines 5339-5357 in calendrica-3.0.cl
@@ -4335,7 +4272,7 @@ def astro_hindu_solar_from_fixed(date):
     month    = sidereal_zodiac(critical)
     year     = astro_hindu_calendar_year(critical) - HINDU_SOLAR_ERA
     approx   = (date - 3 -
-                mod(ifloor(sidereal_solar_longitude( critical)), deg(30)))
+                mod(ifloor(sidereal_solar_longitude( critical)), 30))
     begin    = next_int(approx,
                     lambda i: (sidereal_zodiac(astro_hindu_sunset(i)) == month))
     day      = date - begin + 1
@@ -4361,7 +4298,7 @@ def fixed_from_astro_hindu_solar(s_date):
 def astro_lunar_day_from_moment(tee):
     """Return the phase of moon (tithi) at moment, tee, as an integer in
     the range 1..30."""
-    return quotient(lunar_phase(tee), deg(12)) + 1
+    return quotient(lunar_phase(tee), 12) + 1
 
 
 # see lines 5383-5410 in calendrica-3.0.cl
@@ -4395,9 +4332,9 @@ def fixed_from_astro_hindu_lunar(l_date):
               MEAN_SIDEREAL_YEAR *
               (year + HINDU_LUNAR_ERA + ((month - 1) / 12)))
     s = ifloor(approx -
-              1/deg(360) * MEAN_SIDEREAL_YEAR *
+              1/360 * MEAN_SIDEREAL_YEAR *
               (mod(sidereal_solar_longitude(approx) -
-                  (month - 1) * deg(30) + deg(180), 360) - deg(180)))
+                  (month - 1) * 30 + 180, 360) - 180))
     k = astro_lunar_day_from_moment(s + days_from_hours(6))
     if (3 < k < 27):
         temp = k
@@ -4430,7 +4367,7 @@ def hindu_solar_longitude_at_or_after(lam, tee):
     """Return the moment of the first time at or after moment, tee
     when Hindu solar longitude will be lam degrees."""
     tau = tee + (HINDU_SIDEREAL_YEAR *
-                 (1 / deg(360)) *
+                 (1 / 360) *
                  mod(lam - hindu_solar_longitude(tee), 360))
     a = max(tee, tau - 5)
     b = tau +5
@@ -4442,7 +4379,7 @@ def mesha_samkranti(g_year):
     """Return the fixed moment of Mesha samkranti (Vernal equinox)
     in Gregorian year, g_year."""
     jan1 = GregorianDate.new_year(g_year)
-    return hindu_solar_longitude_at_or_after(deg(0), jan1)
+    return hindu_solar_longitude_at_or_after(0, jan1)
 
 
 # see lines 5489-5493 in calendrica-3.0.cl
@@ -4453,7 +4390,7 @@ def hindu_lunar_new_year(g_year):
     """Return the fixed date of Hindu lunisolar new year in
     Gregorian year, g_year."""
     jan1     = GregorianDate.new_year(g_year)
-    mina     = hindu_solar_longitude_at_or_after(deg(330), jan1)
+    mina     = hindu_solar_longitude_at_or_after(330, jan1)
     new_moon = hindu_lunar_day_at_or_after(1, mina)
     h_day    = ifloor(new_moon)
     critical = hindu_sunrise(h_day)
