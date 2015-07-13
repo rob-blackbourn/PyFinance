@@ -16,12 +16,12 @@ class OldHindu(object):
     ARYA_SOLAR_YEAR = 1577917500/4320000
     ARYA_SOLAR_MONTH = ARYA_SOLAR_YEAR / 12
 
-    HINDU_EPOCH = JulianDate(JulianDate.bce(3102), JulianMonth.February, 18).to_fixed()
+    EPOCH = JulianDate(JulianDate.bce(3102), JulianMonth.February, 18).to_fixed()
 
     @classmethod    
     def hindu_day_count(cls, date):
         """Return elapsed days (Ahargana) to date date since Hindu epoch (KY)."""
-        return date - cls.HINDU_EPOCH
+        return date - cls.EPOCH
 
     # see lines 2462-2466 in calendrica-3.0.cl
     ARYA_JOVIAN_PERIOD =  1577917500/364224
@@ -110,8 +110,15 @@ class OldHinduSolarDate(OldHindu):
 #####################################
 # modern hindu calendars algorithms #
 #####################################
-class HinduLunarDate(object):
-    
+
+class HinduDate(object):
+
+    SIDEREAL_YEAR = 365 + 279457/1080000
+    ANOMALISTIC_YEAR = 1577917828000/(4320000000 - 387)
+    CREATION = OldHindu.EPOCH - 1955880000 * HinduDate.SIDEREAL_YEAR
+    UJJAIN = Location(angle(23, 9, 0), angle(75, 46, 6), 0, Clock.days_from_hours(5 + 461/9000))
+    LOCATION = UJJAIN
+
     def __init__(self, year, month, leap_month, day, leap_day):
         self.year = year
         self.month = month
@@ -119,374 +126,311 @@ class HinduLunarDate(object):
         self.day = day
         self.leap_day = leap_day
 
+    @classmethod
+    def sine_table(cls, entry):
+        """Return the value for entry in the Hindu sine table.
+        Entry, entry, is an angle given as a multiplier of 225'."""
+        exact = 3438 * sin_degrees(entry * angle(0, 225, 0))
+        error = 0.215 * signum(exact) * signum(abs(exact) - 1716)
+        return iround(exact + error) / 3438
 
-# see lines 4842-4850 in calendrica-3.0.cl
-def hindu_sine_table(entry):
-    """Return the value for entry in the Hindu sine table.
-    Entry, entry, is an angle given as a multiplier of 225'."""
-    exact = 3438 * sin_degrees(entry * angle(0, 225, 0))
-    error = 0.215 * signum(exact) * signum(abs(exact) - 1716)
-    return iround(exact + error) / 3438
+    @classmethod
+    def sine(cls, theta):
+        """Return the linear interpolation for angle, theta, in Hindu table."""
+        entry    = theta / angle(0, 225, 0)
+        fraction = mod(entry, 1)
+        return ((fraction * cls.sine_table(iceiling(entry))) + ((1 - fraction) * cls.sine_table(ifloor(entry))))
 
-
-# see lines 4852-4861 in calendrica-3.0.cl
-def hindu_sine(theta):
-    """Return the linear interpolation for angle, theta, in Hindu table."""
-    entry    = theta / angle(0, 225, 0)
-    fraction = mod(entry, 1)
-    return ((fraction * hindu_sine_table(iceiling(entry))) +
-            ((1 - fraction) * hindu_sine_table(ifloor(entry))))
-
-
-# see lines 4863-4873 in calendrica-3.0.cl
-def hindu_arcsin(amp):
-    """Return the inverse of Hindu sine function of amp."""
-    if (amp < 0):
-        return -hindu_arcsin(-amp)
-    else:
-        pos = next_int(0, lambda k: amp <= hindu_sine_table(k))
-        below = hindu_sine_table(pos - 1)
-        return (angle(0, 225, 0) *
-                (pos - 1 + ((amp - below) / (hindu_sine_table(pos) - below))))
-
-
-# see lines 4875-4878 in calendrica-3.0.cl
-HINDU_SIDEREAL_YEAR = 365 + 279457/1080000
-
-# see lines 4880-4883 in calendrica-3.0.cl
-HINDU_CREATION = OldHindu.EPOCH - 1955880000 * HINDU_SIDEREAL_YEAR
-
-# see lines 4885-4889 in calendrica-3.0.cl
-def hindu_mean_position(tee, period):
-    """Return the position in degrees at moment, tee, in uniform circular
-    orbit of period days."""
-    return 360 * mod((tee - HINDU_CREATION) / period, 1)
-
-# see lines 4891-4894 in calendrica-3.0.cl
-HINDU_SIDEREAL_MONTH = 27 + 4644439/14438334
-
-# see lines 4896-4899 in calendrica-3.0.cl
-HINDU_SYNODIC_MONTH = 29 + 7087771/13358334
-
-# see lines 4901-4904 in calendrica-3.0.cl
-HINDU_ANOMALISTIC_YEAR = 1577917828000/(4320000000 - 387)
-
-# see lines 4906-4909 in calendrica-3.0.cl
-HINDU_ANOMALISTIC_MONTH = mpf(1577917828)/(57753336 - 488199)
-
-# see lines 4911-4926 in calendrica-3.0.cl
-def hindu_true_position(tee, period, size, anomalistic, change):
-    """Return the longitudinal position at moment, tee.
-    period is the period of mean motion in days.
-    size is ratio of radii of epicycle and deferent.
-    anomalistic is the period of retrograde revolution about epicycle.
-    change is maximum decrease in epicycle size."""
-    lam         = hindu_mean_position(tee, period)
-    offset      = hindu_sine(hindu_mean_position(tee, anomalistic))
-    contraction = abs(offset) * change * size
-    equation    = hindu_arcsin(offset * (size - contraction))
-    return mod(lam - equation, 360)
-
-
-# see lines 4928-4932 in calendrica-3.0.cl
-def hindu_solar_longitude(tee):
-    """Return the solar longitude at moment, tee."""
-    return hindu_true_position(tee,
-                               HINDU_SIDEREAL_YEAR,
-                               14/360,
-                               HINDU_ANOMALISTIC_YEAR,
-                               1/42)
-
-
-# see lines 4934-4938 in calendrica-3.0.cl
-def hindu_zodiac(tee):
-    """Return the zodiacal sign of the sun, as integer in range 1..12,
-    at moment tee."""
-    return quotient(float(hindu_solar_longitude(tee)), 30) + 1
-
-
-# see lines 4940-4944 in calendrica-3.0.cl
-def hindu_lunar_longitude(tee):
-    """Return the lunar longitude at moment, tee."""
-    return hindu_true_position(tee,
-                               HINDU_SIDEREAL_MONTH,
-                               32/360,
-                               HINDU_ANOMALISTIC_MONTH,
-                               1/96)
-
-
-# see lines 4946-4952 in calendrica-3.0.cl
-def hindu_lunar_phase(tee):
-    """Return the longitudinal distance between the sun and moon
-    at moment, tee."""
-    return mod(hindu_lunar_longitude(tee) - hindu_solar_longitude(tee), 360)
-
-
-# see lines 4954-4958 in calendrica-3.0.cl
-def hindu_lunar_day_from_moment(tee):
-    """Return the phase of moon (tithi) at moment, tee, as an integer in
-    the range 1..30."""
-    return quotient(hindu_lunar_phase(tee), 12) + 1
-
-
-# see lines 4960-4973 in calendrica-3.0.cl
-def hindu_new_moon_before(tee):
-    """Return the approximate moment of last new moon preceding moment, tee,
-    close enough to determine zodiacal sign."""
-    varepsilon = pow(2, -1000)
-    tau = tee - ((1/360)   *
-                 hindu_lunar_phase(tee) *
-                 HINDU_SYNODIC_MONTH)
-    return binary_search(tau - 1, min(tee, tau + 1),
-                         lambda l, u: ((hindu_zodiac(l) == hindu_zodiac(u)) or
-                                       ((u - l) < varepsilon)),
-                         lambda x: hindu_lunar_phase(x) < 180)
-
-
-# see lines 4975-4988 in calendrica-3.0.cl
-def hindu_lunar_day_at_or_after(k, tee):
-    """Return the time lunar_day (tithi) number, k, begins at or after
-    moment, tee.  k can be fractional (for karanas)."""
-    phase = (k - 1) * 12
-    tau   = tee + ((1/360) *
-                   mod(phase - hindu_lunar_phase(tee), 360) *
-                   HINDU_SYNODIC_MONTH)
-    a = max(tee, tau - 2)
-    b = tau + 2
-    return invert_angular(hindu_lunar_phase, phase, a, b)
-
-
-# see lines 4990-4996 in calendrica-3.0.cl
-def hindu_calendar_year(tee):
-    """Return the solar year at given moment, tee."""
-    return iround(((tee - OldHindu.EPOCH) / HINDU_SIDEREAL_YEAR) -
-                 (hindu_solar_longitude(tee) / 360))
-
-
-# see lines 4998-5001 in calendrica-3.0.cl
-HINDU_SOLAR_ERA = 3179
-
-# see lines 5003-5020 in calendrica-3.0.cl
-def hindu_solar_from_fixed(date):
-    """Return the Hindu (Orissa) solar date equivalent to fixed date, date."""
-    critical = hindu_sunrise(date + 1)
-    month    = hindu_zodiac(critical)
-    year     = hindu_calendar_year(critical) - HINDU_SOLAR_ERA
-    approx   = date - 3 - mod(ifloor(hindu_solar_longitude(critical)), 30)
-    begin    = next_int(approx,
-                    lambda i: (hindu_zodiac(hindu_sunrise(i + 1)) ==  month))
-    day      = date - begin + 1
-    return OldHinduSolarDate(year, month, day)
-
-
-# see lines 5022-5039 in calendrica-3.0.cl
-def fixed_from_hindu_solar(s_date):
-    """Return the fixed date corresponding to Hindu solar date, s_date,
-    (Saka era; Orissa rule.)"""
-    begin = ifloor((s_date.year + HINDU_SOLAR_ERA + ((s_date.month - 1)/12)) *
-                  HINDU_SIDEREAL_YEAR + OldHindu.EPOCH)
-    return (s_date.day - 1 +
-            next_int(begin - 3,
-                 lambda d: (hindu_zodiac(hindu_sunrise(d + 1)) == s_date.month)))
-
-
-# see lines 5041-5044 in calendrica-3.0.cl
-HINDU_LUNAR_ERA = 3044
-
-# see lines 5046-5074 in calendrica-3.0.cl
-def hindu_lunar_from_fixed(date):
-    """Return the Hindu lunar date, new_moon scheme, 
-    equivalent to fixed date, date."""
-    critical = hindu_sunrise(date)
-    day      = hindu_lunar_day_from_moment(critical)
-    leap_day = (day == hindu_lunar_day_from_moment(hindu_sunrise(date - 1)))
-    last_new_moon = hindu_new_moon_before(critical)
-    next_new_moon = hindu_new_moon_before(ifloor(last_new_moon) + 35)
-    solar_month   = hindu_zodiac(last_new_moon)
-    leap_month    = (solar_month == hindu_zodiac(next_new_moon))
-    month    = amod(solar_month + 1, 12)
-    year     = (hindu_calendar_year((date + 180) if (month <= 2) else date) -
-                HINDU_LUNAR_ERA)
-    return HinduLunarDate(year, month, leap_month, day, leap_day)
-
-
-# see lines 5076-5123 in calendrica-3.0.cl
-def fixed_from_hindu_lunar(l_date):
-    """Return the Fixed date corresponding to Hindu lunar date, l_date."""
-    approx = OldHindu.EPOCH + (HINDU_SIDEREAL_YEAR *
-                            (l_date.year + HINDU_LUNAR_ERA + ((l_date.month - 1) / 12)))
-    s = ifloor(approx - ((1/360) *
-                        HINDU_SIDEREAL_YEAR *
-                        mod(hindu_solar_longitude(approx) -
-                            ((l_date.month - 1) * 30) +
-                            180, 360) -
-                        180))
-    k = hindu_lunar_day_from_moment(s + Clock.days_from_hours(6))
-    if (3 < k < 27):
-        temp = k
-    else:
-        mid = hindu_lunar_from_fixed(s - 15)
-        if ((mid.month != l_date.month) or
-            (mid.leap_month and not l_date.leap_month)):
-            temp = mod(k + 15, 30) - 15
+    @classmethod
+    def arcsin(cls, amp):
+        """Return the inverse of Hindu sine function of amp."""
+        if (amp < 0):
+            return -cls.arcsin(-amp)
         else:
-            temp = mod(k - 15, 30) + 15
-    est = s + l_date.day - temp
-    tau = (est -
-           mod(hindu_lunar_day_from_moment(est + Clock.days_from_hours(6)) - l_date.day + 15, 30) +
-           15)
-    date = next_int(tau - 1,
-                lambda d: (hindu_lunar_day_from_moment(hindu_sunrise(d)) in
-                           [l_date.day, amod(l_date.day + 1, 30)]))
-    return (date + 1) if l_date.leap_day else date
+            pos = next_int(0, lambda k: amp <= cls.sine_table(k))
+            below = cls.sine_table(pos - 1)
+            return (angle(0, 225, 0) * (pos - 1 + ((amp - below) / (cls.sine_table(pos) - below))))
 
+    @classmethod
+    def mean_position(cls, tee, period):
+        """Return the position in degrees at moment, tee, in uniform circular
+        orbit of period days."""
+        return 360 * mod((tee - cls.CREATION) / period, 1)
 
-# see lines 5125-5139 in calendrica-3.0.cl
-def hindu_equation_of_time(date):
-    """Return the time from true to mean midnight of date, date."""
-    offset = hindu_sine(hindu_mean_position(date, HINDU_ANOMALISTIC_YEAR))
-    equation_sun = (offset *
-                    angle(57, 18, 0) *
-                    (14/360 - (abs(offset) / 1080)))
-    return ((hindu_daily_motion(date) / 360) *
-            (equation_sun / 360) *
-            HINDU_SIDEREAL_YEAR)
+    @classmethod
+    def true_position(cls, tee, period, size, anomalistic, change):
+        """Return the longitudinal position at moment, tee.
+        period is the period of mean motion in days.
+        size is ratio of radii of epicycle and deferent.
+        anomalistic is the period of retrograde revolution about epicycle.
+        change is maximum decrease in epicycle size."""
+        lam         = cls.mean_position(tee, period)
+        offset      = cls.sine(cls.mean_position(tee, anomalistic))
+        contraction = abs(offset) * change * size
+        equation    = cls.arcsin(offset * (size - contraction))
+        return mod(lam - equation, 360)
 
+    @classmethod
+    def solar_longitude(cls, tee):
+        """Return the solar longitude at moment, tee."""
+        return cls.true_position(tee, cls.SIDEREAL_YEAR, 14/360, cls.ANOMALISTIC_YEAR, 1/42)
 
-# see lines 5141-5155 in calendrica-3.0.cl
-def hindu_ascensional_difference(date, location):
-    """Return the difference between right and oblique ascension
-    of sun on date, date, at loacel, location."""
-    sin_delta = (1397/3438) * hindu_sine(hindu_tropical_longitude(date))
-    phi = location.latitude
-    diurnal_radius = hindu_sine(90 + hindu_arcsin(sin_delta))
-    tan_phi = hindu_sine(phi) / hindu_sine(90 + phi)
-    earth_sine = sin_delta * tan_phi
-    return hindu_arcsin(-earth_sine / diurnal_radius)
+    @classmethod
+    def zodiac(cls, tee):
+        """Return the zodiacal sign of the sun, as integer in range 1..12,
+        at moment tee."""
+        return quotient(float(cls.solar_longitude(tee)), 30) + 1
 
+    @classmethod
+    def equation_of_time(cls, date):
+        """Return the time from true to mean midnight of date, date."""
+        offset = cls.sine(cls.mean_position(date, cls.ANOMALISTIC_YEAR))
+        equation_sun = (offset * angle(57, 18, 0) * (14/360 - (abs(offset) / 1080)))
+        return ((cls.daily_motion(date) / 360) * (equation_sun / 360) * cls.SIDEREAL_YEAR)
 
-# see lines 5157-5172 in calendrica-3.0.cl
-def hindu_tropical_longitude(date):
-    """Return the Hindu tropical longitude on fixed date, date.
-    Assumes precession with maximum of 27 degrees
-    and period of 7200 sidereal years (= 1577917828/600 days)."""
-    days = ifloor(date - OldHindu.EPOCH)
-    precession = (27 -
-                  (abs(54 -
-                       mod(27 +
-                           (108 * 600/1577917828 * days),
-                           108))))
-    return mod(hindu_solar_longitude(date) - precession, 360)
+    @classmethod
+    def ascensional_difference(cls, date, location):
+        """Return the difference between right and oblique ascension
+        of sun on date, date, at loacel, location."""
+        sin_delta = (1397/3438) * cls.sine(cls.tropical_longitude(date))
+        phi = location.latitude
+        diurnal_radius = cls.sine(90 + cls.arcsin(sin_delta))
+        tan_phi = cls.sine(phi) / cls.sine(90 + phi)
+        earth_sine = sin_delta * tan_phi
+        return cls.arcsin(-earth_sine / diurnal_radius)
 
+    @classmethod
+    def daily_motion(cls, date):
+        """Return the sidereal daily motion of sun on date, date."""
+        mean_motion = 360 / cls.SIDEREAL_YEAR
+        anomaly     = cls.mean_position(date, cls.ANOMALISTIC_YEAR)
+        epicycle    = 14/360 - abs(cls.sine(anomaly)) / 1080
+        entry       = quotient(float(anomaly), angle(0, 225, 0))
+        sine_table_step = cls.sine_table(entry + 1) - cls.sine_table(entry)
+        factor = -3438/225 * sine_table_step * epicycle
+        return mean_motion * (factor + 1)
 
-# see lines 5174-5183 in calendrica-3.0.cl
-def hindu_rising_sign(date):
-    """Return the tabulated speed of rising of current zodiacal sign on
-    date, date."""
-    i = quotient(float(hindu_tropical_longitude(date)), 30)
-    return [1670/1800, 1795/1800, 1935/1800, 1935/1800,
-            1795/1800, 1670/1800][mod(i, 6)]
+    @classmethod
+    def solar_sidereal_difference(cls, date):
+        """Return the difference between solar and sidereal day on date, date."""
+        return cls.daily_motion(date) * cls.rising_sign(date)
 
+    @classmethod
+    def sunrise(cls, date):
+        """Return the sunrise at hindu_location on date, date."""
+        return (date + Clock.days_from_hours(6) + 
+                ((cls.UJJAIN.longitude - cls.LOCATION.longitude) / 360) -
+                cls.equation_of_time(date) +
+                ((1577917828/1582237828 / 360) *
+                 (cls.ascensional_difference(date, cls.LOCATION) +
+                  (1/4 * cls.solar_sidereal_difference(date)))))
 
-# see lines 5185-5200 in calendrica-3.0.cl
-def hindu_daily_motion(date):
-    """Return the sidereal daily motion of sun on date, date."""
-    mean_motion = 360 / HINDU_SIDEREAL_YEAR
-    anomaly     = hindu_mean_position(date, HINDU_ANOMALISTIC_YEAR)
-    epicycle    = 14/360 - abs(hindu_sine(anomaly)) / 1080
-    entry       = quotient(float(anomaly), angle(0, 225, 0))
-    sine_table_step = hindu_sine_table(entry + 1) - hindu_sine_table(entry)
-    factor = -3438/225 * sine_table_step * epicycle
-    return mean_motion * (factor + 1)
+    @classmethod
+    def sunset(cls, date):
+        """Return sunset at HINDU_LOCATION on date, date."""
+        return (date + Clock.days_from_hours(18) + 
+                ((cls.UJJAIN.longitude - cls.LOCATION.longitude) / 360) -
+                cls.equation_of_time(date) +
+                (((1577917828/1582237828) / 360) *
+                 (- cls.ascensional_difference(date, cls.LOCATION) +
+                  (3/4 * cls.solar_sidereal_difference(date)))))
 
-def hindu_solar_sidereal_difference(date):
-    """Return the difference between solar and sidereal day on date, date."""
-    return hindu_daily_motion(date) * hindu_rising_sign(date)
+    @classmethod
+    def alt_sunrise(cls, date):
+        """Return the astronomical sunrise at Hindu location on date, date,
+        per Lahiri, rounded to nearest minute, as a rational number."""
+        rise = cls.LOCATION.dawn(date, angle(0, 47, 0))
+        return 1/24 * 1/60 * iround(rise * 24 * 60)
 
-UJJAIN = Location(angle(23, 9, 0), angle(75, 46, 6), 0, Clock.days_from_hours(5 + 461/9000))
+class HinduLunarDate(HinduDate):
 
-HINDU_LOCATION = UJJAIN
+    MONTH = 27 + 4644439/14438334
+    SYNODIC_MONTH = 29 + 7087771/13358334
+    ANOMALISTIC_MONTH = mpf(1577917828)/(57753336 - 488199)
+    LUNAR_ERA = 3044
 
-def hindu_sunrise(date):
-    """Return the sunrise at hindu_location on date, date."""
-    return (date + Clock.days_from_hours(6) + 
-            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / 360) -
-            hindu_equation_of_time(date) +
-            ((1577917828/1582237828 / 360) *
-             (hindu_ascensional_difference(date, HINDU_LOCATION) +
-              (1/4 * hindu_solar_sidereal_difference(date)))))
+    def __init__(self, year, month, leap_month, day, leap_day):
+        HinduDate.__init__(self, year, month, leap_month, day, leap_day)
 
+    @classmethod
+    def lunar_longitude(cls, tee):
+        """Return the lunar longitude at moment, tee."""
+        return cls.true_position(tee, cls.SIDEREAL_MONTH, 32/360, cls.ANOMALISTIC_MONTH, 1/96)
 
-# see lines 5230-5244 in calendrica-3.0.cl
-def hindu_fullmoon_from_fixed(date):
-    """Return the Hindu lunar date, full_moon scheme, 
-    equivalent to fixed date, date."""
-    l_date     = hindu_lunar_from_fixed(date)
-    m = (hindu_lunar_from_fixed(date + 20).month
-         if (l_date.day >= 16)
-         else l_date.month)
-    return HinduLunarDate(l_date.year, m, l_date.leap_month, l_date.day, l_date.leap_day)
+    @classmethod
+    def lunar_phase(cls, tee):
+        """Return the longitudinal distance between the sun and moon
+        at moment, tee."""
+        return mod(cls.lunar_longitude(tee) - cls.hindu_solar_longitude(tee), 360)
 
+    @classmethod
+    def lunar_day_from_moment(cls, tee):
+        """Return the phase of moon (tithi) at moment, tee, as an integer in
+        the range 1..30."""
+        return quotient(cls.lunar_phase(tee), 12) + 1
 
-# see lines 5246-5255 in calendrica-3.0.cl
-def is_hindu_expunged(l_month, l_year):
-    """Return True if Hindu lunar month l_month in year, l_year
-    is expunged."""
-    return (l_month != hindu_lunar_from_fixed(fixed_from_hindu_lunar([l_year, l_month, False, 15, False])).month)
+    @classmethod
+    def new_moon_before(cls, tee):
+        """Return the approximate moment of last new moon preceding moment, tee,
+        close enough to determine zodiacal sign."""
+        varepsilon = pow(2, -1000)
+        tau = tee - ((1/360)   *
+                     cls.lunar_phase(tee) *
+                     cls.SYNODIC_MONTH)
+        return binary_search(tau - 1, min(tee, tau + 1),
+                             lambda l, u: ((cls.zodiac(l) == cls.zodiac(u)) or
+                                           ((u - l) < varepsilon)),
+                             lambda x: cls.lunar_phase(x) < 180)
 
+    @classmethod
+    def lunar_day_at_or_after(cls, k, tee):
+        """Return the time lunar_day (tithi) number, k, begins at or after
+        moment, tee.  k can be fractional (for karanas)."""
+        phase = (k - 1) * 12
+        tau   = tee + ((1/360) *
+                       mod(phase - cls.lunar_phase(tee), 360) *
+                       cls.SYNODIC_MONTH)
+        a = max(tee, tau - 2)
+        b = tau + 2
+        return invert_angular(cls.lunar_phase, phase, a, b)
 
-# see lines 5257-5272 in calendrica-3.0.cl
-def fixed_from_hindu_fullmoon(l_date):
-    """Return the fixed date equivalent to Hindu lunar date, l_date,
-    in full_moon scheme."""
-    if (l_date.leap_month or (l_date.day <= 15)):
-        m = l_date.month
-    elif (is_hindu_expunged(amod(l_date.month - 1, 12), l_date.year)):
-        m = amod(l_date.month - 2, 12)
-    else:
-        m = amod(l_date.month - 1, 12)
-    return fixed_from_hindu_lunar(
-        HinduLunarDate(l_date.year, m, l_date.leap_month, l_date.day, l_date.leap_day))
+    @classmethod
+    def calendar_year(cls, tee):
+        """Return the solar year at given moment, tee."""
+        return iround(((tee - OldHindu.EPOCH) / cls.SIDEREAL_YEAR) - (cls.solar_longitude(tee) / 360))
 
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the Hindu lunar date, new_moon scheme, 
+        equivalent to fixed date, date."""
+        critical = cls.sunrise(date)
+        day      = cls.lunar_day_from_moment(critical)
+        leap_day = (day == cls.lunar_day_from_moment(cls.sunrise(date - 1)))
+        last_new_moon = cls.new_moon_before(critical)
+        next_new_moon = cls.new_moon_before(ifloor(last_new_moon) + 35)
+        solar_month   = cls.zodiac(last_new_moon)
+        leap_month    = (solar_month == cls.zodiac(next_new_moon))
+        month    = amod(solar_month + 1, 12)
+        year     = (cls.calendar_year((date + 180) if (month <= 2) else date) - cls.LUNAR_ERA)
+        return HinduLunarDate(year, month, leap_month, day, leap_day)
 
-# see lines 5274-5280 in calendrica-3.0.cl
-def alt_hindu_sunrise(date):
-    """Return the astronomical sunrise at Hindu location on date, date,
-    per Lahiri, rounded to nearest minute, as a rational number."""
-    rise = HINDU_LOCATION.dawn(date, angle(0, 47, 0))
-    return 1/24 * 1/60 * iround(rise * 24 * 60)
+    def to_fixed(self):
+        """Return the Fixed date corresponding to Hindu lunar date, l_date."""
+        approx = OldHindu.EPOCH + (self.SIDEREAL_YEAR *
+                                (self.year + self.LUNAR_ERA + ((self.month - 1) / 12)))
+        s = ifloor(approx - ((1/360) *
+                            self.SIDEREAL_YEAR *
+                            mod(self.hindu_solar_longitude(approx) -
+                                ((self.month - 1) * 30) +
+                                180, 360) -
+                            180))
+        k = self.lunar_day_from_moment(s + Clock.days_from_hours(6))
+        if (3 < k < 27):
+            temp = k
+        else:
+            mid = self.lunar_from_fixed(s - 15)
+            if ((mid.month != self.month) or
+                (mid.leap_month and not self.leap_month)):
+                temp = mod(k + 15, 30) - 15
+            else:
+                temp = mod(k - 15, 30) + 15
+        est = s + self.day - temp
+        tau = (est -
+               mod(self.lunar_day_from_moment(est + Clock.days_from_hours(6)) - self.day + 15, 30) + 15)
+        date = next_int(tau - 1,
+                    lambda d: (self.lunar_day_from_moment(self.sunrise(d)) in [self.day, amod(self.day + 1, 30)]))
+        return (date + 1) if self.leap_day else date
 
+class HinduLunarFullMoonDate(HinduDate):
+    
+    def __init__(self, year, month, leap_month, day, leap_day):
+        HinduDate.__init__(self, year, month, leap_month, day, leap_day)
 
-# see lines 5282-5292 in calendrica-3.0.cl
-def hindu_sunset(date):
-    """Return sunset at HINDU_LOCATION on date, date."""
-    return (date + Clock.days_from_hours(18) + 
-            ((UJJAIN.longitude - HINDU_LOCATION.longitude) / 360) -
-            hindu_equation_of_time(date) +
-            (((1577917828/1582237828) / 360) *
-             (- hindu_ascensional_difference(date, HINDU_LOCATION) +
-              (3/4 * hindu_solar_sidereal_difference(date)))))
+    def to_fixed(self):
+        """Return the fixed date equivalent to Hindu lunar date, l_date,
+        in full_moon scheme."""
+        if (self.leap_month or (self.day <= 15)):
+            m = self.month
+        elif (self.is_expunged(amod(self.month - 1, 12), self.year)):
+            m = amod(self.month - 2, 12)
+        else:
+            m = amod(self.month - 1, 12)
+        return HinduLunarFullMoonDate(self.year, m, self.leap_month, self.day, self.leap_day).to_fixed()
 
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the Hindu lunar date, full_moon scheme, 
+        equivalent to fixed date, date."""
+        l_date     = cls.from_fixed(date)
+        m = (cls.from_fixed(date + 20).month if (l_date.day >= 16) else l_date.month)
+        return HinduLunarFullMoonDate(l_date.year, m, l_date.leap_month, l_date.day, l_date.leap_day)
+    
+    @classmethod
+    def is_expunged(cls, l_month, l_year):
+        """Return True if Hindu lunar month l_month in year, l_year
+        is expunged."""
+        return l_month != cls.lunar_from_fixed(HinduLunarFullMoonDate(l_year, l_month, False, 15, False).to_fixed()).month
+    
+    
+class HinduSolarDate(HinduDate):
+    
+    SOLAR_ERA = 3179
+    
+    def __init__(self, year, month, leap_month, day, leap_day):
+        HinduDate.__init__(self, year, month, leap_month, day, leap_day)
 
-# see lines 5294-5313 in calendrica-3.0.cl
-def hindu_sundial_time(tee):
-    """Return Hindu local time of temporal moment, tee."""
-    date = Clock.fixed_from_moment(tee)
-    time = mod(tee, 1)
-    q    = ifloor(4 * time)
-    if (q == 0):
-        a = hindu_sunset(date - 1)
-        b = hindu_sunrise(date)
-        t = Clock.days_from_hours(-6)
-    elif (q == 3):
-        a = hindu_sunset(date)
-        b = hindu_sunrise(date + 1)
-        t = Clock.days_from_hours(18)
-    else:
-        a = hindu_sunrise(date)
-        b = hindu_sunset(date)
-        t = Clock.days_from_hours(6)
-    return a + (2 * (b - a) * (time - t))
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the Hindu (Orissa) solar date equivalent to fixed date, date."""
+        critical = cls.sunrise(date + 1)
+        month    = cls.zodiac(critical)
+        year     = cls.calendar_year(critical) - cls.SOLAR_ERA
+        approx   = date - 3 - mod(ifloor(cls.solar_longitude(critical)), 30)
+        begin    = next_int(approx, lambda i: (cls.zodiac(cls.sunrise(i + 1)) ==  month))
+        day      = date - begin + 1
+        return HinduSolarDate(year, month, day)
+
+    def to_fixed(self):
+        """Return the fixed date corresponding to Hindu solar date, s_date,
+        (Saka era; Orissa rule.)"""
+        begin = ifloor((self.year + self.SOLAR_ERA + ((self.month - 1)/12)) * self.SIDEREAL_YEAR + OldHindu.EPOCH)
+        return (self.day - 1 + next_int(begin - 3, lambda d: (self.zodiac(self.sunrise(d + 1)) == self.month)))
+
+    @classmethod
+    def tropical_longitude(cls, date):
+        """Return the Hindu tropical longitude on fixed date, date.
+        Assumes precession with maximum of 27 degrees
+        and period of 7200 sidereal years (= 1577917828/600 days)."""
+        days = ifloor(date - OldHindu.EPOCH)
+        precession = (27 - (abs(54 - mod(27 + (108 * 600/1577917828 * days), 108))))
+        return mod(cls.solar_longitude(date) - precession, 360)
+
+    @classmethod
+    def rising_sign(cls, date):
+        """Return the tabulated speed of rising of current zodiacal sign on
+        date, date."""
+        i = quotient(float(cls.tropical_longitude(date)), 30)
+        return [1670/1800, 1795/1800, 1935/1800, 1935/1800, 1795/1800, 1670/1800][mod(i, 6)]
+
+    @classmethod
+    def sundial_time(cls, tee):
+        """Return Hindu local time of temporal moment, tee."""
+        date = Clock.fixed_from_moment(tee)
+        time = mod(tee, 1)
+        q    = ifloor(4 * time)
+        if (q == 0):
+            a = cls.sunset(date - 1)
+            b = cls.sunrise(date)
+            t = Clock.days_from_hours(-6)
+        elif (q == 3):
+            a = cls.sunset(date)
+            b = cls.sunrise(date + 1)
+            t = Clock.days_from_hours(18)
+        else:
+            a = cls.sunrise(date)
+            b = cls.sunset(date)
+            t = Clock.days_from_hours(6)
+        return a + (2 * (b - a) * (time - t))
 
 
 # see lines 5315-5318 in calendrica-3.0.cl
@@ -494,12 +438,20 @@ def ayanamsha(tee):
     """Return the difference between tropical and sidereal solar longitude."""
     return solar_longitude(tee) - sidereal_solar_longitude(tee)
 
+class HinduAstro(HinduDate):
+    
+    def __init__(self, year, month, leap_month, day, leap_day):
+        HinduDate.__init__(self, year, month, leap_month, day, leap_day)
 
-# see lines 5320-5323 in calendrica-3.0.cl
-def astro_hindu_sunset(date):
-    """Return the geometrical sunset at Hindu location on date, date."""
-    return HINDU_LOCATION.dusk(date, 0)
+    @classmethod
+    def sunset(cls, date):
+        """Return the geometrical sunset at Hindu location on date, date."""
+        return cls.LOCATION.dusk(date, 0)
 
+    @classmethod
+    def calendar_year(cls, tee):
+        """Return the astronomical Hindu solar year KY at given moment, tee."""
+        return iround(((tee - OldHindu.EPOCH) / MEAN_SIDEREAL_YEAR) - (sidereal_solar_longitude(tee) / 360))
 
 # see lines 5325-5329 in calendrica-3.0.cl
 def sidereal_zodiac(tee):
@@ -507,114 +459,101 @@ def sidereal_zodiac(tee):
     1..12, at moment, tee."""
     return quotient(int(sidereal_solar_longitude(tee)), 30) + 1
 
+class HinduAstroSolar(HinduAstro):
+    
+    def __init__(self, year, month, leap_month, day, leap_day):
+        HinduAstro.__init__(self, year, month, leap_month, day, leap_day)
 
-# see lines 5331-5337 in calendrica-3.0.cl
-def astro_hindu_calendar_year(tee):
-    """Return the astronomical Hindu solar year KY at given moment, tee."""
-    return iround(((tee - OldHindu.EPOCH) / MEAN_SIDEREAL_YEAR) -
-                 (sidereal_solar_longitude(tee) / 360))
+    def to_fixed(self):
+        """Return the fixed date corresponding to Astronomical 
+        Hindu solar date (Tamil rule; Saka era)."""
+        approx = (OldHindu.EPOCH - 3 +
+                  ifloor(((self.year + HinduSolarDate.SOLAR_ERA) + ((self.month - 1) / 12)) *
+                        MEAN_SIDEREAL_YEAR))
+        begin = next_int(approx, lambda i: (sidereal_zodiac(self.sunset(i)) == self.month))
+        return begin + self.day - 1
 
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the Astronomical Hindu (Tamil) solar date equivalent to
+        fixed date, date."""
+        critical = cls.sunset(date)
+        month    = sidereal_zodiac(critical)
+        year     = cls.calendar_year(critical) - HinduSolarDate.SOLAR_ERA
+        approx   = (date - 3 - mod(ifloor(sidereal_solar_longitude( critical)), 30))
+        begin    = next_int(approx, lambda i: (sidereal_zodiac(cls.sunset(i)) == month))
+        day      = date - begin + 1
+        return HinduAstroSolar(year, month, day)
 
-# see lines 5339-5357 in calendrica-3.0.cl
-def astro_hindu_solar_from_fixed(date):
-    """Return the Astronomical Hindu (Tamil) solar date equivalent to
-    fixed date, date."""
-    critical = astro_hindu_sunset(date)
-    month    = sidereal_zodiac(critical)
-    year     = astro_hindu_calendar_year(critical) - HINDU_SOLAR_ERA
-    approx   = (date - 3 -
-                mod(ifloor(sidereal_solar_longitude( critical)), 30))
-    begin    = next_int(approx,
-                    lambda i: (sidereal_zodiac(astro_hindu_sunset(i)) == month))
-    day      = date - begin + 1
-    return OldHinduSolarDate(year, month, day)
+class HinduAstroLunar(HinduAstro):
+    
+    def __init__(self, year, month, leap_month, day, leap_day):
+        HinduAstro.__init__(self, year, month, leap_month, day, leap_day)
+        
+    @classmethod
+    def day_from_moment(cls, tee):
+        """Return the phase of moon (tithi) at moment, tee, as an integer in
+        the range 1..30."""
+        return quotient(lunar_phase(tee), 12) + 1
 
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the astronomical Hindu lunar date equivalent to
+        fixed date, date."""
+        critical = cls.alt_sunrise(date)
+        day      = cls.day_from_moment(critical)
+        leap_day = (day == cls.day_from_moment(cls.alt_sunrise(date - 1)))
+        last_new_moon = new_moon_before(critical)
+        next_new_moon = new_moon_at_or_after(critical)
+        solar_month   = sidereal_zodiac(last_new_moon)
+        leap_month    = solar_month == sidereal_zodiac(next_new_moon)
+        month    = amod(solar_month + 1, 12)
+        year     = cls.calendar_year((date + 180)
+                                             if (month <= 2)
+                                             else date) - cls.LUNAR_ERA
+        return HinduAstroLunar(year, month, leap_month, day, leap_day)
 
-# see lines 5359-5375 in calendrica-3.0.cl
-def fixed_from_astro_hindu_solar(s_date):
-    """Return the fixed date corresponding to Astronomical 
-    Hindu solar date (Tamil rule; Saka era)."""
-    approx = (OldHindu.EPOCH - 3 +
-              ifloor(((s_date.year + HINDU_SOLAR_ERA) + ((s_date.month - 1) / 12)) *
-                    MEAN_SIDEREAL_YEAR))
-    begin = next_int(approx,
-                 lambda i: (sidereal_zodiac(astro_hindu_sunset(i)) == s_date.month))
-    return begin + s_date.day - 1
-
-
-# see lines 5377-5381 in calendrica-3.0.cl
-def astro_lunar_day_from_moment(tee):
-    """Return the phase of moon (tithi) at moment, tee, as an integer in
-    the range 1..30."""
-    return quotient(lunar_phase(tee), 12) + 1
-
-
-# see lines 5383-5410 in calendrica-3.0.cl
-def astro_hindu_lunar_from_fixed(date):
-    """Return the astronomical Hindu lunar date equivalent to
-    fixed date, date."""
-    critical = alt_hindu_sunrise(date)
-    day      = astro_lunar_day_from_moment(critical)
-    leap_day = (day == astro_lunar_day_from_moment(
-        alt_hindu_sunrise(date - 1)))
-    last_new_moon = new_moon_before(critical)
-    next_new_moon = new_moon_at_or_after(critical)
-    solar_month   = sidereal_zodiac(last_new_moon)
-    leap_month    = solar_month == sidereal_zodiac(next_new_moon)
-    month    = amod(solar_month + 1, 12)
-    year     = astro_hindu_calendar_year((date + 180)
-                                         if (month <= 2)
-                                         else date) - HINDU_LUNAR_ERA
-    return HinduLunarDate(year, month, leap_month, day, leap_day)
-
-
-# see lines 5412-5460 in calendrica-3.0.cl
-def fixed_from_astro_hindu_lunar(l_date):
-    """Return the fixed date corresponding to Hindu lunar date, l_date."""
-    approx = (OldHindu.EPOCH +
-              MEAN_SIDEREAL_YEAR *
-              (l_date.year + HINDU_LUNAR_ERA + ((l_date.month - 1) / 12)))
-    s = ifloor(approx -
-              1/360 * MEAN_SIDEREAL_YEAR *
-              (mod(sidereal_solar_longitude(approx) -
-                  (l_date.month - 1) * 30 + 180, 360) - 180))
-    k = astro_lunar_day_from_moment(s + Clock.days_from_hours(6))
-    if (3 < k < 27):
-        temp = k
-    else:
-        mid = astro_hindu_lunar_from_fixed(s - 15)
-        if ((mid.month != l_date.month) or
-            (mid.leap_month and not l_date.leap_month)):
-            temp = mod(k + 15, 30) - 15
+    def to_fixed(self):
+        """Return the fixed date corresponding to Hindu lunar date, l_date."""
+        approx = (OldHindu.EPOCH + MEAN_SIDEREAL_YEAR * (self.year + self.LUNAR_ERA + ((self.month - 1) / 12)))
+        s = ifloor(approx -
+                  1/360 * MEAN_SIDEREAL_YEAR *
+                  (mod(sidereal_solar_longitude(approx) -
+                      (self.month - 1) * 30 + 180, 360) - 180))
+        k = self.day_from_moment(s + Clock.days_from_hours(6))
+        if (3 < k < 27):
+            temp = k
         else:
-            temp = mod(k - 15, 30) + 15
-    est = s + l_date.day - temp
-    tau = (est -
-           mod(astro_lunar_day_from_moment(est + Clock.days_from_hours(6)) - l_date.day + 15, 30) +
-           15)
-    date = next_int(tau - 1,
-                lambda d: (astro_lunar_day_from_moment(alt_hindu_sunrise(d)) in
-                           [l_date.day, amod(l_date.day + 1, 30)]))
-    return (date + 1) if l_date.leap_day else date
+            mid = self.from_fixed(s - 15)
+            if ((mid.month != self.month) or (mid.leap_month and not self.leap_month)):
+                temp = mod(k + 15, 30) - 15
+            else:
+                temp = mod(k - 15, 30) + 15
+        est = s + self.day - temp
+        tau = (est - mod(self.day_from_moment(est + Clock.days_from_hours(6)) - self.day + 15, 30) + 15)
+        date = next_int(tau - 1,
+                    lambda d: (self.day_from_moment(self.alt_sunrise(d)) in
+                               [self.day, amod(self.day + 1, 30)]))
+        return (date + 1) if self.leap_day else date
 
 
 # see lines 5462-5467 in calendrica-3.0.cl
 def hindu_lunar_station(date):
     """Return the Hindu lunar station (nakshatra) at sunrise on date, date."""
-    critical = hindu_sunrise(date)
-    return quotient(hindu_lunar_longitude(critical), angle(0, 800, 0)) + 1
+    critical = HinduDate.sunrise(date)
+    return quotient(HinduLunarDate.longitude(critical), angle(0, 800, 0)) + 1
 
 
 # see lines 5469-5480 in calendrica-3.0.cl
 def hindu_solar_longitude_at_or_after(lam, tee):
     """Return the moment of the first time at or after moment, tee
     when Hindu solar longitude will be lam degrees."""
-    tau = tee + (HINDU_SIDEREAL_YEAR *
+    tau = tee + (HinduSolarDate.SIDEREAL_YEAR *
                  (1 / 360) *
-                 mod(lam - hindu_solar_longitude(tee), 360))
+                 mod(lam - HinduSolarDate.longitude(tee), 360))
     a = max(tee, tau - 5)
     b = tau +5
-    return invert_angular(hindu_solar_longitude, lam, a, b)
+    return invert_angular(HinduSolarDate.longitude, lam, a, b)
 
 
 # see lines 5482-5487 in calendrica-3.0.cl
@@ -626,7 +565,7 @@ def mesha_samkranti(g_year):
 
 
 # see lines 5489-5493 in calendrica-3.0.cl
-SIDEREAL_START = precession(HINDU_LOCATION.universal_from_local(mesha_samkranti(JulianDate.ce(285))))
+SIDEREAL_START = precession(HinduDate.LOCATION.universal_from_local(mesha_samkranti(JulianDate.ce(285))))
 
 # see lines 5495-5513 in calendrica-3.0.cl
 def hindu_lunar_new_year(g_year):
@@ -634,12 +573,12 @@ def hindu_lunar_new_year(g_year):
     Gregorian year, g_year."""
     jan1     = GregorianDate.new_year(g_year)
     mina     = hindu_solar_longitude_at_or_after(330, jan1)
-    new_moon = hindu_lunar_day_at_or_after(1, mina)
+    new_moon = HinduLunarDate.day_at_or_after(1, mina)
     h_day    = ifloor(new_moon)
-    critical = hindu_sunrise(h_day)
+    critical = HinduDate.sunrise(h_day)
     return (h_day +
             (0 if ((new_moon < critical) or
-                   (hindu_lunar_day_from_moment(hindu_sunrise(h_day + 1)) == 2))
+                   (HinduLunarDate.day_from_moment(HinduDate.sunrise(h_day + 1)) == 2))
              else 1))
 
 
@@ -666,16 +605,16 @@ def hindu_date_occur(l_month, l_day, l_year):
     expunged days into account.  When the month is
     expunged, then the following month is used."""
     lunar = HinduLunarDate(l_year, l_month, False, l_day, False)
-    ttry   = fixed_from_hindu_lunar(lunar)
-    mid   = hindu_lunar_from_fixed((ttry - 5) if (l_day > 15) else ttry)
+    ttry   = lunar.to_fixed()
+    mid   = HinduLunarDate.from_fixed((ttry - 5) if (l_day > 15) else ttry)
     expunged = l_month != mid.month
     l_date = HinduLunarDate(mid.year, mid.month, mid.leap_month, l_day, False)
     if (expunged):
         return next_int(ttry,
                     lambda d: (not is_hindu_lunar_on_or_before(
-                        hindu_lunar_from_fixed(d),
+                        HinduLunarDate.from_fixed(d),
                         l_date))) - 1
-    elif (l_day != hindu_lunar_from_fixed(ttry).day):
+    elif (l_day != HinduLunarDate.from_fixed(ttry).day):
         return ttry - 1
     else:
         return ttry
@@ -685,7 +624,7 @@ def hindu_date_occur(l_month, l_day, l_year):
 def hindu_lunar_holiday(l_month, l_day, g_year):
     """Return the list of fixed dates of occurrences of Hindu lunar
     month, month, day, day, in Gregorian year, g_year."""
-    l_year = hindu_lunar_from_fixed(GregorianDate.new_year(g_year)).year
+    l_year = HinduLunarDate.from_fixed(GregorianDate.new_year(g_year)).year
     date1  = hindu_date_occur(l_month, l_day, l_year)
     date2  = hindu_date_occur(l_month, l_day, l_year + 1)
     return list_range([date1, date2], GregorianDate.year_range(g_year))
@@ -703,11 +642,11 @@ def hindu_tithi_occur(l_month, tithi, tee, l_year):
     to sundial time, tee, in Hindu lunar month, l_month, and
     year, l_year."""
     approx = hindu_date_occur(l_month, ifloor(tithi), l_year)
-    lunar  = hindu_lunar_day_at_or_after(tithi, approx - 2)
+    lunar  = HinduLunarDate.day_at_or_after(tithi, approx - 2)
     ttry    = Clock.fixed_from_moment(lunar)
-    tee_h  = standard_from_sundial(ttry + tee, UJJAIN)
+    tee_h  = standard_from_sundial(ttry + tee, HinduLunarDate.UJJAIN)
     if ((lunar <= tee_h) or
-        (hindu_lunar_phase(standard_from_sundial(ttry + 1 + tee, UJJAIN)) >
+        (HinduLunarDate.lunar_phase(standard_from_sundial(ttry + 1 + tee, HinduLunarDate.UJJAIN)) >
          (12 * tithi))):
         return ttry
     else:
@@ -719,7 +658,7 @@ def hindu_lunar_event(l_month, tithi, tee, g_year):
     """Return the list of fixed dates of occurrences of Hindu lunar tithi
     prior to sundial time, tee, in Hindu lunar month, l_month,
     in Gregorian year, g_year."""
-    l_year = hindu_lunar_from_fixed(GregorianDate.new_year(g_year)).year
+    l_year = HinduLunarDate.from_fixed(GregorianDate.new_year(g_year)).year
     date1  = hindu_tithi_occur(l_month, tithi, tee, l_year)
     date2  = hindu_tithi_occur(l_month, tithi, tee, l_year + 1)
     return list_range([date1, date2],
@@ -755,8 +694,7 @@ def karana(n):
 # see lines 5642-5648 in calendrica-3.0.cl
 def yoga(date):
     """Return the Hindu yoga on date, date."""
-    return ifloor(mod((hindu_solar_longitude(date) +
-                 hindu_lunar_longitude(date)) / angle(0, 800, 0), 27)) + 1
+    return ifloor(mod((HinduSolarDate.longitude(date) + HinduLunarDate.longitude(date)) / angle(0, 800, 0), 27)) + 1
 
 
 # see lines 5650-5655 in calendrica-3.0.cl
@@ -773,7 +711,7 @@ def sacred_wednesdays_in_range(range):
     a      = range[0]
     b      = range[1]
     wed    = DayOfWeek(DayOfWeek.Wednesday).on_or_after(a)
-    h_date = hindu_lunar_from_fixed(wed)
+    h_date = HinduLunarDate.from_fixed(wed)
     ell  = [wed] if (h_date.day == 8) else []
     if is_in_range(wed, range):
         ell[:0] = sacred_wednesdays_in_range([wed + 1, b])
