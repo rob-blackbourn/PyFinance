@@ -1,7 +1,7 @@
 from operator import mod
-from py_cal_cal import quotient, list_range
-from gregorian_calendars import JulianMonth, GregorianDate
-from py_calendrical.calendars.julian_calendars import JulianDate
+from py_calendrical.py_cal_cal import quotient, list_range
+from py_calendrical.calendars.gregorian import JulianMonth, GregorianDate
+from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.year_month_day import YearMonthDay
 
 class CopticDate(YearMonthDay):

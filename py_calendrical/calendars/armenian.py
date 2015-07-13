@@ -1,5 +1,5 @@
-from year_month_day import YearMonthDay
-from egyptian_calendars import EgyptianDate
+from py_calendrical.year_month_day import YearMonthDay
+from py_calendrical.calendars.egyptian import EgyptianDate
 
 class ArmenianDate(YearMonthDay):
 

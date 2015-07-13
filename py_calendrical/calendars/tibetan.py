@@ -1,6 +1,6 @@
 from operator import mod
-from py_cal_cal import iceiling, ifloor, final_int, amod, list_range
-from py_calendrical.calendars.gregorian_calendars import GregorianDate, JulianMonth
+from py_calendrical.py_cal_cal import iceiling, ifloor, final_int, amod, list_range
+from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 
 class TibetanDate(object):
     

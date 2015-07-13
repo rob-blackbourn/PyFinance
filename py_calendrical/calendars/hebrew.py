@@ -1,15 +1,15 @@
 from operator import mod
 from enum import IntEnum
 from mpmath import mpf
-from py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
-from triganometry import angle
-from day_arithmatic import DayOfWeek
-from astro import phasis_on_or_before, solar_longitude_after, SPRING, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
-from julian_calendars import JulianDate
-from py_calendrical.calendars.coptic_calendars import CopticDate
-from location import Location
-from py_calendrical.calendars.gregorian_calendars import GregorianDate, JulianMonth
-from time_arithmatic import Clock
+from py_calendrical.py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
+from py_calendrical.triganometry import angle
+from py_calendrical.day_arithmatic import DayOfWeek
+from py_calendrical.astro import phasis_on_or_before, solar_longitude_after, SPRING, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
+from py_calendrical.calendars.julian import JulianDate
+from py_calendrical.calendars.coptic import CopticDate
+from py_calendrical.location import Location
+from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.time_arithmatic import Clock
 from py_calendrical.year_month_day import YearMonthDay
 
 class HebrewMonth(IntEnum):

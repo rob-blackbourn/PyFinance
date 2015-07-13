@@ -1,11 +1,11 @@
 from operator import mod
 from mpmath import mpf
-from gregorian_calendars import GregorianDate, JulianMonth
-from py_cal_cal import ifloor, amod, quotient, iround, iceiling, rd, next_int
-from triganometry import angle
-from astro import WINTER, MEAN_SYNODIC_MONTH, MEAN_TROPICAL_YEAR, solar_longitude_after, solar_longitude, new_moon_before, new_moon_at_or_after, estimate_prior_solar_longitude
-from location import Location
-from time_arithmatic import Clock
+from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.py_cal_cal import ifloor, amod, quotient, iround, iceiling, rd, next_int
+from py_calendrical.triganometry import angle
+from py_calendrical.astro import WINTER, MEAN_SYNODIC_MONTH, MEAN_TROPICAL_YEAR, solar_longitude_after, solar_longitude, new_moon_before, new_moon_at_or_after, estimate_prior_solar_longitude
+from py_calendrical.location import Location
+from py_calendrical.time_arithmatic import Clock
 
 class ChineseDate(object):
 

@@ -1,7 +1,7 @@
 from operator import mod
-from py_cal_cal import amod, even, quotient
-from julian_calendars import JD
-from gregorian_calendars import GregorianDate
+from py_calendrical.py_cal_cal import amod, even, quotient
+from py_calendrical.calendars.julian import JD
+from py_calendrical.calendars.gregorian import GregorianDate
 
 class BalineseDate(object):
 

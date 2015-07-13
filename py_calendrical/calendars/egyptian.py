@@ -1,7 +1,7 @@
 from operator import mod
-from year_month_day import YearMonthDay
-from py_cal_cal import quotient
-from julian_calendars import JD
+from py_calendrical.year_month_day import YearMonthDay
+from py_calendrical.py_cal_cal import quotient
+from py_calendrical.calendars.julian import JD
 
 class EgyptianDate(YearMonthDay):
 
