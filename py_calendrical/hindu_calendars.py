@@ -110,38 +110,15 @@ class OldHinduSolarDate(OldHindu):
 #####################################
 # modern hindu calendars algorithms #
 #####################################
-# see lines 4816-4820 in calendrica-3.0.cl
-def hindu_lunar_date(year, month, leap_month, day, leap_day):
-    """Return a lunar Hindu date data structure."""
-    return [year, month, leap_month, day, leap_day]
+class HinduLunarDate(object):
+    
+    def __init__(self, year, month, leap_month, day, leap_day):
+        self.year = year
+        self.month = month
+        self.leap_month = leap_month
+        self.day = day
+        self.leap_day = leap_day
 
-
-# see lines 4822-4824 in calendrica-3.0.cl
-def hindu_lunar_month(date):
-    """Return 'month' element of a lunar Hindu date, date."""
-    return date[1]
-
-
-# see lines 4826-4828 in calendrica-3.0.cl
-def hindu_lunar_leap_month(date):
-    """Return 'leap_month' element of a lunar Hindu date, date."""
-    return date[2]
-
-
-# see lines 4830-4832 in calendrica-3.0.cl
-def hindu_lunar_day(date):
-    """Return 'day' element of a lunar Hindu date, date."""
-    return date[3]
-
-# see lines 4834-4836 in calendrica-3.0.cl
-def hindu_lunar_leap_day(date):
-    """Return 'leap_day' element of a lunar Hindu date, date."""
-    return date[4]
-
-# see lines 4838-4840 in calendrica-3.0.cl
-def hindu_lunar_year(date):
-    """Return 'year' element of a lunar Hindu date, date."""
-    return date[0]
 
 # see lines 4842-4850 in calendrica-3.0.cl
 def hindu_sine_table(entry):
@@ -330,23 +307,18 @@ def hindu_lunar_from_fixed(date):
     month    = amod(solar_month + 1, 12)
     year     = (hindu_calendar_year((date + 180) if (month <= 2) else date) -
                 HINDU_LUNAR_ERA)
-    return hindu_lunar_date(year, month, leap_month, day, leap_day)
+    return HinduLunarDate(year, month, leap_month, day, leap_day)
 
 
 # see lines 5076-5123 in calendrica-3.0.cl
 def fixed_from_hindu_lunar(l_date):
     """Return the Fixed date corresponding to Hindu lunar date, l_date."""
-    year       = hindu_lunar_year(l_date)
-    month      = hindu_lunar_month(l_date)
-    leap_month = hindu_lunar_leap_month(l_date)
-    day        = hindu_lunar_day(l_date)
-    leap_day   = hindu_lunar_leap_day(l_date)
     approx = OldHindu.EPOCH + (HINDU_SIDEREAL_YEAR *
-                            (year + HINDU_LUNAR_ERA + ((month - 1) / 12)))
+                            (l_date.year + HINDU_LUNAR_ERA + ((l_date.month - 1) / 12)))
     s = ifloor(approx - ((1/360) *
                         HINDU_SIDEREAL_YEAR *
                         mod(hindu_solar_longitude(approx) -
-                            ((month - 1) * 30) +
+                            ((l_date.month - 1) * 30) +
                             180, 360) -
                         180))
     k = hindu_lunar_day_from_moment(s + Clock.days_from_hours(6))
@@ -354,19 +326,19 @@ def fixed_from_hindu_lunar(l_date):
         temp = k
     else:
         mid = hindu_lunar_from_fixed(s - 15)
-        if ((hindu_lunar_month(mid) != month) or
-            (hindu_lunar_leap_month(mid) and not leap_month)):
+        if ((mid.month != l_date.month) or
+            (mid.leap_month and not l_date.leap_month)):
             temp = mod(k + 15, 30) - 15
         else:
             temp = mod(k - 15, 30) + 15
-    est = s + day - temp
+    est = s + l_date.day - temp
     tau = (est -
-           mod(hindu_lunar_day_from_moment(est + Clock.days_from_hours(6)) - day + 15, 30) +
+           mod(hindu_lunar_day_from_moment(est + Clock.days_from_hours(6)) - l_date.day + 15, 30) +
            15)
     date = next_int(tau - 1,
                 lambda d: (hindu_lunar_day_from_moment(hindu_sunrise(d)) in
-                           [day, amod(day + 1, 30)]))
-    return (date + 1) if leap_day else date
+                           [l_date.day, amod(l_date.day + 1, 30)]))
+    return (date + 1) if l_date.leap_day else date
 
 
 # see lines 5125-5139 in calendrica-3.0.cl
@@ -450,45 +422,31 @@ def hindu_fullmoon_from_fixed(date):
     """Return the Hindu lunar date, full_moon scheme, 
     equivalent to fixed date, date."""
     l_date     = hindu_lunar_from_fixed(date)
-    year       = hindu_lunar_year(l_date)
-    month      = hindu_lunar_month(l_date)
-    leap_month = hindu_lunar_leap_month(l_date)
-    day        = hindu_lunar_day(l_date)
-    leap_day   = hindu_lunar_leap_day(l_date)
-    m = (hindu_lunar_month(hindu_lunar_from_fixed(date + 20))
-         if (day >= 16)
-         else month)
-    return hindu_lunar_date(year, m, leap_month, day, leap_day)
+    m = (hindu_lunar_from_fixed(date + 20).month
+         if (l_date.day >= 16)
+         else l_date.month)
+    return HinduLunarDate(l_date.year, m, l_date.leap_month, l_date.day, l_date.leap_day)
 
 
 # see lines 5246-5255 in calendrica-3.0.cl
 def is_hindu_expunged(l_month, l_year):
     """Return True if Hindu lunar month l_month in year, l_year
     is expunged."""
-    return (l_month !=
-            hindu_lunar_month(
-                hindu_lunar_from_fixed(
-                    fixed_from_hindu_lunar(
-                        [l_year, l_month, False, 15, False]))))
+    return (l_month != hindu_lunar_from_fixed(fixed_from_hindu_lunar([l_year, l_month, False, 15, False])).month)
 
 
 # see lines 5257-5272 in calendrica-3.0.cl
 def fixed_from_hindu_fullmoon(l_date):
     """Return the fixed date equivalent to Hindu lunar date, l_date,
     in full_moon scheme."""
-    year       = hindu_lunar_year(l_date)
-    month      = hindu_lunar_month(l_date)
-    leap_month = hindu_lunar_leap_month(l_date)
-    day        = hindu_lunar_day(l_date)
-    leap_day   = hindu_lunar_leap_day(l_date)
-    if (leap_month or (day <= 15)):
-        m = month
-    elif (is_hindu_expunged(amod(month - 1, 12), year)):
-        m = amod(month - 2, 12)
+    if (l_date.leap_month or (l_date.day <= 15)):
+        m = l_date.month
+    elif (is_hindu_expunged(amod(l_date.month - 1, 12), l_date.year)):
+        m = amod(l_date.month - 2, 12)
     else:
-        m = amod(month - 1, 12)
+        m = amod(l_date.month - 1, 12)
     return fixed_from_hindu_lunar(
-        hindu_lunar_date(year, m, leap_month, day, leap_day))
+        HinduLunarDate(l_date.year, m, l_date.leap_month, l_date.day, l_date.leap_day))
 
 
 # see lines 5274-5280 in calendrica-3.0.cl
@@ -607,42 +565,37 @@ def astro_hindu_lunar_from_fixed(date):
     year     = astro_hindu_calendar_year((date + 180)
                                          if (month <= 2)
                                          else date) - HINDU_LUNAR_ERA
-    return hindu_lunar_date(year, month, leap_month, day, leap_day)
+    return HinduLunarDate(year, month, leap_month, day, leap_day)
 
 
 # see lines 5412-5460 in calendrica-3.0.cl
 def fixed_from_astro_hindu_lunar(l_date):
     """Return the fixed date corresponding to Hindu lunar date, l_date."""
-    year  = hindu_lunar_year(l_date)
-    month = hindu_lunar_month(l_date)
-    leap_month = hindu_lunar_leap_month(l_date)
-    day   = hindu_lunar_day(l_date)
-    leap_day = hindu_lunar_leap_day(l_date)
     approx = (OldHindu.EPOCH +
               MEAN_SIDEREAL_YEAR *
-              (year + HINDU_LUNAR_ERA + ((month - 1) / 12)))
+              (l_date.year + HINDU_LUNAR_ERA + ((l_date.month - 1) / 12)))
     s = ifloor(approx -
               1/360 * MEAN_SIDEREAL_YEAR *
               (mod(sidereal_solar_longitude(approx) -
-                  (month - 1) * 30 + 180, 360) - 180))
+                  (l_date.month - 1) * 30 + 180, 360) - 180))
     k = astro_lunar_day_from_moment(s + Clock.days_from_hours(6))
     if (3 < k < 27):
         temp = k
     else:
         mid = astro_hindu_lunar_from_fixed(s - 15)
-        if ((hindu_lunar_month(mid) != month) or
-            (hindu_lunar_leap_month(mid) and not leap_month)):
+        if ((mid.month != l_date.month) or
+            (mid.leap_month and not l_date.leap_month)):
             temp = mod(k + 15, 30) - 15
         else:
             temp = mod(k - 15, 30) + 15
-    est = s + day - temp
+    est = s + l_date.day - temp
     tau = (est -
-           mod(astro_lunar_day_from_moment(est + Clock.days_from_hours(6)) - day + 15, 30) +
+           mod(astro_lunar_day_from_moment(est + Clock.days_from_hours(6)) - l_date.day + 15, 30) +
            15)
     date = next_int(tau - 1,
                 lambda d: (astro_lunar_day_from_moment(alt_hindu_sunrise(d)) in
-                           [day, amod(day + 1, 30)]))
-    return (date + 1) if leap_day else date
+                           [l_date.day, amod(l_date.day + 1, 30)]))
+    return (date + 1) if l_date.leap_day else date
 
 
 # see lines 5462-5467 in calendrica-3.0.cl
@@ -694,26 +647,16 @@ def hindu_lunar_new_year(g_year):
 def is_hindu_lunar_on_or_before(l_date1, l_date2):
     """Return True if Hindu lunar date, l_date1 is on or before
     Hindu lunar date, l_date2."""
-    month1 = hindu_lunar_month(l_date1)
-    month2 = hindu_lunar_month(l_date2)
-    leap1  = hindu_lunar_leap_month(l_date1)
-    leap2  = hindu_lunar_leap_month(l_date2)
-    day1   = hindu_lunar_day(l_date1)
-    day2   = hindu_lunar_day(l_date2)
-    leap_day1 = hindu_lunar_leap_day(l_date1)
-    leap_day2 = hindu_lunar_leap_day(l_date2)
-    year1  = hindu_lunar_year(l_date1)
-    year2  = hindu_lunar_year(l_date2)
-    return ((year1 < year2) or
-            ((year1 == year2) and
-             ((month1 < month2) or
-              ((month1 == month2) and
-               ((leap1 and not leap2) or
-                ((leap1 == leap2) and
-                 ((day1 < day2) or
-                  ((day1 == day2) and
-                   ((not leap_day1) or
-                    leap_day2)))))))))
+    return ((l_date1.year < l_date2.year) or
+            ((l_date1.year == l_date2.year) and
+             ((l_date1.month < l_date2.month) or
+              ((l_date1.month == l_date2.month) and
+               ((l_date1.leap_month and not l_date2.leap_month) or
+                ((l_date1.leap_month == l_date2.leap_month) and
+                 ((l_date1.day < l_date2.day) or
+                  ((l_date1.day == l_date2.day) and
+                   ((not l_date1.leap_day) or
+                    l_date2.leap_day)))))))))
 
 
 # see lines 5941-5967 in calendrica-3.0.cl
@@ -722,21 +665,17 @@ def hindu_date_occur(l_month, l_day, l_year):
     day, l_day, in Hindu lunar year, l_year, taking leap and
     expunged days into account.  When the month is
     expunged, then the following month is used."""
-    lunar = hindu_lunar_date(l_year, l_month, False, l_day, False)
+    lunar = HinduLunarDate(l_year, l_month, False, l_day, False)
     ttry   = fixed_from_hindu_lunar(lunar)
     mid   = hindu_lunar_from_fixed((ttry - 5) if (l_day > 15) else ttry)
-    expunged = l_month != hindu_lunar_month(mid)
-    l_date = hindu_lunar_date(hindu_lunar_year(mid),
-                              hindu_lunar_month(mid),
-                              hindu_lunar_leap_month(mid),
-                              l_day,
-                              False)
+    expunged = l_month != mid.month
+    l_date = HinduLunarDate(mid.year, mid.month, mid.leap_month, l_day, False)
     if (expunged):
         return next_int(ttry,
                     lambda d: (not is_hindu_lunar_on_or_before(
                         hindu_lunar_from_fixed(d),
                         l_date))) - 1
-    elif (l_day != hindu_lunar_day(hindu_lunar_from_fixed(ttry))):
+    elif (l_day != hindu_lunar_from_fixed(ttry).day):
         return ttry - 1
     else:
         return ttry
@@ -746,8 +685,7 @@ def hindu_date_occur(l_month, l_day, l_year):
 def hindu_lunar_holiday(l_month, l_day, g_year):
     """Return the list of fixed dates of occurrences of Hindu lunar
     month, month, day, day, in Gregorian year, g_year."""
-    l_year = hindu_lunar_year(
-        hindu_lunar_from_fixed(GregorianDate.new_year(g_year)))
+    l_year = hindu_lunar_from_fixed(GregorianDate.new_year(g_year)).year
     date1  = hindu_date_occur(l_month, l_day, l_year)
     date2  = hindu_date_occur(l_month, l_day, l_year + 1)
     return list_range([date1, date2], GregorianDate.year_range(g_year))
@@ -781,8 +719,7 @@ def hindu_lunar_event(l_month, tithi, tee, g_year):
     """Return the list of fixed dates of occurrences of Hindu lunar tithi
     prior to sundial time, tee, in Hindu lunar month, l_month,
     in Gregorian year, g_year."""
-    l_year = hindu_lunar_year(
-        hindu_lunar_from_fixed(GregorianDate.new_year(g_year)))
+    l_year = hindu_lunar_from_fixed(GregorianDate.new_year(g_year)).year
     date1  = hindu_tithi_occur(l_month, tithi, tee, l_year)
     date2  = hindu_tithi_occur(l_month, tithi, tee, l_year + 1)
     return list_range([date1, date2],
@@ -837,7 +774,7 @@ def sacred_wednesdays_in_range(range):
     b      = range[1]
     wed    = DayOfWeek(DayOfWeek.Wednesday).on_or_after(a)
     h_date = hindu_lunar_from_fixed(wed)
-    ell  = [wed] if (hindu_lunar_day(h_date) == 8) else []
+    ell  = [wed] if (h_date.day == 8) else []
     if is_in_range(wed, range):
         ell[:0] = sacred_wednesdays_in_range([wed + 1, b])
         return ell
