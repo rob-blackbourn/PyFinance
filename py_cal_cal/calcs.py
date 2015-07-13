@@ -3665,23 +3665,17 @@ class ChineseName(object):
         has Chinese name, name."""
         return (date - mod(date + cls.name_difference(name, cls.sexagesimal_name(cls.DAY_NAME_EPOCH)), 60))
 
-
-
-# see lines 4760-4769 in calendrica-3.0.cl
 def japanese_location(tee):
     """Return the location for Japanese calendar; varies with moment, tee."""
     year = GregorianDate.to_year(ifloor(tee))
     if (year < 1888):
         # Tokyo (139 deg 46 min east) local time
-        loc = Location(mpf(35.7), angle(139, 46, 0),
-                           24, days_from_hours(9 + 143/450))
+        loc = Location(mpf(35.7), angle(139, 46, 0), 24, days_from_hours(9 + 143/450))
     else:
         # Longitude 135 time zone
         loc = Location(35, 135, 0, days_from_hours(9))
     return loc
 
-
-# see lines 4771-4795 in calendrica-3.0.cl
 def korean_location(tee):
     """Return the location for Korean calendar; varies with moment, tee."""
     # Seoul city hall at a varying time zone.
@@ -3696,17 +3690,12 @@ def korean_location(tee):
         z = 8.5
     else:
         z = 9
-    return Location(angle(37, 34, 0), angle(126, 58, 0),
-                    0, days_from_hours(z))
+    return Location(angle(37, 34, 0), angle(126, 58, 0), 0, days_from_hours(z))
 
-
-# see lines 4797-4800 in calendrica-3.0.cl
 def korean_year(cycle, year):
     """Return equivalent Korean year to Chinese cycle, cycle, and year, year."""
     return (60 * cycle) + year - 364
 
-
-# see lines 4802-4811 in calendrica-3.0.cl
 def vietnamese_location(tee):
     """Return the location for Vietnamese calendar is Hanoi;
     varies with moment, tee. Time zone has changed over the years."""
@@ -3714,8 +3703,7 @@ def vietnamese_location(tee):
         z = 8
     else:
         z =7
-        return Location(angle(21, 2, 0), angle(105, 51, 0),
-                        12, days_from_hours(z))
+    return Location(angle(21, 2, 0), angle(105, 51, 0), 12, days_from_hours(z))
 
 
 #####################################
