@@ -1,9 +1,10 @@
 from operator import mod
 from enum import IntEnum
+import datetime
 from py_calendrical.py_cal_cal import quotient, amod, is_in_range
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.year_month_day import YearMonthDay
-from py_calendrical.calendars.julian import JulianDate
+#from py_calendrical.calendars.julian import JulianDate
 
 class JulianMonth(IntEnum):
     January = 1
@@ -50,6 +51,13 @@ class GregorianDate(YearMonthDay):
         day = 1 + (fixed_date - GregorianDate(year, month, 1).to_fixed())
         return GregorianDate(year, month, day)
 
+    def to_date(self):
+        return datetime.date(self.year, self.month, self.day)
+    
+    @classmethod
+    def from_date(cls, date):
+        return GregorianDate(date.year, date.month, date.day)
+    
     @classmethod
     def is_leap_year(cls, year):
         """Return True if 'year' is leap."""
@@ -186,11 +194,6 @@ def pentecost(year):
     """Return fixed date of Pentecost in Gregorian year g_year."""
     return easter(year) + 49
 
-def eastern_orthodox_christmas(year):
-    """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
-    in Gregorian year 'year'."""
-    return JulianDate.julian_in_gregorian(JulianMonth.December, 25, year)
-
 def labor_day(year):
     """Return the fixed date of United States Labor Day in Gregorian
     year 'g_year' (the first Monday in September)."""
@@ -234,13 +237,6 @@ def epiphany(year):
 def epiphany_it(year):
     """Return fixed date of Epiphany in Italy in Gregorian year 'year'."""
     return GregorianDate(year, JulianMonth.January, 6)
-
-def orthodox_easter(year):
-    """Return fixed date of Orthodox Easter in Gregorian year g_year."""
-    shifted_epact = mod(14 + 11 * mod(year, 19), 30)
-    j_year        = year if year > 0 else year - 1
-    paschal_moon  = JulianDate(j_year, JulianMonth.April, 19).to_fixed() - shifted_epact
-    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
 
 def unlucky_fridays_in_range(range):
     """Return the list of Fridays within range 'range' of fixed dates that

@@ -158,3 +158,14 @@ def pentecost(g_year):
     """Return fixed date of Pentecost in Gregorian year g_year."""
     return easter(g_year) + 49
 
+def eastern_orthodox_christmas(year):
+    """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
+    in Gregorian year 'year'."""
+    return JulianDate.julian_in_gregorian(JulianMonth.December, 25, year)
+
+def orthodox_easter(year):
+    """Return fixed date of Orthodox Easter in Gregorian year g_year."""
+    shifted_epact = mod(14 + 11 * mod(year, 19), 30)
+    j_year        = year if year > 0 else year - 1
+    paschal_moon  = JulianDate(j_year, JulianMonth.April, 19).to_fixed() - shifted_epact
+    return DayOfWeek(DayOfWeek.Sunday).after(paschal_moon)
