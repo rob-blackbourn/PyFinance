@@ -66,11 +66,11 @@ def signum(a):
 
 # see lines 2380-2390 in calendrica-3.0.cl
 # The following
-#      from math import ceil as ceiling
+#      from math import ceil as iceiling
 # is not ok, the corresponding CL code
-# uses CL ceiling which always returns and integer, while
+# uses CL iceiling which always returns and integer, while
 # ceil from math module always returns a float...so I redefine it
-def ceiling(n):
+def iceiling(n):
     """Return the integer rounded towards +infinitum of n."""
     return int(math.ceil(n))
 
@@ -1645,7 +1645,7 @@ class OldHinduLunarDate(OldHindu):
         lunar_new_year = self.ARYA_LUNAR_MONTH * (quotient(mina, self.ARYA_LUNAR_MONTH) + 1)
     
         if ((not self.leap) and 
-            (ceiling((lunar_new_year - mina) / (self.ARYA_SOLAR_MONTH - self.ARYA_LUNAR_MONTH))
+            (iceiling((lunar_new_year - mina) / (self.ARYA_SOLAR_MONTH - self.ARYA_LUNAR_MONTH))
              <= self.month)):
             temp = self.month
         else:
@@ -1655,7 +1655,7 @@ class OldHinduLunarDate(OldHindu):
                 (self.ARYA_LUNAR_MONTH * temp) +
                 ((self.day - 1) * self.ARYA_LUNAR_DAY) +
                 Clock.days_from_hours(-6))
-        return ceiling(temp)
+        return iceiling(temp)
 
     @classmethod
     def is_leap_year(cls, l_year):
@@ -1674,9 +1674,9 @@ class OldHinduLunarDate(OldHindu):
                  mod(new_moon, cls.ARYA_SOLAR_MONTH))
                 and
                 (mod(new_moon, cls.ARYA_SOLAR_MONTH) > 0))
-        month = mod(ceiling(new_moon / cls.ARYA_SOLAR_MONTH), 12) + 1
+        month = mod(iceiling(new_moon / cls.ARYA_SOLAR_MONTH), 12) + 1
         day = mod(quotient(sun, cls.ARYA_LUNAR_DAY), 30) + 1
-        year = ceiling((new_moon + cls.ARYA_SOLAR_MONTH) / cls.ARYA_SOLAR_YEAR) - 1
+        year = iceiling((new_moon + cls.ARYA_SOLAR_MONTH) / cls.ARYA_SOLAR_YEAR) - 1
         return OldHinduLunarDate(year, month, leap, day)
 
 class OldHinduSolarDate(OldHindu):
@@ -1698,7 +1698,7 @@ class OldHinduSolarDate(OldHindu):
         
     def to_fixed(self):
         """Return fixed date corresponding to Old Hindu solar date s_date."""
-        return ceiling(self.HINDU_EPOCH                 +
+        return iceiling(self.HINDU_EPOCH                 +
                     self.year * self.ARYA_SOLAR_YEAR         +
                     (self.month - 1) * self.ARYA_SOLAR_MONTH +
                     self.day + Clock.days_from_hours(-30))
@@ -3070,9 +3070,9 @@ class PersianDate(object):
         y = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR) + 1
         year = y if (0 < y) else (y - 1)
         day_of_year = date - PersianDate(year, 1, 1).to_fixed() + 1
-        month = (ceiling(day_of_year / 31)
+        month = (iceiling(day_of_year / 31)
                  if (day_of_year <= 186)
-                 else ceiling((day_of_year - 6) / 30))
+                 else iceiling((day_of_year - 6) / 30))
         day = date - (PersianDate(year, month, 1).to_fixed() - 1)
         return PersianDate(year, month, day)
     
@@ -3113,9 +3113,9 @@ class PersianDate(object):
         """Return the Persian date corresponding to fixed date, date."""
         year        = cls.to_arithmetic_year(date)
         day_of_year = 1 + date - PersianDate(year, 1, 1).to_fixed_arithmetic()
-        month       = (ceiling(day_of_year / 31)
+        month       = (iceiling(day_of_year / 31)
                        if (day_of_year <= 186)
-                       else ceiling((day_of_year - 6) / 30))
+                       else iceiling((day_of_year - 6) / 30))
         day = date - PersianDate(year, month, 1).to_fixed_arithmetic() +1
         return PersianDate(year, month, day)
     
@@ -3380,7 +3380,7 @@ class ChineseDate(object):
         major terms begin when the sun's longitude is a
         multiple of 30 degrees."""
         s = solar_longitude(cls.midnight(date))
-        l = mod(30 * ceiling(s / 30), 360)
+        l = mod(30 * iceiling(s / 30), 360)
         return cls.solar_longitude_on_or_after(l, date)
 
     @classmethod    
@@ -3395,7 +3395,7 @@ class ChineseDate(object):
         term (jieqi) on or after fixed date, date.  The minor terms
         begin when the sun's longitude is an odd multiple of 15 degrees."""
         s = solar_longitude(cls.midnight(date))
-        l = mod(30 * ceiling((s - 15) / 30) + 15, 360)
+        l = mod(30 * iceiling((s - 15) / 30) + 15, 360)
         return cls.solar_longitude_on_or_after(l, date)
 
     @classmethod    
@@ -3686,7 +3686,7 @@ def hindu_sine(theta):
     """Return the linear interpolation for angle, theta, in Hindu table."""
     entry    = theta / angle(0, 225, 0)
     fraction = mod(entry, 1)
-    return ((fraction * hindu_sine_table(ceiling(entry))) +
+    return ((fraction * hindu_sine_table(iceiling(entry))) +
             ((1 - fraction) * hindu_sine_table(ifloor(entry))))
 
 

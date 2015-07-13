@@ -1,5 +1,5 @@
 from operator import mod
-from py_cal_cal import GregorianDate, JulianMonth, ceiling, ifloor, final_int, amod, list_range
+from py_cal_cal import GregorianDate, JulianMonth, iceiling, ifloor, final_int, amod, list_range
 
 class TibetanDate(object):
     
@@ -33,7 +33,7 @@ class TibetanDate(object):
     def from_fixed(cls, fixed_date):
         """Return the Tibetan lunar date corresponding to fixed date, 'fixed_date'."""
         cap_Y = 365 + 4975/18382
-        years = ceiling((fixed_date - cls.EPOCH) / cap_Y)
+        years = iceiling((fixed_date - cls.EPOCH) / cap_Y)
         year0 = final_int(years, lambda y:(fixed_date >= TibetanDate(y, 1, False, 1, False).to_fixed()))
         month0 = final_int(1, lambda m: (fixed_date >= TibetanDate(year0, m, False, 1, False).to_fixed()))
         est = fixed_date - TibetanDate(year0, month0, False, 1, False).to_fixed()
@@ -67,7 +67,7 @@ class TibetanDate(object):
         elif isinstance(alpha, int):
             return [0, 6/60, 10/60, 11/60][alpha]
         else:
-            return ((mod(alpha, 1) * cls.sun_equation(ceiling(alpha))) +
+            return ((mod(alpha, 1) * cls.sun_equation(iceiling(alpha))) +
                     (mod(-alpha, 1) * cls.sun_equation(ifloor(alpha))))
 
     @classmethod
@@ -80,7 +80,7 @@ class TibetanDate(object):
         elif isinstance(alpha, int):
             return [0, 5/60, 10/60, 15/60, 19/60, 22/60, 24/60, 25/60][alpha]
         else:
-            return ((mod(alpha, 1) * cls.moon_equation(ceiling(alpha))) +
+            return ((mod(alpha, 1) * cls.moon_equation(iceiling(alpha))) +
                     (mod(-alpha, 1) * cls.moon_equation(ifloor(alpha))))
 
     @classmethod
