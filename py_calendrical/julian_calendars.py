@@ -1,7 +1,7 @@
 from operator import mod
 from mpmath import mpf
 from py_cal_cal import quotient, list_range, rd, ifloor
-from py_cal_cal import DayOfWeek
+from day_arithmatic import DayOfWeek
 from gregorian_calendars import GregorianDate, JulianMonth
 
 class JD(object):

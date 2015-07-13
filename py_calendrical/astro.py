@@ -1,7 +1,7 @@
 from operator import mod
 from mpmath import mpf
 from py_cal_cal import ifloor, iround, next_int, final_int, signum, poly, arcsin_degrees, sin_degrees, cos_degrees, tan_degrees, arctan_degrees, pi, sigma, normalized_degrees, arccos_degrees
-from py_cal_cal import DayOfWeek
+from day_arithmatic import DayOfWeek
 from py_cal_cal import angle, invert_angular, secs
 from gregorian_calendars import GregorianDate, JulianMonth
 from location import Location, URBANA

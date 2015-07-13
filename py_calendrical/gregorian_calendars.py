@@ -1,7 +1,7 @@
 from operator import mod
 from enum import IntEnum
 from py_cal_cal import rd, quotient, amod, is_in_range
-from py_cal_cal import DayOfWeek
+from day_arithmatic import DayOfWeek
 
 
 class JulianMonth(IntEnum):
