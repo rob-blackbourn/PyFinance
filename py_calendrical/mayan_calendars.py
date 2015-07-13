@@ -1,6 +1,6 @@
 from operator import mod
 from py_cal_cal import quotient, amod
-from py_cal_cal import JD
+from julian_calendars import JD
 
 ##############################
 # mayan calendars algorithms #

@@ -1,7 +1,43 @@
 from operator import mod
-from py_cal_cal import quotient, list_range
+from mpmath import mpf
+from py_cal_cal import quotient, list_range, rd, ifloor
 from py_cal_cal import DayOfWeek
 from gregorian_calendars import GregorianDate, JulianMonth
+
+class JD(object):
+    
+    EPOCH = rd(mpf(-1721424.5))
+
+    def __init__(self, date_from_epoch):
+        self.date_from_epoch = date_from_epoch
+    
+    def to_moment(self):
+        return self.date_from_epoch + self.EPOCH
+
+    @classmethod
+    def from_moment(cls, tee):
+        return JD(tee - cls.EPOCH)
+    
+    def to_fixed(self):
+        return ifloor(self.to_moment())
+
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        return cls.from_moment(fixed_date)
+
+class MJD(object):
+    
+    EPOCH = rd(678576)
+
+    def __init__(self, date_from_epoch):
+        self.date_from_epoch = date_from_epoch
+
+    def to_fixed(self):
+        return self.date_from_epoch + self.EPOCH
+
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        return MJD(fixed_date - cls.EPOCH)
 
 class JulianDate(object):
     

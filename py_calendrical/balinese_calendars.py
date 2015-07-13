@@ -1,6 +1,6 @@
 from operator import mod
 from py_cal_cal import amod, even, quotient
-from py_cal_cal import JD
+from julian_calendars import JD
 from gregorian_calendars import GregorianDate
 
 class BalineseDate(object):
