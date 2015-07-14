@@ -4,7 +4,6 @@ from mpmath import mpf
 from py_calendrical.py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
 from py_calendrical.triganometry import angle
 from py_calendrical.day_arithmatic import DayOfWeek
-from py_calendrical.astro import phasis_on_or_before, solar_longitude_after, SPRING, lunar_phase, MEAN_SYNODIC_MONTH, visible_crescent
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.calendars.coptic import CopticDate
 from py_calendrical.location import Location
@@ -110,7 +109,7 @@ class HebrewDate(YearMonthDay):
         return   (days + 1) if (mod(3 * (days + 1), 7) < 3) else days
 
     @classmethod    
-    def hebrew_new_year(cls, year):
+    def new_year(cls, year):
         """Return fixed date of Hebrew new year h_year."""
         return (cls.EPOCH +
                cls.elapsed_days(year) +
@@ -341,7 +340,7 @@ def observational_hebrew_new_year(g_year):
     """Return fixed date of Observational (classical)
     Nisan 1 occurring in Gregorian year, g_year."""
     jan1 = GregorianDate.new_year(g_year)
-    equinox = solar_longitude_after(SPRING, jan1)
+    equinox = Location.solar_longitude_after(Location.SPRING, jan1)
     sset = JAFFA.universal_from_standard(JAFFA.sunset(ifloor(equinox)))
     return phasis_on_or_after(ifloor(equinox) - (14 if (equinox < sset) else 13), JAFFA)
 
@@ -353,13 +352,13 @@ def fixed_from_observational_hebrew(h_date):
     g_year = GregorianDate.to_year(start + 60)
     new_year = observational_hebrew_new_year(g_year)
     midmonth = new_year + iround(29.5 * (h_date.month - 1)) + 15
-    return phasis_on_or_before(midmonth, JAFFA) + h_date.day - 1
+    return Location.phasis_on_or_before(midmonth, JAFFA) + h_date.day - 1
 
 # see lines 5975-5991 in calendrica-3.0.cl
 def observational_hebrew_from_fixed(date):
     """Return Observational Hebrew date (year month day)
     corresponding to fixed date, date."""
-    crescent = phasis_on_or_before(date, JAFFA)
+    crescent = Location.phasis_on_or_before(date, JAFFA)
     g_year = GregorianDate.to_year(date)
     ny = observational_hebrew_new_year(g_year)
     new_year = observational_hebrew_new_year(g_year - 1) if (date < ny) else ny
@@ -382,9 +381,9 @@ JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, Clock.days_from_hours(2)
 def phasis_on_or_after(date, location):
     """Return closest fixed date on or after date, date, on the eve
     of which crescent moon first became visible at location, location."""
-    mean = date - ifloor(lunar_phase(date + 1) / mpf(360) *
-                        MEAN_SYNODIC_MONTH)
+    mean = date - ifloor(Location.lunar_phase(date + 1) / mpf(360) *
+                        Location.MEAN_SYNODIC_MONTH)
     tau = (date if (((date - mean) <= 3) and
-                    (not visible_crescent(date - 1, location)))
+                    (not Location.visible_crescent(date - 1, location)))
            else (mean + 29))
-    return next_int(tau, lambda d: visible_crescent(d, location))
+    return next_int(tau, lambda d: Location.visible_crescent(d, location))
