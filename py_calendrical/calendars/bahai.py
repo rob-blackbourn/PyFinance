@@ -2,9 +2,9 @@ from operator import mod
 from mpmath import mpf
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.py_cal_cal import quotient, next_int, ifloor, iround
-from py_calendrical.astro import SPRING, estimate_prior_solar_longitude, solar_longitude, MEAN_TROPICAL_YEAR
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.utils import reduce_cond
 
 class BahaiDate(object):
 
@@ -17,7 +17,10 @@ class BahaiDate(object):
         self.year = year
         self.month = month
         self.day = day
-        
+    
+    def to_tuple(self):
+        return (self.major, self.cycle, self.year, self.month, self.day)
+    
     def to_fixed(self):
         """Return fixed date equivalent to the Bahai date, b_date."""
         g_year = (361 * (self.major - 1) +
@@ -79,10 +82,10 @@ class BahaiDate(object):
     def future_new_year_on_or_before(cls, date):
         """Return fixed date of Future Bahai New Year on or
         before fixed date, date."""
-        approx = estimate_prior_solar_longitude(SPRING, cls.sunset_in_haifa(date))
+        approx = Location.estimate_prior_solar_longitude(Location.SPRING, cls.sunset_in_haifa(date))
         return next_int(ifloor(approx) - 1,
-                    lambda day: (solar_longitude(cls.sunset_in_haifa(day)) <=
-                                 (SPRING + 2)))
+                    lambda day: (Location.solar_longitude(cls.sunset_in_haifa(day)) <=
+                                 (Location.SPRING + 2)))
 
     def to_future_fixed(self):
         """Return fixed date of Bahai date, b_date."""
@@ -90,24 +93,24 @@ class BahaiDate(object):
         if (self.month == 19):
             return (self.future_new_year_on_or_before(
                 self.EPOCH +
-                ifloor(MEAN_TROPICAL_YEAR * (years + 1/2))) -
+                ifloor(Location.MEAN_TROPICAL_YEAR * (years + 1/2))) -
                     20 + self.day)
         elif (self.month == self.AYYAM_I_HA):
             return (self.future_new_year_on_or_before(
                 self.EPOCH +
-                ifloor(MEAN_TROPICAL_YEAR * (years - 1/2))) +
+                ifloor(Location.MEAN_TROPICAL_YEAR * (years - 1/2))) +
                     341 + self.day)
         else:
             return (self.future_new_year_on_or_before(
                 self.EPOCH +
-                ifloor(MEAN_TROPICAL_YEAR * (years - 1/2))) +
+                ifloor(Location.MEAN_TROPICAL_YEAR * (years - 1/2))) +
                     (19 * (self.month - 1)) + self.day - 1)
     
     @classmethod
     def from_future_fixed(cls, date):
         """Return Future Bahai date corresponding to fixed date, date."""
         new_year = cls.future_new_year_on_or_before(date)
-        years    = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR)
+        years    = iround((new_year - cls.EPOCH) / Location.MEAN_TROPICAL_YEAR)
         major    = 1 + quotient(years, 361)
         cycle    = 1 + quotient(mod(years, 361), 19)
         year     = 1 + mod(years, 19)
@@ -132,3 +135,21 @@ class BahaiDate(object):
         cycle = 1 + quotient(mod(years, 361), 19)
         year = 1 + mod(years, 19)
         return BahaiDate(major, cycle, year, 2, 13).to_future_fixed()
+
+    def __eq__(self, other):
+        return isinstance(other, BahaiDate) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, BahaiDate) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, BahaiDate) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, BahaiDate) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, BahaiDate) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)

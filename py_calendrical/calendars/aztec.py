@@ -2,6 +2,7 @@ from operator import mod
 from py_calendrical.py_cal_cal import quotient, amod
 from py_calendrical.calendars.gregorian import JulianMonth
 from py_calendrical.calendars.julian import JulianDate
+from py_calendrical.utils import reduce_cond
 
 AZTEC_CORRELATION = JulianDate(1521, JulianMonth.August, 13).to_fixed()
 
@@ -15,6 +16,27 @@ class AztecXihuitlOrdinal(object):
         """Return the number of elapsed days into cycle of Aztec xihuitl
         date x_date."""
         return  ((self.month - 1) * 20) + self.day - 1
+
+    def to_tuple(self):
+        return (self.month, self.day)
+    
+    def __eq__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
 
 class AztecXihuitlDate(AztecXihuitlOrdinal):
 
@@ -46,6 +68,27 @@ class AztecTonalpohuallOrdinal(object):
     def to_ordinal(self):
         """Return the number of days into Aztec tonalpohualli cycle of t_date."""
         return mod(self.number - 1 + 39 * (self.number - self.name), 260)
+    
+    def to_tuple(self):
+        return (self.number, self.name)
+    
+    def __eq__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, AztecXihuitlOrdinal) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
 
 class AztecTonalpohualliDate(AztecTonalpohuallOrdinal):
 
