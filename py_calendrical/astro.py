@@ -1,12 +1,12 @@
 from operator import mod
 from mpmath import mpf
 from py_cal_cal import ifloor, iround, next_int, final_int, signum, poly, pi, sigma
-from triganometry import angle, arcsin_degrees, sin_degrees, cos_degrees, tan_degrees, arctan_degrees, normalized_degrees, arccos_degrees, secs
-from day_arithmatic import DayOfWeek
-from py_cal_cal import invert_angular
+from py_calendrical.triganometry import angle, arcsin_degrees, sin_degrees, cos_degrees, tan_degrees, arctan_degrees, normalized_degrees, arccos_degrees, secs
+from py_calendrical.day_arithmatic import DayOfWeek
+from py_calendrical.py_cal_cal import invert_angular
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
-from location import Location, URBANA
-from time_arithmatic import Clock
+from py_calendrical.location import Location, URBANA
+from py_calendrical.time_arithmatic import Clock
 
 def urbana_sunset(gdate):
     """Return sunset time in Urbana, Ill, on Gregorian date 'gdate'."""

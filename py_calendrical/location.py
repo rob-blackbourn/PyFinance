@@ -1,10 +1,10 @@
 from operator import mod
 from mpmath import mpf
 import math
-from triganometry import sin_degrees, cos_degrees, tan_degrees, arctan_degrees, arcsin_degrees, arccos_degrees, secs, angle 
-from py_cal_cal import binary_search
-from astro import equation_of_time, solar_longitude, declination, lunar_phase
-from time_arithmatic import Clock
+from py_calendrical.triganometry import sin_degrees, cos_degrees, tan_degrees, arctan_degrees, arcsin_degrees, arccos_degrees, secs, angle 
+from py_calendrical.py_cal_cal import binary_search
+from py_calendrical.astro import equation_of_time, solar_longitude, declination, lunar_phase
+from py_calendrical.time_arithmatic import Clock
 
 class Location(object):
 
