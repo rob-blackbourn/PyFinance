@@ -90,3 +90,12 @@ class RomanDate(object):
     
     def __lt__(self, other):
         return isinstance(other, RomanDate) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, RomanDate) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, RomanDate) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, RomanDate) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
