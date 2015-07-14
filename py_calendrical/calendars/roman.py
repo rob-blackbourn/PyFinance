@@ -1,9 +1,10 @@
-from enum import Enum
+from enum import IntEnum
 from py_calendrical.py_cal_cal import amod
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.calendars.gregorian import JulianMonth
+from py_calendrical.utils import reduce_cond
 
-class Event(Enum):
+class Event(IntEnum):
     Kalends = 1
     Nones = 2
     Ides = 3
@@ -77,27 +78,15 @@ class RomanDate(object):
         """Return the date of Nones in Roman month 'month'."""
         return cls.ides_of_month(month) - 8
 
+    def to_tuple(self):
+        return (self.year, self.month, self.event, self.count, self.leap)
+
+    
     def __eq__(self, other):
-        return isinstance(other, RomanDate) and self.year == other.year and self.month == other.month and self.event == other.event and self.count == other.count and self.leap == other.leap
+        return isinstance(other, RomanDate) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
     
     def __ne__(self, other):
         return not self.__eq__(other)
     
     def __lt__(self, other):
-        if not isinstance(other, RomanDate):
-            return False
-        if self.year < other.year:
-            return True
-        elif self.year == other.year:
-            if self.month < other.month:
-                return True
-            elif self.month == other.month:
-                if self.event < other.event:
-                    return True
-                elif self.event == other.event:
-                    if self.count < other.count:
-                        return True
-                    elif self.count == other.count:
-                        return self.leap < other.leap
-        return False
-    
+        return isinstance(other, RomanDate) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
