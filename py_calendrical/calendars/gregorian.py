@@ -4,7 +4,6 @@ import datetime
 from py_calendrical.py_cal_cal import quotient, amod, is_in_range
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.year_month_day import YearMonthDay
-#from py_calendrical.calendars.julian import JulianDate
 
 class JulianMonth(IntEnum):
     January = 1
