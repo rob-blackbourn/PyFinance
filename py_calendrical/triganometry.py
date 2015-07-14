@@ -4,13 +4,13 @@ from mpmath import radians as radians_from_degrees, degrees, sin, cos, tan, mpf,
 
 def secs(x):
     """Return the seconds in angle x."""
-    return x / 3600
+    return x / 3600.0
 
 def angle(d, m, s):
     """Return an angle data structure
     from d degrees, m arcminutes and s arcseconds.
     This assumes that negative angles specifies negative d, m and s."""
-    return d + ((m + (s / 60)) / 60)
+    return d + ((m + (s / 60.0)) / 60.0)
 
 def normalized_degrees(theta):
     """Return a normalize angle theta to range [0,360) degrees."""
@@ -20,7 +20,6 @@ def normalized_degrees_from_radians(theta):
     """Return normalized degrees from radians, theta.
     Function 'degrees' comes from mpmath."""
     return normalized_degrees(degrees(theta))
-
 
 def sin_degrees(theta):
     """Return sine of theta (given in degrees)."""
@@ -48,7 +47,7 @@ def tan_degrees(theta):
 
 def arctan_degrees(y, x):
     """ Arctangent of y/x in degrees."""
-    if (x == 0) and (y != 0):
+    if x == 0 and y != 0:
         return mod(signum(y) * mpf(90), 360)
     else:
         alpha = normalized_degrees_from_radians(atan(y / x))
