@@ -4,6 +4,7 @@ import datetime
 from py_calendrical.py_cal_cal import quotient, amod, is_in_range
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.year_month_day import YearMonthDay
+from fractions import Fraction
 
 class JulianMonth(IntEnum):
     January = 1
@@ -34,9 +35,7 @@ class GregorianDate(YearMonthDay):
                 quotient(self.year - 1, 100) + 
                 quotient(self.year - 1, 400) + 
                 quotient((367 * self.month) - 362, 12) + 
-                (0 if self.month <= 2
-                 else (-1 if self.is_leap_year(self.year) else -2)) +
-                self.day)
+                (0 if self.month <= 2 else (-1 if self.is_leap_year(self.year) else -2)) + self.day)
 
     @classmethod    
     def from_fixed(cls, fixed_date):
@@ -74,7 +73,7 @@ class GregorianDate(YearMonthDay):
         d3   = mod(d2, 1461)
         n1   = quotient(d3, 365)
         year = (400 * n400) + (100 * n100) + (4 * n4) + n1
-        return year if (n100 == 4) or (n1 == 4) else (year + 1)
+        return year if n100 == 4 or n1 == 4 else year + 1
 
     @classmethod
     def new_year(cls, year):
@@ -135,13 +134,13 @@ class GregorianDate(YearMonthDay):
     def to_year_alt(cls, fixed_date):
         """Return the year corresponding to the fixed date 'fixed_date'.
         Alternative calculation."""
-        approx = quotient(fixed_date - cls.EPOCH +2, 146097/400)
+        approx = quotient(fixed_date - cls.EPOCH + 2, Fraction(146097, 400))
         start  = (cls.EPOCH        +
                   (365 * approx)         +
                   quotient(approx, 4)    +
                   -quotient(approx, 100) +
                   quotient(approx, 400))
-        return approx if (fixed_date < start) else (approx + 1)
+        return approx if fixed_date < start else approx + 1
 
     def nth_day_of_week(self, n, day_of_week):
         """Return the fixed date of n-th day of week.
@@ -150,9 +149,9 @@ class GregorianDate(YearMonthDay):
         If n=0, return raise an error.
         A k-day of 0 means Sunday, 1 means Monday, and so on."""
         if n > 0:
-            return 7*n + day_of_week.before(self.to_fixed())
+            return 7 * n + day_of_week.before(self.to_fixed())
         elif n < 0:
-            return 7*n + day_of_week.after(self.to_fixed())
+            return 7 * n + day_of_week.after(self.to_fixed())
         else:
             raise ValueError("No valid answer where 'n' == 0.")
 
@@ -182,11 +181,8 @@ def easter(year):
                         11 * mod(year, 19) -
                         quotient(3 * century, 4) +
                         quotient(5 + (8 * century), 25), 30)
-    adjusted_epact = ((shifted_epact + 1)
-                      if ((shifted_epact == 0) or ((shifted_epact == 1) and
-                                                  (10 < mod(year, 19))))
-                      else  shifted_epact)
-    paschal_moon = (GregorianDate(year, JulianMonth.April, 19).to_fixed() - adjusted_epact)
+    adjusted_epact = shifted_epact + 1 if shifted_epact == 0 or (shifted_epact == 1 and 10 < mod(year, 19)) else shifted_epact
+    paschal_moon = GregorianDate(year, JulianMonth.April, 19).to_fixed() - adjusted_epact
     return DayOfWeek.Sunday.after(paschal_moon)
 
 def pentecost(year):
