@@ -3,9 +3,9 @@ from py_calendrical.py_cal_cal import amod, even, quotient
 from py_calendrical.calendars.julian import JD
 from py_calendrical.calendars.gregorian import GregorianDate
 
-class BalineseDate(object):
+class BalinesePawukonDate(object):
 
-    EPOCH = JD.from_fixed(146)
+    EPOCH = JD(146).to_fixed()
     
     def __init__(self, luang, dwiwara, triwara, caturwara, pancawara, sadwara, saptawara, asatawara, sangawara, dasawara):
         self.luang = luang
@@ -18,9 +18,24 @@ class BalineseDate(object):
         self.asatawara = asatawara
         self.sangawara = sangawara
         self.dasawara = dasawara
+    
+    @classmethod
+    def from_fixed(cls, date):
+        """Return the positions of date date in ten cycles of Balinese Pawukon
+        calendar."""
+        return BalinesePawukonDate(cls.luang_from_fixed(date),
+                                   cls.dwiwara_from_fixed(date),
+                                   cls.triwara_from_fixed(date),
+                                   cls.caturwara_from_fixed(date),
+                                   cls.pancawara_from_fixed(date),
+                                   cls.sadwara_from_fixed(date),
+                                   cls.saptawara_from_fixed(date),
+                                   cls.asatawara_from_fixed(date),
+                                   cls.sangawara_from_fixed(date),
+                                   cls.dasawara_from_fixed(date))
 
     @classmethod
-    def bali_day_from_fixed(cls, date):
+    def day_from_fixed(cls, date):
         """Return the position of date date in 210_day Pawukon cycle."""
         return mod(date - cls.EPOCH, 210)
 
@@ -78,26 +93,11 @@ class BalineseDate(object):
         return mod(1 + [5, 9, 7, 4, 8][i] + [5, 4, 3, 7, 8, 6, 9][j], 10)
     
     @classmethod
-    def pawukon_from_fixed(cls, date):
-        """Return the positions of date date in ten cycles of Balinese Pawukon
-        calendar."""
-        return BalineseDate(cls.luang_from_fixed(date),
-                             cls.dwiwara_from_fixed(date),
-                             cls.triwara_from_fixed(date),
-                             cls.caturwara_from_fixed(date),
-                             cls.pancawara_from_fixed(date),
-                             cls.sadwara_from_fixed(date),
-                             cls.saptawara_from_fixed(date),
-                             cls.asatawara_from_fixed(date),
-                             cls.sangawara_from_fixed(date),
-                             cls.dasawara_from_fixed(date))
-    
-    @classmethod
     def week_from_fixed(cls, date):
         """Return the  week number of date date in Balinese cycle."""
         return quotient(cls.day_from_fixed(date), 7) + 1
     
-    def bali_on_or_before(self, date):
+    def on_or_before(self, date):
         """Return last fixed date on or before date with Pawukon date b_date."""
         a5 = self.pancawara - 1
         a6 = self.sadwara   - 1
