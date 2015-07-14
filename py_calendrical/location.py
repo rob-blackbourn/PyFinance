@@ -2,7 +2,7 @@ from operator import mod
 from mpmath import mpf, pi
 import math
 from py_calendrical.triganometry import sin_degrees, cos_degrees, tan_degrees, arctan_degrees, arcsin_degrees, arccos_degrees, secs, angle, normalized_degrees 
-from py_calendrical.py_cal_cal import binary_search, ifloor, iround, poly, signum, sigma, final_int, next_int
+from py_calendrical.py_cal_cal import binary_search, ifloor, iround, poly, signum, sigma, final_int, next_int, invert_angular
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 
@@ -347,6 +347,20 @@ class Location(object):
         return mod(poly(c, [mpf(280.46061837), mpf(36525) * mpf(360.98564736629), mpf(0.000387933), mpf(-1)/mpf(38710000)]), 360)
 
     @classmethod
+    def solar_latitude(cls, tee):
+        """Return the latitude of Sun (in degrees) at moment, tee.
+        Adapted from "Astronomical Algorithms" by Jean Meeus,
+        Willmann_Bell, Inc., 1998."""
+        pass
+    
+    @classmethod
+    def solar_distance(cls, tee):
+        """Return the distance of Sun (in degrees) at moment, tee.
+        Adapted from "Astronomical Algorithms" by Jean Meeus,
+        Willmann_Bell, Inc., 1998."""
+        pass
+
+    @classmethod
     def solar_longitude(cls, tee):
         """Return the longitude of sun at moment 'tee'.
         Adapted from 'Planetary Programs and Tables from -4000 to +2800'
@@ -431,7 +445,7 @@ class Location(object):
         tau = tee + rate * mod(lam - cls.solar_longitude(tee), 360)
         a = max(tee, tau - 5)
         b = tau + 5
-        return cls.invert_angular(cls.solar_longitude, lam, a, b)
+        return invert_angular(cls.solar_longitude, lam, a, b)
 
     @classmethod
     def precession(cls, tee):
@@ -771,7 +785,7 @@ class Location(object):
                 mod(cls.lunar_phase(tee) - phi, 360)))
         a = tau - 2
         b = min(tee, tau +2)
-        return cls.invert_angular(cls.lunar_phase, phi, a, b)
+        return invert_angular(cls.lunar_phase, phi, a, b)
 
     @classmethod
     def visible_crescent(cls, date, location):
@@ -807,7 +821,7 @@ class Location(object):
                 mod(phi - cls.lunar_phase(tee), 360)))
         a = max(tee, tau - 2)
         b = tau + 2
-        return cls.invert_angular(cls.lunar_phase, phi, a, b)
+        return invert_angular(cls.lunar_phase, phi, a, b)
 
     @classmethod
     def lunar_altitude(cls, tee, location):
