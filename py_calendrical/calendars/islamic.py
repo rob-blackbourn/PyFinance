@@ -2,7 +2,6 @@ from operator import mod
 from mpmath import mpf
 from py_calendrical.py_cal_cal import quotient, list_range, ifloor, iround
 from py_calendrical.time_arithmatic import Clock
-from py_calendrical.astro import phasis_on_or_before, MEAN_SYNODIC_MONTH
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
@@ -61,14 +60,14 @@ ISLAMIC_LOCATION = Location(mpf(30.1), mpf(31.3), 200, Clock.days_from_hours(2))
 
 def fixed_from_observational_islamic(i_date):
     """Return fixed date equivalent to Observational Islamic date, i_date."""
-    midmonth = IslamicDate.EPOCH + ifloor((((i_date.year - 1) * 12) + i_date.month - 0.5) * MEAN_SYNODIC_MONTH)
-    return (phasis_on_or_before(midmonth, ISLAMIC_LOCATION) + i_date.day - 1)
+    midmonth = IslamicDate.EPOCH + ifloor((((i_date.year - 1) * 12) + i_date.month - 0.5) * Location.MEAN_SYNODIC_MONTH)
+    return (Location.phasis_on_or_before(midmonth, ISLAMIC_LOCATION) + i_date.day - 1)
 
 def observational_islamic_from_fixed(date):
     """Return Observational Islamic date (year month day)
     corresponding to fixed date, date."""
-    crescent = phasis_on_or_before(date, ISLAMIC_LOCATION)
-    elapsed_months = iround((crescent - IslamicDate.EPOCH) / MEAN_SYNODIC_MONTH)
+    crescent = Location.phasis_on_or_before(date, ISLAMIC_LOCATION)
+    elapsed_months = iround((crescent - IslamicDate.EPOCH) / Location.MEAN_SYNODIC_MONTH)
     year = quotient(elapsed_months, 12) + 1
     month = mod(elapsed_months, 12) + 1
     day = (date - crescent) + 1
