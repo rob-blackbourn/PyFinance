@@ -2,6 +2,7 @@ from operator import mod
 from py_calendrical.py_cal_cal import amod, even, quotient
 from py_calendrical.calendars.julian import JD
 from py_calendrical.calendars.gregorian import GregorianDate
+from py_calendrical.utils import reduce_cond
 
 class BalinesePawukonDate(object):
 
@@ -18,6 +19,9 @@ class BalinesePawukonDate(object):
         self.asatawara = asatawara
         self.sangawara = sangawara
         self.dasawara = dasawara
+    
+    def to_tuple(self):
+        return (self.luang, self.dwiwara, self.triwara, self.caturwara, self.pancawara, self.sadwara, self.saptawara, self.asatawara, self.sangawara, self.dasawara)
     
     @classmethod
     def from_fixed(cls, date):
@@ -134,3 +138,21 @@ class BalinesePawukonDate(object):
         year = GregorianDate.year_range(g_year)
         cap_Delta = cls.day_from_fixed(0)
         return cls.positions_in_range(14, 35, cap_Delta, year)
+
+    def __eq__(self, other):
+        return isinstance(other, BalinesePawukonDate) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, BalinesePawukonDate) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, BalinesePawukonDate) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, BalinesePawukonDate) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, BalinesePawukonDate) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
