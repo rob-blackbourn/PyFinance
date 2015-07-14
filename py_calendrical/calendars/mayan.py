@@ -1,13 +1,11 @@
 from operator import mod
 from py_calendrical.py_cal_cal import quotient, amod
 from py_calendrical.calendars.julian import JD
+from py_calendrical.utils import reduce_cond
 
-##############################
-# mayan calendars algorithms #
-##############################
 class MayanLongCountDate(object):
 
-    EPOCH = JD.from_fixed(584283)
+    EPOCH = JD(584283).to_fixed()
     
     def __init__(self, baktun, katun, tun, uinal, kin):
         self.baktun = baktun
@@ -15,7 +13,10 @@ class MayanLongCountDate(object):
         self.tun = tun
         self.uinal = uinal
         self.kin = kin
-        
+    
+    def to_tuple(self):
+        return (self.baktun, self.katun, self.tun, self.uinal, self.kin)
+    
     def to_fixed(self):
         """Return fixed date corresponding to the Mayan long count count,
         which is a list [baktun, katun, tun, uinal, kin]."""
@@ -35,6 +36,24 @@ class MayanLongCountDate(object):
         tun, day_of_tun        = divmod(day_of_katun, 360)
         uinal, kin             = divmod(day_of_tun, 20)
         return MayanLongCountDate(baktun, katun, tun, uinal, kin)
+    
+    def __eq__(self, other):
+        return isinstance(other, MayanLongCountDate) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, MayanLongCountDate) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, MayanLongCountDate) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, MayanLongCountDate) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, MayanLongCountDate) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
 
 class MayanHaabOrdinal(object):
 
@@ -45,6 +64,27 @@ class MayanHaabOrdinal(object):
     def to_ordinal(self):
         """Return the number of days into cycle of Mayan haab date h_date."""
         return ((self.month - 1) * 20) + self.day
+    
+    def to_tuple(self):
+        return (self.month, self.day)
+
+    def __eq__(self, other):
+        return isinstance(other, MayanHaabOrdinal) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, MayanHaabOrdinal) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, MayanHaabOrdinal) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, MayanHaabOrdinal) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, MayanHaabOrdinal) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
 
 class MayanHaabDate(MayanHaabOrdinal):
 
@@ -76,6 +116,27 @@ class MayanTzolkinOrdinal(object):
         """Return number of days into Mayan tzolkin cycle of t_date."""
         return mod(self.number - 1 + (39 * (self.number - self.name)), 260)
 
+    def to_tuple(self):
+        return (self.number, self.name)
+
+    def __eq__(self, other):
+        return isinstance(other, MayanTzolkinOrdinal) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, MayanTzolkinOrdinal) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, MayanTzolkinOrdinal) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, MayanTzolkinOrdinal) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, MayanTzolkinOrdinal) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
 class MayanTzolkinDate(MayanTzolkinOrdinal):
 
     EPOCH = MayanLongCountDate.EPOCH - MayanTzolkinOrdinal(4, 20).to_ordinal()
