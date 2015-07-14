@@ -143,23 +143,19 @@ class Location(object):
                      -1.25 * eccentricity * eccentricity * sin_degrees(2 * anomaly)))
         return signum(equation) * min(abs(equation), Clock.days_from_hours(mpf(12)))
 
-    # see lines 2841-2844 in calendrica-3.0.cl
     def apparent_from_local(self, tee):
         """Return sundial time at local time tee at location, location."""
         return tee + self.equation_of_time(self.universal_from_local(tee))
     
-    # see lines 2846-2849 in calendrica-3.0.cl
     def local_from_apparent(self, tee):
         """Return local time from sundial time tee at location, location."""
         return tee - self.equation_of_time(self.universal_from_local(tee))
     
-    # see lines 2851-2857 in calendrica-3.0.cl
     def midnight(self, date):
         """Return standard time on fixed date, date, of true (apparent)
         midnight at location, location."""
         return self.standard_from_local(self.local_from_apparent(date))
     
-    # see lines 2859-2864 in calendrica-3.0.cl
     def midday(self, date):
         """Return standard time on fixed date, date, of midday
         at location, location."""
@@ -176,7 +172,6 @@ class Location(object):
                 (sin_degrees(alpha) / (cos_degrees(delta) *
                                        cos_degrees(phi))))
 
-    # see lines 2922-2947 in calendrica-3.0.cl
     def approx_moment_of_depression(self, tee, alpha, early):
         """Return the moment in local time near tee when depression angle
         of sun is alpha (negative if above horizon) at location;
@@ -197,7 +192,6 @@ class Location(object):
             value = self.sine_offset(alt, alpha)
         else:
             value = ttry
-    
     
         if (abs(value) <= 1):
             temp = -1 if early else 1
@@ -788,28 +782,26 @@ class Location(object):
         return invert_angular(cls.lunar_phase, phi, a, b)
 
     @classmethod
-    def visible_crescent(cls, date, location):
+    def visible_crescent(self, date):
         """Return S. K. Shaukat's criterion for likely
         visibility of crescent moon on eve of date 'date',
         at location 'location'."""
-        tee = location.universal_from_standard(location.dusk(date - 1, mpf(4.5)))
-        phase = cls.lunar_phase(tee)
-        altitude = cls.lunar_altitude(tee, location)
-        arc_of_light = arccos_degrees(cos_degrees(cls.lunar_latitude(tee)) * cos_degrees(phase))
-        return ((cls.NEW < phase < cls.FIRST_QUARTER) and
+        tee = self.universal_from_standard(self.dusk(date - 1, mpf(4.5)))
+        phase = self.lunar_phase(tee)
+        altitude = self.lunar_altitude(tee)
+        arc_of_light = arccos_degrees(cos_degrees(self.lunar_latitude(tee)) * cos_degrees(phase))
+        return ((self.NEW < phase < self.FIRST_QUARTER) and
                 (mpf(10.6) <= arc_of_light <= 90) and
                 (altitude > mpf(4.1)))
     
-    @classmethod
-    def phasis_on_or_before(cls, date, location):
+    def phasis_on_or_before(self, date):
         """Return the closest fixed date on or before date 'date', when crescent
         moon first became visible at location 'location'."""
-        mean = date - ifloor(cls.lunar_phase(date + 1) / 360 *
-                             cls.MEAN_SYNODIC_MONTH)
+        mean = date - ifloor(self.lunar_phase(date + 1) / 360 * self.MEAN_SYNODIC_MONTH)
         tau = ((mean - 30)
-               if (((date - mean) <= 3) and (not cls.visible_crescent(date, location)))
+               if (((date - mean) <= 3) and (not self.visible_crescent(date)))
                else (mean - 2))
-        return  next_int(tau, lambda d: cls.visible_crescent(d, location))
+        return  next_int(tau, lambda d: self.visible_crescent(d))
 
     @classmethod
     def lunar_phase_at_or_after(cls, phi, tee):
@@ -823,23 +815,20 @@ class Location(object):
         b = tau + 2
         return invert_angular(cls.lunar_phase, phi, a, b)
 
-    @classmethod
-    def lunar_altitude(cls, tee, location):
+    def lunar_altitude(self, tee):
         """Return the geocentric altitude of moon at moment, tee,
         at location, location, as a small positive/negative angle in degrees,
         ignoring parallax and refraction.  Adapted from 'Astronomical
         Algorithms' by Jean Meeus, Willmann_Bell, Inc., 1998."""
-        phi = location.latitude
-        psi = location.longitude
-        lamb = cls.lunar_longitude(tee)
-        beta = cls.lunar_latitude(tee)
-        alpha = cls.right_ascension(tee, beta, lamb)
-        delta = cls.declination(tee, beta, lamb)
-        theta0 = cls.sidereal_from_moment(tee)
-        cap_H = mod(theta0 + psi - alpha, 360)
+        lamb = self.lunar_longitude(tee)
+        beta = self.lunar_latitude(tee)
+        alpha = self.right_ascension(tee, beta, lamb)
+        delta = self.declination(tee, beta, lamb)
+        theta0 = self.sidereal_from_moment(tee)
+        cap_H = mod(theta0 + self.longitude - alpha, 360)
         altitude = arcsin_degrees(
-            (sin_degrees(phi) * sin_degrees(delta)) +
-            (cos_degrees(phi) * cos_degrees(delta) * cos_degrees(cap_H)))
+            (sin_degrees(self.latitude) * sin_degrees(delta)) +
+            (cos_degrees(self.latitude) * cos_degrees(delta) * cos_degrees(cap_H)))
         return mod(altitude + 180, 360) - 180
      
     @classmethod
@@ -900,23 +889,21 @@ class Location(object):
         Willmann_Bell, Inc., 2nd ed."""
         return (cls.lunar_latitude(tee), cls.lunar_longitude(tee), cls.lunar_distance(tee))
     
-    @classmethod
-    def lunar_parallax(cls, tee, location):
+    def lunar_parallax(self, tee):
         """Return the parallax of moon at moment, tee, at location, location.
         Adapted from "Astronomical Algorithms" by Jean Meeus,
         Willmann_Bell, Inc., 1998."""
-        geo = cls.lunar_altitude(tee, location)
-        Delta = cls.lunar_distance(tee)
+        geo = self.lunar_altitude(tee)
+        Delta = self.lunar_distance(tee)
         alt = 6378140 / Delta
         arg = alt * cos_degrees(geo)
         return arcsin_degrees(arg)
     
-    @classmethod
-    def topocentric_lunar_altitude(cls, tee, location):
+    def topocentric_lunar_altitude(self, tee):
         """Return the topocentric altitude of moon at moment, tee,
         at location, location, as a small positive/negative angle in degrees,
         ignoring refraction."""
-        return cls.lunar_altitude(tee, location) - cls.lunar_parallax(tee, location)
+        return self.lunar_altitude(tee) - self.lunar_parallax(tee)
     
     @classmethod
     def lunar_diameter(cls, tee):
