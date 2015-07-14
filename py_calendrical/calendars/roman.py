@@ -81,7 +81,6 @@ class RomanDate(object):
     def to_tuple(self):
         return (self.year, self.month, self.event, self.count, self.leap)
 
-    
     def __eq__(self, other):
         return isinstance(other, RomanDate) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
     

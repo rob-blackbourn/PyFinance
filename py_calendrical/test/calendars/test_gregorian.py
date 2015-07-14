@@ -24,6 +24,5 @@ class GregorianCalendarSmokeTestCase(unittest.TestCase):
         self.assertEqual(self.myDate.day_number(), 30)
         self.assertEqual(self.aLeapDate.day_number(), 60)
 
-
 if __name__ == "__main__":
     unittest.main()
