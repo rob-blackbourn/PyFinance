@@ -76,3 +76,28 @@ class RomanDate(object):
     def nones_of_month(cls, month):
         """Return the date of Nones in Roman month 'month'."""
         return cls.ides_of_month(month) - 8
+
+    def __eq__(self, other):
+        return isinstance(other, RomanDate) and self.year == other.year and self.month == other.month and self.event == other.event and self.count == other.count and self.leap == other.leap
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        if not isinstance(other, RomanDate):
+            return False
+        if self.year < other.year:
+            return True
+        elif self.year == other.year:
+            if self.month < other.month:
+                return True
+            elif self.month == other.month:
+                if self.event < other.event:
+                    return True
+                elif self.event == other.event:
+                    if self.count < other.count:
+                        return True
+                    elif self.count == other.count:
+                        return self.leap < other.leap
+        return False
+    
