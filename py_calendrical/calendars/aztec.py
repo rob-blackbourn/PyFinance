@@ -54,7 +54,7 @@ class AztecXihuitlDate(AztecXihuitlOrdinal):
         return AztecXihuitlDate(month, day)
     
     # see lines 2239-2246 in calendrica-3.0.cl
-    def aztec_xihuitl_on_or_before(self, date):
+    def on_or_before(self, date):
         """Return fixed date of latest date on or before fixed date date
         that is Aztec xihuitl date xihuitl."""
         return (date - mod(date - self.CORRELATION - self.to_ordinal(), 365))
