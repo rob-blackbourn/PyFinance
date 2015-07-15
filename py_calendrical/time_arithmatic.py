@@ -1,3 +1,4 @@
+from __future__ import division
 from operator import mod
 from py_cal_cal import ifloor
 
@@ -10,7 +11,7 @@ class Clock(object):
 
     def to_time(self):
         """Return time of day from clock time."""
-        return(1.0 / 24.0 * (self.hour + ((self.minute + (self.second / 60.0)) / 60.0)))
+        return(1/24 * (self.hour + ((self.minute + (self.second / 60)) / 60)))
 
     @classmethod
     def from_moment(cls, tee):
@@ -34,9 +35,9 @@ class Clock(object):
     @classmethod
     def days_from_hours(cls, hours):
         """Return the number of days given x hours."""
-        return hours / 24.0
+        return hours / 24
     
     @classmethod
     def days_from_seconds(cls, seconds):
         """Return the number of days given x seconds."""
-        return seconds / 24.0 / 60.0 / 60.0
+        return seconds / 24 / 60 / 60

@@ -1,3 +1,4 @@
+from __future__ import division
 from enum import IntEnum
 from py_calendrical.py_cal_cal import amod
 from py_calendrical.calendars.julian import JulianDate

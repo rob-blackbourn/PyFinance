@@ -1,3 +1,4 @@
+from __future__ import division
 from operator import mod
 from mpmath import mpf, pi
 import math
@@ -60,7 +61,7 @@ class Location(object):
     def zone_from_longitude(cls, phi):
         """Return the difference between UT and local mean time at longitude
         'phi' as a fraction of a day."""
-        return phi / 360.0
+        return phi / 360
     
     def local_from_universal(self, tee_rom_u):
         """Return local time from universal tee_rom_u at location, location."""
@@ -86,18 +87,18 @@ class Location(object):
         year = GregorianDate.to_year(ifloor(tee))
         c = GregorianDate.date_difference(GregorianDate(1900, JulianMonth.January, 1), GregorianDate(year, JulianMonth.July, 1)) / mpf(36525)
         if (1988 <= year <= 2019):
-            return 1.0 / 86400.0 * (year - 1933)
+            return 1/86400 * (year - 1933)
         elif (1900 <= year <= 1987):
             return poly(c, [mpf(-0.00002), mpf(0.000297), mpf(0.025184), mpf(-0.181133), mpf(0.553040), mpf(-0.861938), mpf(0.677066), mpf(-0.212591)])
         elif (1800 <= year <= 1899):
             return poly(c, [mpf(-0.000009), mpf(0.003844), mpf(0.083563), mpf(0.865736), mpf(4.867575), mpf(15.845535), mpf(31.332267), mpf(38.291999), mpf(28.316289), mpf(11.636204), mpf(2.043794)])
         elif (1700 <= year <= 1799):
-            return (1.0 / 86400.0 * poly(year - 1700, [8.118780842, -0.005092142, 0.003336121, -0.0000266484]))
+            return (1/86400 * poly(year - 1700, [8.118780842, -0.005092142, 0.003336121, -0.0000266484]))
         elif (1620 <= year <= 1699):
-            return (1.0 / 86400.0 * poly(year - 1600, [mpf(196.58333), mpf(-4.0675), mpf(0.0219167)]))
+            return (1/86400 * poly(year - 1600, [mpf(196.58333), mpf(-4.0675), mpf(0.0219167)]))
         else:
             x = (Clock.days_from_hours(mpf(12)) + GregorianDate.date_difference(GregorianDate(1810, JulianMonth.January, 1), GregorianDate(year, JulianMonth.January, 1)))
-            return 1.0 / 86400.0 * (((x * x) / mpf(41048480)) - 15)
+            return 1/86400 * (((x * x) / mpf(41048480)) - 15)
 
     @classmethod
     def universal_from_dynamical(cls, tee):
@@ -134,8 +135,8 @@ class Location(object):
         anomaly = poly(c, [mpf(357.52910), mpf(35999.05030), mpf(-0.0001559), mpf(-0.00000048)])
         eccentricity = poly(c, [mpf(0.016708617), mpf(-0.000042037), mpf(-0.0000001236)])
         varepsilon = cls.obliquity(tee)
-        y = pow(tan_degrees(varepsilon / 2.0), 2)
-        equation = ((1.0 / 2.0 / pi) *
+        y = pow(tan_degrees(varepsilon / 2), 2)
+        equation = ((1/2 / pi) *
                     (y * sin_degrees(2 * lamb) +
                      -2 * eccentricity * sin_degrees(anomaly) +
                      (4 * eccentricity * y * sin_degrees(anomaly) *
@@ -196,7 +197,7 @@ class Location(object):
     
         if abs(value) <= 1:
             temp = -1 if early else 1
-            temp *= mod(Clock.days_from_hours(12) + arcsin_degrees(value) / 360.0, 1) - Clock.days_from_hours(6)
+            temp *= mod(Clock.days_from_hours(12) + arcsin_degrees(value) / 360, 1) - Clock.days_from_hours(6)
             temp += date + Clock.days_from_hours(12)
             return self.local_from_apparent(temp)
         else:
@@ -254,7 +255,7 @@ class Location(object):
         t = self.universal_from_standard(date)
         waning = (self.lunar_phase(t) > 180)
         alt = self.observed_lunar_altitude(t)
-        offset = alt / 360.0
+        offset = alt / 360
         if waning and (offset > 0):
             approx =  t + 1 - offset
         elif waning:
@@ -263,7 +264,7 @@ class Location(object):
             approx = t + (1 / 2) + offset
         rise = binary_search(approx - Clock.days_from_hours(3),
                              approx + Clock.days_from_hours(3),
-                             lambda u, l: ((u - l) < Clock.days_from_hours(1.0 / 60.0)),
+                             lambda u, l: ((u - l) < Clock.days_from_hours(1/60)),
                              lambda x: self.observed_lunar_altitude(x) > 0)
         if rise < (t + 1):
             return self.standard_from_universal(rise)
@@ -273,17 +274,17 @@ class Location(object):
     def daytime_temporal_hour(self, date):
         """Return the length of daytime temporal hour on fixed date, date
         at location, location."""
-        return (self.sunset(date) - self.sunrise(date)) / 12.0
+        return (self.sunset(date) - self.sunrise(date)) / 12
     
     def nighttime_temporal_hour(self, date):
         """Return the length of nighttime temporal hour on fixed date, date,
         at location, location."""
-        return (self.sunrise(date + 1) - self.sunset(date)) / 12.0
+        return (self.sunrise(date + 1) - self.sunset(date)) / 12
 
     @classmethod
     def precise_obliquity(cls, tee):
         """Return precise (mean) obliquity of ecliptic at moment tee."""
-        u = cls.julian_centuries(tee) / 100.0
+        u = cls.julian_centuries(tee) / 100
         #assert(abs(u) < 1,
         #       'Error! This formula is valid for +/-10000 years around J2000.0')
         return (poly(u, [angle(23, 26, mpf(21.448)),
@@ -436,7 +437,7 @@ class Location(object):
     def solar_longitude_after(cls, lam, tee):
         """Return the moment UT of the first time at or after moment, tee,
         when the solar longitude will be lam degrees."""
-        rate = cls.MEAN_TROPICAL_YEAR / 360.0
+        rate = cls.MEAN_TROPICAL_YEAR / 360
         tau = tee + rate * mod(lam - cls.solar_longitude(tee), 360)
         a = max(tee, tau - 5)
         b = tau + 5
@@ -474,7 +475,7 @@ class Location(object):
         Adapted from eq. 47.1 in "Astronomical Algorithms" by Jean Meeus,
         Willmann_Bell, Inc., 2nd ed. with corrections, 2005."""
         return normalized_degrees(poly(c, [mpf(218.3164477), mpf(481267.88123421),
-                                   mpf(-0.0015786), mpf(1.0 / 538841.0),
+                                   mpf(-0.0015786), mpf(1 / 538841.0),
                                    mpf(-1.0 / 65194000.0)]))
     
     @classmethod
@@ -484,8 +485,8 @@ class Location(object):
         Adapted from eq. 47.2 in "Astronomical Algorithms" by Jean Meeus,
         Willmann_Bell, Inc., 2nd ed. with corrections, 2005."""
         return normalized_degrees(poly(c, [mpf(297.8501921), mpf(445267.1114034),
-                                    mpf(-0.0018819), mpf(1.0 / 545868.0),
-                                    mpf(-1.0 / 113065000.0)]))
+                                    mpf(-0.0018819), mpf(1/545868),
+                                    mpf(-1/113065000)]))
     
     @classmethod
     def solar_anomaly(cls, c):
@@ -561,10 +562,10 @@ class Location(object):
                                         (y * cap_M_prime) +
                                         (z * cap_F))))
         A1 = mpf(119.75) + (c * mpf(131.849))
-        venus = ((3958.0/1000000.0) * sin_degrees(A1))
+        venus = ((3958/1000000) * sin_degrees(A1))
         A2 = mpf(53.09) + c * mpf(479264.29)
-        jupiter = ((318.0/1000000.0) * sin_degrees(A2))
-        flat_earth = ((1962.0/1000000.0) * sin_degrees(cap_L_prime - cap_F))
+        jupiter = ((318/1000000) * sin_degrees(A2))
+        flat_earth = ((1962/1000000) * sin_degrees(cap_L_prime - cap_F))
     
         return mod(cap_L_prime + correction + venus +
                    jupiter + flat_earth + cls.nutation(tee), 360)
@@ -619,13 +620,13 @@ class Location(object):
                                                          (x * cap_M) +
                                                          (y * cap_M_prime) +
                                                          (z * cap_F)))))
-        venus = ((175.0/1000000.0) *
+        venus = ((175/1000000) *
                  (sin_degrees(mpf(119.75) + c * mpf(131.849) + cap_F) +
                   sin_degrees(mpf(119.75) + c * mpf(131.849) - cap_F)))
-        flat_earth = ((-2235.0/1000000.0) *  sin_degrees(cap_L_prime) +
-                      (127.0/1000000.0) * sin_degrees(cap_L_prime - cap_M_prime) +
-                      (-115.0/1000000.0) * sin_degrees(cap_L_prime + cap_M_prime))
-        extra = ((382.0/1000000.0) *
+        flat_earth = ((-2235/1000000) *  sin_degrees(cap_L_prime) +
+                      (127/1000000) * sin_degrees(cap_L_prime - cap_M_prime) +
+                      (-115/1000000) * sin_degrees(cap_L_prime + cap_M_prime))
+        extra = ((382/1000000) *
                  sin_degrees(mpf(313.45) + c * mpf(481266.484)))
         return beta + venus + flat_earth + extra
     
@@ -743,7 +744,7 @@ class Location(object):
         """Return the moment UT of last new moon before moment tee."""
         t0 = cls.nth_new_moon(0)
         phi = cls.lunar_phase(tee)
-        n = iround(((tee - t0) / cls.MEAN_SYNODIC_MONTH) - (phi / 360.0))
+        n = iround(((tee - t0) / cls.MEAN_SYNODIC_MONTH) - (phi / 360))
         return cls.nth_new_moon(final_int(n - 1, lambda k: cls.nth_new_moon(k) < tee))
 
     @classmethod    
@@ -751,7 +752,7 @@ class Location(object):
         """Return the moment UT of first new moon at or after moment, tee."""
         t0 = cls.nth_new_moon(0)
         phi = cls.lunar_phase(tee)
-        n = iround((tee - t0) / cls.MEAN_SYNODIC_MONTH - phi / 360.0)
+        n = iround((tee - t0) / cls.MEAN_SYNODIC_MONTH - phi / 360)
         return cls.nth_new_moon(next_int(n, lambda k: cls.nth_new_moon(k) >= tee))
     
     @classmethod    
@@ -776,7 +777,7 @@ class Location(object):
         when the lunar_phase was phi degrees."""
         tau = (tee -
                (cls.MEAN_SYNODIC_MONTH  *
-                (1.0 / 360.0) *
+                (1/360) *
                 mod(cls.lunar_phase(tee) - phi, 360)))
         a = tau - 2
         b = min(tee, tau +2)
@@ -810,7 +811,7 @@ class Location(object):
         when the lunar_phase is phi degrees."""
         tau = (tee +
                (cls.MEAN_SYNODIC_MONTH    *
-                (1.0 / 360.0) *
+                (1/360) *
                 mod(phi - cls.lunar_phase(tee), 360)))
         a = max(tee, tau - 2)
         b = tau + 2

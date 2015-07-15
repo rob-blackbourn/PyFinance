@@ -1,3 +1,4 @@
+from __future__ import division
 from mpmath import mpf
 from py_cal_cal import ifloor
 from py_calendrical.triganometry import angle, tan_degrees, arctan_degrees

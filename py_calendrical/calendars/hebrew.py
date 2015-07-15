@@ -1,3 +1,4 @@
+from __future__ import division
 from operator import mod
 from fractions import Fraction
 from enum import IntEnum

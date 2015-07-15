@@ -1,3 +1,4 @@
+from __future__ import division
 from py_calendrical.utils import reduce_cond
 
 class YearMonthDay(object):

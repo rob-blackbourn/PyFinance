@@ -1,3 +1,4 @@
+from __future__ import division
 from operator import mod
 from py_calendrical.triganometry import angle
 from py_calendrical.py_cal_cal import ifloor, iround, quotient

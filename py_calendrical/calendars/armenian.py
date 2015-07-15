@@ -1,3 +1,4 @@
+from __future__ import division
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.calendars.egyptian import EgyptianDate
 

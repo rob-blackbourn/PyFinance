@@ -1,3 +1,4 @@
+from __future__ import division
 from mpmath import atan2
 from triganometry import cos_degrees, sin_degrees, tan_degrees, arcsin_degrees, normalized_degrees_from_radians
 

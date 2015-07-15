@@ -1,3 +1,4 @@
+from __future__ import division
 from operator import mod
 from py_cal_cal import signum, ifloor
 from mpmath import radians as radians_from_degrees, degrees, sin, cos, tan, mpf, atan, asin, acos
@@ -10,7 +11,7 @@ def angle(d, m, s):
     """Return an angle data structure
     from d degrees, m arcminutes and s arcseconds.
     This assumes that negative angles specifies negative d, m and s."""
-    return d + ((m + (s / 60.0)) / 60.0)
+    return d + ((m + (s / 60)) / 60)
 
 def normalized_degrees(theta):
     """Return a normalize angle theta to range [0,360) degrees."""

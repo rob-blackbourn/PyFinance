@@ -1,3 +1,4 @@
+from __future__ import division
 from py_calendrical.py_cal_cal import amod, quotient, rd
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth

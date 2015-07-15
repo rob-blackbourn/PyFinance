@@ -1,3 +1,4 @@
+from __future__ import division
 from py_calendrical.calendars.gregorian import JulianMonth 
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.calendars.coptic import CopticDate

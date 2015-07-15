@@ -1,3 +1,4 @@
+from __future__ import division
 from operator import mod
 from enum import IntEnum
 from py_cal_cal import rd

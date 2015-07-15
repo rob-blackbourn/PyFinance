@@ -1,3 +1,4 @@
+from __future__ import division
 from operator import mod
 
 def reduce_cond(function, condition, iterable, initializer=None):
