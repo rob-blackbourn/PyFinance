@@ -1,6 +1,8 @@
+from __future__ import division
 from operator import mod
 from py_calendrical.py_cal_cal import iceiling, ifloor, final_int, amod, list_range
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.utils import reduce_cond
 
 class TibetanDate(object):
     
@@ -13,19 +15,16 @@ class TibetanDate(object):
         self.day = day
         self.leap_day = leap_day
     
+    def to_tuple(self):
+        return (self.year, self.month, self.leap_month, self.day, self.leap_day)
+    
     def to_fixed(self):
-        """Return the fixed date corresponding to Tibetan lunar date."""
-        months = ifloor((804/65 * (self.year - 1)) +
-                       (67/65 * self.month) +
-                       (-1 if self.leap_month else 0) +
-                       64/65)
+        """Return the fixed date corresponding to this Tibetan lunar date."""
+        months = ifloor((804/65 * (self.year - 1)) + (67/65 * self.month) + (-1 if self.leap_month else 0) + 64/65)
         days = (30 * months) + self.day
-        mean = ((days * 11135/11312) -30 +
-                (0 if self.leap_day else -1) +
-                1071/1616)
+        mean = (days * 11135/11312) -30 + (0 if self.leap_day else -1) + 1071/1616
         solar_anomaly = mod((days * 13/4824) + 2117/4824, 1)
-        lunar_anomaly = mod((days * 3781/105840) +
-                            2837/15120, 1)
+        lunar_anomaly = mod((days * 3781/105840) + 2837/15120, 1)
         sun  = -self.sun_equation(12 * solar_anomaly)
         moon = self.moon_equation(28 * lunar_anomaly)
         return ifloor(self.EPOCH + mean + sun + moon)
@@ -41,7 +40,7 @@ class TibetanDate(object):
         day0 = final_int(est -2, lambda d: (fixed_date >= TibetanDate(year0, month0, False, d, False).to_fixed()))
         leap_month = (day0 > 30)
         day = amod(day0, 30)
-        if (day > day0):
+        if day > day0:
             temp = month0 - 1
         elif leap_month:
             temp = month0 + 1
@@ -49,9 +48,9 @@ class TibetanDate(object):
             temp = month0
         month = amod(temp, 12)
         
-        if ((day > day0) and (month0 == 1)):
+        if day > day0 and month0 == 1:
             year = year0 - 1
-        elif (leap_month and (month0 == 12)):
+        elif leap_month and month0 == 12:
             year = year0 + 1
         else:
             year = year0
@@ -61,28 +60,26 @@ class TibetanDate(object):
     @classmethod        
     def sun_equation(cls, alpha):
         """Return the interpolated tabular sine of solar anomaly, 'alpha'."""
-        if (alpha > 6):
+        if alpha > 6:
             return -cls.sun_equation(alpha - 6)
-        elif (alpha > 3):
+        elif alpha > 3:
             return cls.sun_equation(6 - alpha)
         elif isinstance(alpha, int):
             return [0, 6/60, 10/60, 11/60][alpha]
         else:
-            return ((mod(alpha, 1) * cls.sun_equation(iceiling(alpha))) +
-                    (mod(-alpha, 1) * cls.sun_equation(ifloor(alpha))))
+            return (mod(alpha, 1) * cls.sun_equation(iceiling(alpha))) + (mod(-alpha, 1) * cls.sun_equation(ifloor(alpha)))
 
     @classmethod
     def moon_equation(cls, alpha):
         """Return the interpolated tabular sine of lunar anomaly, 'alpha'."""
-        if (alpha > 14):
+        if alpha > 14:
             return -cls.moon_equation(alpha - 14)
-        elif (alpha > 7):
+        elif alpha > 7:
             return cls.moon_equation(14 -alpha)
         elif isinstance(alpha, int):
             return [0, 5/60, 10/60, 15/60, 19/60, 22/60, 24/60, 25/60][alpha]
         else:
-            return ((mod(alpha, 1) * cls.moon_equation(iceiling(alpha))) +
-                    (mod(-alpha, 1) * cls.moon_equation(ifloor(alpha))))
+            return (mod(alpha, 1) * cls.moon_equation(iceiling(alpha))) + (mod(-alpha, 1) * cls.moon_equation(ifloor(alpha)))
 
     @classmethod
     def is_leap_month(cls, month, year):
@@ -103,3 +100,22 @@ class TibetanDate(object):
         dec31  = GregorianDate.year_end(gregorian_year)
         t_year = cls.from_fixed(dec31).year
         return list_range([cls.losar(t_year - 1), cls.losar(t_year)], GregorianDate.year_range(gregorian_year))
+
+    def __eq__(self, other):
+        return isinstance(other, TibetanDate) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, TibetanDate) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, TibetanDate) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, TibetanDate) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, TibetanDate) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
