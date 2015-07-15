@@ -1,9 +1,9 @@
+from __future__ import division
 from operator import mod
 from mpmath import mpf
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.py_cal_cal import ifloor, amod, quotient, iround, iceiling, rd, next_int
 from py_calendrical.triganometry import angle
-from py_calendrical.astro import WINTER, MEAN_SYNODIC_MONTH, MEAN_TROPICAL_YEAR, solar_longitude_after, solar_longitude, new_moon_before, new_moon_at_or_after, estimate_prior_solar_longitude
 from py_calendrical.location import Location
 from py_calendrical.time_arithmatic import Clock
 
@@ -20,7 +20,7 @@ class ChineseDate(object):
     
     def to_fixed(self):
         """Return fixed date of Chinese date, c_date."""
-        mid_year = ifloor(self.EPOCH + ((((self.cycle - 1) * 60) + (self.year - 1) + 1/2) * MEAN_TROPICAL_YEAR))
+        mid_year = ifloor(self.EPOCH + ((((self.cycle - 1) * 60) + (self.year - 1) + 1/2) * Location.MEAN_TROPICAL_YEAR))
         new_year = self.new_year_on_or_before(mid_year)
         p = self.new_moon_on_or_after(new_year + ((self.month - 1) * 29))
         d = self.from_fixed(p)
@@ -34,12 +34,12 @@ class ChineseDate(object):
         s2 = cls.winter_solstice_on_or_before(s1 + 370)
         next_m11 = cls.new_moon_before(1 + s2)
         m12 = cls.new_moon_on_or_after(1 + s1)
-        leap_year = iround((next_m11 - m12) / MEAN_SYNODIC_MONTH) == 12
+        leap_year = iround((next_m11 - m12) / Location.MEAN_SYNODIC_MONTH) == 12
     
         m = cls.new_moon_before(1 + fixed_date)
-        month = amod(iround((m - m12) / MEAN_SYNODIC_MONTH) - (1 if (leap_year and cls.is_prior_leap_month(m12, m)) else 0), 12)
+        month = amod(iround((m - m12) / Location.MEAN_SYNODIC_MONTH) - (1 if (leap_year and cls.is_prior_leap_month(m12, m)) else 0), 12)
         leap_month = (leap_year and cls.is_no_major_solar_term(m) and (not cls.is_prior_leap_month(m12, cls.new_moon_before(m))))
-        elapsed_years = (ifloor(mpf(1.5) - (month / 12) + ((fixed_date - cls.EPOCH) / MEAN_TROPICAL_YEAR)))
+        elapsed_years = (ifloor(mpf(1.5) - (month / 12) + ((fixed_date - cls.EPOCH) / Location.MEAN_TROPICAL_YEAR)))
         cycle = 1 + quotient(elapsed_years - 1, 60)
         year = amod(elapsed_years, 60)
         day = 1 + (fixed_date - m)
@@ -59,14 +59,14 @@ class ChineseDate(object):
         """Return moment (Beijing time) of the first date on or after
         fixed date, 'fixed_date', (Beijing time) when the solar longitude
         will be 'lam' degrees."""
-        tee = solar_longitude_after(lam, cls.location(fixed_date).universal_from_standard(fixed_date))
+        tee = Location.solar_longitude_after(lam, cls.location(fixed_date).universal_from_standard(fixed_date))
         return cls.location(tee).standard_from_universal(tee)
 
     @classmethod
     def major_solar_term(cls, fixed_date):
         """Return last Chinese major solar term (zhongqi) before
         fixed date, 'fixed_date'."""
-        s = solar_longitude(cls.location(fixed_date).universal_from_standard(fixed_date))
+        s = Location.solar_longitude(cls.location(fixed_date).universal_from_standard(fixed_date))
         return amod(2 + quotient(int(s), 30), 12)
 
     @classmethod
@@ -75,14 +75,14 @@ class ChineseDate(object):
         solar term (zhongqi) on or after fixed date, 'fixed_date'.  The
         major terms begin when the sun's longitude is a
         multiple of 30 degrees."""
-        s = solar_longitude(cls.midnight(fixed_date))
+        s = Location.solar_longitude(cls.midnight(fixed_date))
         l = mod(30 * iceiling(s / 30), 360)
         return cls.solar_longitude_on_or_after(l, fixed_date)
 
     @classmethod    
     def current_minor_solar_term(cls, fixed_date):
         """Return last Chinese minor solar term (jieqi) before date, 'fixed_date'."""
-        s = solar_longitude(cls.location(fixed_date).universal_from_standard(fixed_date))
+        s = Location.solar_longitude(cls.location(fixed_date).universal_from_standard(fixed_date))
         return amod(3 + quotient(s - 15, 30), 12)
 
     @classmethod    
@@ -90,21 +90,21 @@ class ChineseDate(object):
         """Return moment (in Beijing) of the first Chinese minor solar
         term (jieqi) on or after fixed date, 'fixed_date'.  The minor terms
         begin when the sun's longitude is an odd multiple of 15 degrees."""
-        s = solar_longitude(cls.midnight(fixed_date))
+        s = Location.solar_longitude(cls.midnight(fixed_date))
         l = mod(30 * iceiling((s - 15) / 30) + 15, 360)
         return cls.solar_longitude_on_or_after(l, fixed_date)
 
     @classmethod    
     def new_moon_before(cls, fixed_date):
         """Return fixed date (Beijing) of first new moon before fixed date, 'fixed_date'."""
-        tee = new_moon_before(cls.midnight(fixed_date))
+        tee = Location.new_moon_before(cls.midnight(fixed_date))
         return ifloor(cls.location(tee).standard_from_universal(tee))
     
     @classmethod    
     def new_moon_on_or_after(cls, fixed_date):
         """Return fixed date (Beijing) of first new moon on or after
         fixed date, 'fixed_date'."""
-        tee = new_moon_at_or_after(cls.midnight(fixed_date))
+        tee = Location.new_moon_at_or_after(cls.midnight(fixed_date))
         return ifloor(cls.chinese_location(tee).standard_from_universal(tee))
 
     @classmethod    
@@ -124,8 +124,8 @@ class ChineseDate(object):
     def winter_solstice_on_or_before(cls, fixed_date):
         """Return fixed date, in the Chinese zone, of winter solstice
         on or before fixed date, 'fixed_date'."""
-        approx = estimate_prior_solar_longitude(WINTER, cls.midnight(fixed_date + 1))
-        return next_int(ifloor(approx) - 1, lambda day: WINTER < solar_longitude(cls.midnight(1 + day)))
+        approx = Location.estimate_prior_solar_longitude(Location.WINTER, cls.midnight(fixed_date + 1))
+        return next_int(ifloor(approx) - 1, lambda day: Location.WINTER < Location.solar_longitude(cls.midnight(1 + day)))
     
     @classmethod    
     def new_year_in_sui(cls, fixed_date):
@@ -136,7 +136,7 @@ class ChineseDate(object):
         next_m11 = cls.new_moon_before(1 + s2)
         m12 = cls.new_moon_on_or_after(1 + s1)
         m13 = cls.new_moon_on_or_after(1 + m12)
-        leap_year = iround((next_m11 - m12) / MEAN_SYNODIC_MONTH) == 12
+        leap_year = iround((next_m11 - m12) / Location.MEAN_SYNODIC_MONTH) == 12
     
         if (leap_year and
             (cls.is_no_major_solar_term(m12) or cls.is_no_major_solar_term(m13))):
