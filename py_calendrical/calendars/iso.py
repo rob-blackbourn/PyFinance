@@ -1,6 +1,7 @@
 from py_calendrical.py_cal_cal import amod, quotient, rd
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.utils import reduce_cond
 
 class IsoDate(object):
     
@@ -29,6 +30,27 @@ class IsoDate(object):
         """Return True if ISO year 'i_year' is a long (53-week) year."""
         jan1  = DayOfWeek.from_fixed(GregorianDate.new_year(i_year))
         dec31 = DayOfWeek._from_fixed(GregorianDate.year_end(i_year))
-        return (jan1 == DayOfWeek.Thursday) or (dec31 == DayOfWeek.Thursday)
+        return jan1 == DayOfWeek.Thursday or dec31 == DayOfWeek.Thursday
 
+    def to_tuple(self):
+        return (self.year, self.week, self.day)
+    
+    def __eq__(self, other):
+        return isinstance(other, IsoDate) and all(map(lambda (x,y): x == y, zip(self.to_tuple(), other.to_tuple())))
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        return isinstance(other, IsoDate) and reduce_cond(lambda _, (x, y): x < y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __le__(self, other):
+        return isinstance(other, IsoDate) and reduce_cond(lambda _, (x, y): x <= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __gt__(self, other):
+        return isinstance(other, IsoDate) and reduce_cond(lambda _, (x, y): x > y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
+    def __ge__(self, other):
+        return isinstance(other, IsoDate) and reduce_cond(lambda _, (x, y): x >= y, lambda r, (x, y): not r and x == y, zip(self.to_tuple(), other.to_tuple()), False)
+    
 
