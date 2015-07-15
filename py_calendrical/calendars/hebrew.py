@@ -13,6 +13,9 @@ from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.utils import next_int, final_int, list_range
+from py_calendrical.lunar import Lunar
+from py_calendrical.astro import Astro
+from py_calendrical.solar import Solar
 
 class HebrewMonth(IntEnum):
     NISAN = 1
@@ -325,7 +328,7 @@ def observational_hebrew_new_year(g_year):
     """Return fixed date of Observational (classical)
     Nisan 1 occurring in Gregorian year, g_year."""
     jan1 = GregorianDate.new_year(g_year)
-    equinox = Location.solar_longitude_after(Location.SPRING, jan1)
+    equinox = Solar.solar_longitude_after(Astro.SPRING, jan1)
     sset = JAFFA.universal_from_standard(JAFFA.sunset(ifloor(equinox)))
     return phasis_on_or_after(ifloor(equinox) - (14 if (equinox < sset) else 13), JAFFA)
 
@@ -366,8 +369,7 @@ JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, Clock.days_from_hours(2)
 def phasis_on_or_after(date, location):
     """Return closest fixed date on or after date, date, on the eve
     of which crescent moon first became visible at location, location."""
-    mean = date - ifloor(Location.lunar_phase(date + 1) / mpf(360) *
-                        Location.MEAN_SYNODIC_MONTH)
+    mean = date - ifloor(Lunar.lunar_phase(date + 1) / mpf(360) * Lunar.MEAN_SYNODIC_MONTH)
     tau = (date if (((date - mean) <= 3) and
                     (not location.visible_crescent(date - 1)))
            else (mean + 29))

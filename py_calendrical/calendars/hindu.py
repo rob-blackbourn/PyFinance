@@ -10,6 +10,9 @@ from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.utils import reduce_cond, next_int, is_in_range, list_range
+from py_calendrical.solar import Solar
+from py_calendrical.astro import Astro
+from py_calendrical.lunar import Lunar
 
 
 class OldHindu(object):
@@ -463,9 +466,11 @@ class HinduSolarDate(HinduDate):
 
 def ayanamsha(tee):
     """Return the difference between tropical and sidereal solar longitude."""
-    return Location.solar_longitude(tee) - sidereal_solar_longitude(tee)
+    return Solar.solar_longitude(tee) - sidereal_solar_longitude(tee)
 
 class HinduAstro(HinduDate):
+    
+    MEAN_SIDEREAL_YEAR = mpf(365.25636)
     
     def __init__(self, year, month, leap_month, day, leap_day):
         HinduDate.__init__(self, year, month, leap_month, day, leap_day)
@@ -478,7 +483,7 @@ class HinduAstro(HinduDate):
     @classmethod
     def calendar_year(cls, tee):
         """Return the astronomical Hindu solar year KY at given moment, tee."""
-        return iround(((tee - OldHindu.EPOCH) / Location.MEAN_SIDEREAL_YEAR) - (sidereal_solar_longitude(tee) / 360))
+        return iround(((tee - OldHindu.EPOCH) / cls.MEAN_SIDEREAL_YEAR) - (sidereal_solar_longitude(tee) / 360))
 
 def sidereal_zodiac(tee):
     """Return the sidereal zodiacal sign of the sun, as integer in range
@@ -493,7 +498,7 @@ class HinduAstroSolar(HinduAstro):
     def to_fixed(self):
         """Return the fixed date corresponding to Astronomical 
         Hindu solar date (Tamil rule; Saka era)."""
-        approx = OldHindu.EPOCH - 3 + ifloor(((self.year + HinduSolarDate.SOLAR_ERA) + ((self.month - 1) / 12)) * Location.MEAN_SIDEREAL_YEAR)
+        approx = OldHindu.EPOCH - 3 + ifloor(((self.year + HinduSolarDate.SOLAR_ERA) + ((self.month - 1) / 12)) * self.MEAN_SIDEREAL_YEAR)
         begin = next_int(approx, lambda i: sidereal_zodiac(self.sunset(i)) == self.month)
         return begin + self.day - 1
 
@@ -707,12 +712,12 @@ def sacred_wednesdays_in_range(range):
     else:
         return []
 
-SIDEREAL_START = Location.precession(HinduDate.UJJAIN.universal_from_local(mesha_samkranti(JulianDate.ce(285))))
+SIDEREAL_START = Astro.precession(HinduDate.UJJAIN.universal_from_local(mesha_samkranti(JulianDate.ce(285))))
 
 def sidereal_solar_longitude(tee):
     """Return sidereal solar longitude at moment, tee."""
-    return mod(Location.solar_longitude(tee) - Location.precession(tee) + SIDEREAL_START, 360)
+    return mod(Solar.solar_longitude(tee) - Astro.precession(tee) + SIDEREAL_START, 360)
 
 def sidereal_lunar_longitude(tee):
     """Return sidereal lunar longitude at moment, tee."""
-    return mod(Location.lunar_longitude(tee) - Location.precession(tee) + SIDEREAL_START, 360)
+    return mod(Lunar.lunar_longitude(tee) - Astro.precession(tee) + SIDEREAL_START, 360)

@@ -8,6 +8,7 @@ from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.year_month_day import YearMonthDay
 from py_cal_cal.pycalcal import list_range
+from py_calendrical.lunar import Lunar
 
 class IslamicDate(YearMonthDay):
 
@@ -62,14 +63,14 @@ ISLAMIC_LOCATION = Location(mpf(30.1), mpf(31.3), 200, Clock.days_from_hours(2))
 
 def fixed_from_observational_islamic(i_date):
     """Return fixed date equivalent to Observational Islamic date, i_date."""
-    midmonth = IslamicDate.EPOCH + ifloor((((i_date.year - 1) * 12) + i_date.month - 0.5) * Location.MEAN_SYNODIC_MONTH)
+    midmonth = IslamicDate.EPOCH + ifloor((((i_date.year - 1) * 12) + i_date.month - 0.5) * Lunar.MEAN_SYNODIC_MONTH)
     return (ISLAMIC_LOCATION.phasis_on_or_before(midmonth) + i_date.day - 1)
 
 def observational_islamic_from_fixed(date):
     """Return Observational Islamic date (year month day)
     corresponding to fixed date, date."""
     crescent = ISLAMIC_LOCATION.phasis_on_or_before(date)
-    elapsed_months = iround((crescent - IslamicDate.EPOCH) / Location.MEAN_SYNODIC_MONTH)
+    elapsed_months = iround((crescent - IslamicDate.EPOCH) / Lunar.MEAN_SYNODIC_MONTH)
     year = quotient(elapsed_months, 12) + 1
     month = mod(elapsed_months, 12) + 1
     day = (date - crescent) + 1

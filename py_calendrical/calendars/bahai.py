@@ -6,6 +6,8 @@ from py_calendrical.py_cal_cal import quotient, ifloor, iround
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.utils import reduce_cond, next_int
+from py_calendrical.solar import Solar
+from py_calendrical.astro import Astro
 
 class BahaiDate(object):
 
@@ -83,10 +85,10 @@ class BahaiDate(object):
     def future_new_year_on_or_before(cls, date):
         """Return fixed date of Future Bahai New Year on or
         before fixed date, date."""
-        approx = Location.estimate_prior_solar_longitude(Location.SPRING, cls.sunset_in_haifa(date))
+        approx = Solar.estimate_prior_solar_longitude(Astro.SPRING, cls.sunset_in_haifa(date))
         return next_int(ifloor(approx) - 1,
-                    lambda day: (Location.solar_longitude(cls.sunset_in_haifa(day)) <=
-                                 (Location.SPRING + 2)))
+                    lambda day: (Solar.solar_longitude(cls.sunset_in_haifa(day)) <=
+                                 (Astro.SPRING + 2)))
 
     def to_future_fixed(self):
         """Return fixed date of Bahai date, b_date."""
@@ -94,24 +96,24 @@ class BahaiDate(object):
         if (self.month == 19):
             return (self.future_new_year_on_or_before(
                 self.EPOCH +
-                ifloor(Location.MEAN_TROPICAL_YEAR * (years + 1/2))) -
+                ifloor(Solar.MEAN_TROPICAL_YEAR * (years + 1/2))) -
                     20 + self.day)
         elif (self.month == self.AYYAM_I_HA):
             return (self.future_new_year_on_or_before(
                 self.EPOCH +
-                ifloor(Location.MEAN_TROPICAL_YEAR * (years - 1/2))) +
+                ifloor(Solar.MEAN_TROPICAL_YEAR * (years - 1/2))) +
                     341 + self.day)
         else:
             return (self.future_new_year_on_or_before(
                 self.EPOCH +
-                ifloor(Location.MEAN_TROPICAL_YEAR * (years - 1/2))) +
+                ifloor(Solar.MEAN_TROPICAL_YEAR * (years - 1/2))) +
                     (19 * (self.month - 1)) + self.day - 1)
     
     @classmethod
     def from_future_fixed(cls, date):
         """Return Future Bahai date corresponding to fixed date, date."""
         new_year = cls.future_new_year_on_or_before(date)
-        years    = iround((new_year - cls.EPOCH) / Location.MEAN_TROPICAL_YEAR)
+        years    = iround((new_year - cls.EPOCH) / Solar.MEAN_TROPICAL_YEAR)
         major    = 1 + quotient(years, 361)
         cycle    = 1 + quotient(mod(years, 361), 19)
         year     = 1 + mod(years, 19)
