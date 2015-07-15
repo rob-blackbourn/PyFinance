@@ -1,8 +1,8 @@
 from __future__ import division
 from operator import mod
-from py_calendrical.py_cal_cal import iceiling, ifloor, final_int, amod, list_range
+from py_calendrical.py_cal_cal import iceiling, ifloor, amod
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
-from py_calendrical.utils import reduce_cond
+from py_calendrical.utils import reduce_cond, list_range, final_int
 
 class TibetanDate(object):
     

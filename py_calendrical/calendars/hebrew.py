@@ -2,7 +2,7 @@ from operator import mod
 from fractions import Fraction
 from enum import IntEnum
 from mpmath import mpf
-from py_calendrical.py_cal_cal import quotient, summa, iround, ifloor, final_int, next_int, list_range
+from py_calendrical.py_cal_cal import quotient, summa, iround, ifloor
 from py_calendrical.triganometry import angle
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.calendars.julian import JulianDate
@@ -11,6 +11,7 @@ from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.year_month_day import YearMonthDay
+from py_calendrical.utils import next_int, final_int, list_range
 
 class HebrewMonth(IntEnum):
     NISAN = 1

@@ -2,9 +2,10 @@ from operator import mod
 from mpmath import mpf, pi
 import math
 from py_calendrical.triganometry import sin_degrees, cos_degrees, tan_degrees, arctan_degrees, arcsin_degrees, arccos_degrees, secs, angle, normalized_degrees 
-from py_calendrical.py_cal_cal import binary_search, ifloor, iround, poly, signum, sigma, final_int, next_int, invert_angular
+from py_calendrical.py_cal_cal import binary_search, ifloor, iround, poly, signum, sigma, invert_angular
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.utils import next_int, final_int
 
 class Location(object):
 

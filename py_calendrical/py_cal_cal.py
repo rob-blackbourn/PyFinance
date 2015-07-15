@@ -5,14 +5,7 @@ from __future__ import division
 # at least 50 bits of precision
 import math
 from mpmath import *
-from enum import IntEnum, Enum
 mp.prec = 50
-
-def even(i):
-    return mod(i, 2) == 0
-
-def odd(i):
-    return not even(i)
 
 # I (re)define floor: in CL it always returns an integer.
 # I make it explicit the fact it returns an integer by
@@ -73,16 +66,6 @@ def signum(a):
 def iceiling(n):
     """Return the integer rounded towards +infinitum of n."""
     return int(math.ceil(n))
-
-def next_int(i, p):
-    """Return first integer greater or equal to initial index, i,
-    such that condition, p, holds."""
-    return i if p(i) else next_int(i + 1, p)
-
-def final_int(i, p):
-    """Return last integer greater or equal to initial index, i,
-    such that condition, p, holds."""
-    return i - 1 if not p(i) else final_int(i + 1, p)
 
 def summa(f, k, p):
     """Return the sum of f(i) from i=k, k+1, ... till p(i) holds true or 0.
@@ -179,12 +162,3 @@ def epoch():
 def rd(tee):
     """Return rata diem (number of days since epoch) of moment in time, tee."""
     return tee - epoch()
-
-def is_in_range(tee, pair):
-    """Return True if moment 'tee' falls within range 'range',
-    False otherwise."""
-    return pair[0] <= tee <= pair[1]
-
-def list_range(ell, pair):
-    """Return those moments in list ell that occur in range 'pair'."""
-    return filter(lambda x: is_in_range(x, pair), ell)

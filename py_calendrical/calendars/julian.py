@@ -1,9 +1,10 @@
 from operator import mod
 from mpmath import mpf
-from py_calendrical.py_cal_cal import quotient, list_range, ifloor
+from py_calendrical.py_cal_cal import quotient, ifloor
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.year_month_day import YearMonthDay
+from py_calendrical.utils import list_range
 
 class JD(object):
     

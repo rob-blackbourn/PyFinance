@@ -1,7 +1,7 @@
 from operator import mod
 from enum import IntEnum
 import datetime
-from py_calendrical.py_cal_cal import quotient, amod, is_in_range
+from py_calendrical.py_cal_cal import quotient, amod
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.year_month_day import YearMonthDay
 from fractions import Fraction
@@ -233,16 +233,15 @@ def epiphany_it(year):
     """Return fixed date of Epiphany in Italy in Gregorian year 'year'."""
     return GregorianDate(year, JulianMonth.January, 6)
 
-def unlucky_fridays_in_range(range):
+def unlucky_fridays_in_range(first_fixed_date, last_fixed_date):
     """Return the list of Fridays within range 'range' of fixed dates that
     are day 13 of the relevant Gregorian months."""
-    a    = range[0]
-    b    = range[1]
-    fri  = DayOfWeek.Friday.on_or_after(a)
+    fri  = DayOfWeek.Friday.on_or_after(first_fixed_date)
     date = GregorianDate.from_fixed(fri)
     ell  = [fri] if (date.day == 13) else []
-    if is_in_range(fri, range):
-        ell[:0] = unlucky_fridays_in_range([fri + 1, b])
+    
+    if first_fixed_date <= fri <= last_fixed_date:
+        ell[:0] = unlucky_fridays_in_range(fri + 1, last_fixed_date)
         return ell
     else:
         return []

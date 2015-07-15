@@ -1,12 +1,12 @@
 from operator import mod
 from mpmath import mpf
-from py_calendrical.py_cal_cal import next_int, ifloor, iceiling, iround, quotient
+from py_calendrical.py_cal_cal import ifloor, iceiling, iround, quotient
 from py_calendrical.time_arithmatic import Clock
-from py_calendrical.astro import estimate_prior_solar_longitude, SPRING, solar_longitude, MEAN_TROPICAL_YEAR
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.year_month_day import YearMonthDay
+from py_calendrical.utils import next_int
 
 class PersianDate(YearMonthDay):
 
@@ -25,13 +25,13 @@ class PersianDate(YearMonthDay):
     def new_year_on_or_before(cls, date):
         """Return the fixed date of Astronomical Persian New Year on or
         before fixed date, date."""
-        approx = estimate_prior_solar_longitude(SPRING, cls.midday_in_tehran(date))
-        return next_int(ifloor(approx) - 1, lambda day: (solar_longitude(cls.midday_in_tehran(day)) <= (SPRING + 2)))
+        approx = Location.estimate_prior_solar_longitude(Location.SPRING, cls.midday_in_tehran(date))
+        return next_int(ifloor(approx) - 1, lambda day: (Location.solar_longitude(cls.midday_in_tehran(day)) <= (Location.SPRING + 2)))
 
     def to_fixed(self):
         """Return fixed date of Astronomical Persian date, p_date."""
         temp = (self.year - 1) if (0 < self.year) else self.year
-        new_year = self.new_year_on_or_before(self.EPOCH + 180 + ifloor(MEAN_TROPICAL_YEAR * temp))
+        new_year = self.new_year_on_or_before(self.EPOCH + 180 + ifloor(Location.MEAN_TROPICAL_YEAR * temp))
         return ((new_year - 1) +
                 ((31 * (self.month - 1)) if (self.month <= 7) else (30 * (self.month - 1) + 6)) +
                 self.day)
@@ -41,7 +41,7 @@ class PersianDate(YearMonthDay):
         """Return Astronomical Persian date (year month day)
         corresponding to fixed date, date."""
         new_year = cls.new_year_on_or_before(date)
-        y = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR) + 1
+        y = iround((new_year - cls.EPOCH) / Location.MEAN_TROPICAL_YEAR) + 1
         year = y if (0 < y) else (y - 1)
         day_of_year = date - PersianDate(year, 1, 1).to_fixed() + 1
         month = (iceiling(day_of_year / 31)

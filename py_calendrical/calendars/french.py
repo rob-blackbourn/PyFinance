@@ -1,11 +1,11 @@
 from operator import mod
 from py_calendrical.triganometry import angle
-from py_calendrical.py_cal_cal import next_int, ifloor, iround, quotient
-from py_calendrical.astro import estimate_prior_solar_longitude, AUTUMN, solar_longitude, MEAN_TROPICAL_YEAR
+from py_calendrical.py_cal_cal import ifloor, iround, quotient
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth 
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.year_month_day import YearMonthDay
+from py_calendrical.utils import next_int
 
 class FrenchDate(YearMonthDay):
 
@@ -18,17 +18,14 @@ class FrenchDate(YearMonthDay):
 
     def to_fixed(self):
         """Return fixed date of French Revolutionary date, f_date"""
-        new_year = self.new_year_on_or_before(
-                      ifloor(self.EPOCH + 
-                            180 + 
-                            MEAN_TROPICAL_YEAR * (self.year - 1)))
+        new_year = self.new_year_on_or_before(ifloor(self.EPOCH + 180 + Location.MEAN_TROPICAL_YEAR * (self.year - 1)))
         return new_year - 1 + 30 * (self.month - 1) + self.day
 
     @classmethod
     def from_fixed(cls, fixed_date):
         """Return French Revolutionary date of fixed date, 'fixed_date'."""
         new_year = cls.new_year_on_or_before(fixed_date)
-        year  = iround((new_year - cls.EPOCH) / MEAN_TROPICAL_YEAR) + 1
+        year  = iround((new_year - cls.EPOCH) / Location.MEAN_TROPICAL_YEAR) + 1
         month = quotient(fixed_date - new_year, 30) + 1
         day   = mod(fixed_date - new_year, 30) + 1
         return FrenchDate(year, month, day)
@@ -44,8 +41,8 @@ class FrenchDate(YearMonthDay):
     def new_year_on_or_before(cls, date):
         """Return fixed date of French Revolutionary New Year on or
            before fixed date, date."""
-        approx = estimate_prior_solar_longitude(AUTUMN, cls.midnight_in_paris(date))
-        return next_int(ifloor(approx) - 1, lambda day: AUTUMN <= solar_longitude(cls.midnight_in_paris(day)))
+        approx = Location.estimate_prior_solar_longitude(Location.AUTUMN, cls.midnight_in_paris(date))
+        return next_int(ifloor(approx) - 1, lambda day: Location.AUTUMN <= Location.solar_longitude(cls.midnight_in_paris(day)))
     
     @classmethod
     def is_arithmetic_leap_year(cls, f_year):

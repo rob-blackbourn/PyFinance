@@ -1,11 +1,12 @@
 from operator import mod
 from mpmath import mpf
-from py_calendrical.py_cal_cal import quotient, list_range, ifloor, iround
+from py_calendrical.py_cal_cal import quotient, ifloor, iround
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.year_month_day import YearMonthDay
+from py_cal_cal.pycalcal import list_range
 
 class IslamicDate(YearMonthDay):
 

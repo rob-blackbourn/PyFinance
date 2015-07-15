@@ -1,10 +1,10 @@
 from operator import mod
 from mpmath import mpf
 from py_calendrical.time_arithmatic import Clock
-from py_calendrical.py_cal_cal import quotient, next_int, ifloor, iround
+from py_calendrical.py_cal_cal import quotient, ifloor, iround
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
-from py_calendrical.utils import reduce_cond
+from py_calendrical.utils import reduce_cond, next_int
 
 class BahaiDate(object):
 

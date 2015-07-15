@@ -1,8 +1,8 @@
 from operator import mod
-from py_calendrical.py_cal_cal import amod, even, quotient
+from py_calendrical.py_cal_cal import amod, quotient
 from py_calendrical.calendars.julian import JD
 from py_calendrical.calendars.gregorian import GregorianDate
-from py_calendrical.utils import reduce_cond
+from py_calendrical.utils import reduce_cond, even
 
 class BalinesePawukonDate(object):
 

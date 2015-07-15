@@ -1,7 +1,7 @@
 from __future__ import division
 from operator import mod
 from mpmath import mpf
-from py_calendrical.py_cal_cal import amod, quotient, iceiling, ifloor, iround, signum, next_int, list_range, binary_search, is_in_range
+from py_calendrical.py_cal_cal import amod, quotient, iceiling, ifloor, iround, signum, binary_search
 from py_calendrical.py_cal_cal import invert_angular
 from py_calendrical.triganometry import angle, sin_degrees
 from py_calendrical.day_arithmatic import DayOfWeek
@@ -9,7 +9,7 @@ from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.location import Location
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.time_arithmatic import Clock
-from py_calendrical.utils import reduce_cond
+from py_calendrical.utils import reduce_cond, next_int, is_in_range, list_range
 
 
 class OldHindu(object):

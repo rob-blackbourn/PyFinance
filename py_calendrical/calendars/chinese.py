@@ -2,10 +2,11 @@ from __future__ import division
 from operator import mod
 from mpmath import mpf
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
-from py_calendrical.py_cal_cal import ifloor, amod, quotient, iround, iceiling, rd, next_int
+from py_calendrical.py_cal_cal import ifloor, amod, quotient, iround, iceiling, rd
 from py_calendrical.triganometry import angle
 from py_calendrical.location import Location
 from py_calendrical.time_arithmatic import Clock
+from py_calendrical.utils import next_int
 
 class ChineseDate(object):
 
