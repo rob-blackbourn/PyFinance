@@ -56,12 +56,6 @@ class Location(object):
     def universal_from_standard(self, tee_rom_s):
         """Return universal time from tee_rom_s in standard time at location."""
         return tee_rom_s - self.zone
-
-    @classmethod
-    def zone_from_longitude(cls, phi):
-        """Return the difference between UT and local mean time at longitude
-        'phi' as a fraction of a day."""
-        return phi / 360
     
     def local_from_universal(self, tee_rom_u):
         """Return local time from universal tee_rom_u at location, location."""
@@ -78,72 +72,6 @@ class Location(object):
     def local_from_standard(self, tee_rom_s):
         """Return local time from standard tee_rom_s at location, location."""
         return self.local_from_universal(self.universal_from_standard(tee_rom_s))
-    
-    @classmethod    
-    def ephemeris_correction(cls, tee):
-        """Return Dynamical Time minus Universal Time (in days) for
-        moment, tee.  Adapted from "Astronomical Algorithms"
-        by Jean Meeus, Willmann_Bell, Inc., 1991."""
-        year = GregorianDate.to_year(ifloor(tee))
-        c = GregorianDate.date_difference(GregorianDate(1900, JulianMonth.January, 1), GregorianDate(year, JulianMonth.July, 1)) / mpf(36525)
-        if (1988 <= year <= 2019):
-            return 1/86400 * (year - 1933)
-        elif (1900 <= year <= 1987):
-            return poly(c, [mpf(-0.00002), mpf(0.000297), mpf(0.025184), mpf(-0.181133), mpf(0.553040), mpf(-0.861938), mpf(0.677066), mpf(-0.212591)])
-        elif (1800 <= year <= 1899):
-            return poly(c, [mpf(-0.000009), mpf(0.003844), mpf(0.083563), mpf(0.865736), mpf(4.867575), mpf(15.845535), mpf(31.332267), mpf(38.291999), mpf(28.316289), mpf(11.636204), mpf(2.043794)])
-        elif (1700 <= year <= 1799):
-            return (1/86400 * poly(year - 1700, [8.118780842, -0.005092142, 0.003336121, -0.0000266484]))
-        elif (1620 <= year <= 1699):
-            return (1/86400 * poly(year - 1600, [mpf(196.58333), mpf(-4.0675), mpf(0.0219167)]))
-        else:
-            x = (Clock.days_from_hours(mpf(12)) + GregorianDate.date_difference(GregorianDate(1810, JulianMonth.January, 1), GregorianDate(year, JulianMonth.January, 1)))
-            return 1/86400 * (((x * x) / mpf(41048480)) - 15)
-
-    @classmethod
-    def universal_from_dynamical(cls, tee):
-        """Return Universal moment from Dynamical time, tee."""
-        return tee - cls.ephemeris_correction(tee)
-
-    @classmethod
-    def dynamical_from_universal(cls, tee):
-        """Return Dynamical time at Universal moment, tee."""
-        return tee + cls.ephemeris_correction(tee)
-
-    @classmethod
-    def julian_centuries(cls, tee):
-        """Return Julian centuries since 2000 at moment tee."""
-        return (cls.dynamical_from_universal(tee) - cls.J2000) / mpf(36525)
-
-    @classmethod
-    def obliquity(cls, tee):
-        """Return (mean) obliquity of ecliptic at moment tee."""
-        c = cls.julian_centuries(tee)
-        return (angle(23, 26, mpf(21.448)) +
-                poly(c, [mpf(0),
-                         angle(0, 0, mpf(-46.8150)),
-                         angle(0, 0, mpf(-0.00059)),
-                         angle(0, 0, mpf(0.001813))]))
-
-    @classmethod
-    def equation_of_time(cls, tee):
-        """Return the equation of time (as fraction of day) for moment, tee.
-        Adapted from "Astronomical Algorithms" by Jean Meeus,
-        Willmann_Bell, Inc., 1991."""
-        c = cls.julian_centuries(tee)
-        lamb = poly(c, [mpf(280.46645), mpf(36000.76983), mpf(0.0003032)])
-        anomaly = poly(c, [mpf(357.52910), mpf(35999.05030), mpf(-0.0001559), mpf(-0.00000048)])
-        eccentricity = poly(c, [mpf(0.016708617), mpf(-0.000042037), mpf(-0.0000001236)])
-        varepsilon = cls.obliquity(tee)
-        y = pow(tan_degrees(varepsilon / 2), 2)
-        equation = ((1/2 / pi) *
-                    (y * sin_degrees(2 * lamb) +
-                     -2 * eccentricity * sin_degrees(anomaly) +
-                     (4 * eccentricity * y * sin_degrees(anomaly) *
-                      cos_degrees(2 * lamb)) +
-                     -0.5 * y * y * sin_degrees(4 * lamb) +
-                     -1.25 * eccentricity * eccentricity * sin_degrees(2 * anomaly)))
-        return signum(equation) * min(abs(equation), Clock.days_from_hours(mpf(12)))
 
     def apparent_from_local(self, tee):
         """Return sundial time at local time tee at location, location."""
@@ -281,6 +209,138 @@ class Location(object):
         at location, location."""
         return (self.sunrise(date + 1) - self.sunset(date)) / 12
 
+    def standard_from_sundial(self, tee):
+        """Return standard time of temporal moment, tee, at location, location."""
+        date = Clock.fixed_from_moment(tee)
+        hour = 24 * mod(tee, 1)
+        if 6 <= hour <= 18:
+            h = self.daytime_temporal_hour(date)
+        elif (hour < 6):
+            h = self.nighttime_temporal_hour(date - 1)
+        else:
+            h = self.nighttime_temporal_hour(date)
+    
+        # return
+        if 6 <= hour <= 18:
+            return self.sunrise(date) + ((hour - 6) * h)
+        elif hour < 6:
+            return self.sunset(date - 1) + ((hour + 6) * h)
+        else:
+            return self.sunset(date) + ((hour - 18) * h)
+    
+    def lunar_parallax(self, tee):
+        """Return the parallax of moon at moment, tee, at location, location.
+        Adapted from "Astronomical Algorithms" by Jean Meeus,
+        Willmann_Bell, Inc., 1998."""
+        geo = self.lunar_altitude(tee)
+        Delta = self.lunar_distance(tee)
+        alt = 6378140 / Delta
+        arg = alt * cos_degrees(geo)
+        return arcsin_degrees(arg)
+    
+    def topocentric_lunar_altitude(self, tee):
+        """Return the topocentric altitude of moon at moment, tee,
+        at location, location, as a small positive/negative angle in degrees,
+        ignoring refraction."""
+        return self.lunar_altitude(tee) - self.lunar_parallax(tee)
+    
+    def phasis_on_or_before(self, date):
+        """Return the closest fixed date on or before date 'date', when crescent
+        moon first became visible at location 'location'."""
+        mean = date - ifloor(self.lunar_phase(date + 1) / 360.0 * self.MEAN_SYNODIC_MONTH)
+        tau = ((mean - 30)
+               if (((date - mean) <= 3) and (not self.visible_crescent(date)))
+               else (mean - 2))
+        return  next_int(tau, lambda d: self.visible_crescent(d))
+
+    def lunar_altitude(self, tee):
+        """Return the geocentric altitude of moon at moment, tee,
+        at location, location, as a small positive/negative angle in degrees,
+        ignoring parallax and refraction.  Adapted from 'Astronomical
+        Algorithms' by Jean Meeus, Willmann_Bell, Inc., 1998."""
+        lamb = self.lunar_longitude(tee)
+        beta = self.lunar_latitude(tee)
+        alpha = self.right_ascension(tee, beta, lamb)
+        delta = self.declination(tee, beta, lamb)
+        theta0 = self.sidereal_from_moment(tee)
+        cap_H = mod(theta0 + self.longitude - alpha, 360)
+        altitude = arcsin_degrees(
+            (sin_degrees(self.latitude) * sin_degrees(delta)) +
+            (cos_degrees(self.latitude) * cos_degrees(delta) * cos_degrees(cap_H)))
+        return mod(altitude + 180, 360) - 180
+
+    @classmethod
+    def zone_from_longitude(cls, phi):
+        """Return the difference between UT and local mean time at longitude
+        'phi' as a fraction of a day."""
+        return phi / 360
+    
+    @classmethod    
+    def ephemeris_correction(cls, tee):
+        """Return Dynamical Time minus Universal Time (in days) for
+        moment, tee.  Adapted from "Astronomical Algorithms"
+        by Jean Meeus, Willmann_Bell, Inc., 1991."""
+        year = GregorianDate.to_year(ifloor(tee))
+        c = GregorianDate.date_difference(GregorianDate(1900, JulianMonth.January, 1), GregorianDate(year, JulianMonth.July, 1)) / mpf(36525)
+        if 1988 <= year <= 2019:
+            return 1/86400 * (year - 1933)
+        elif 1900 <= year <= 1987:
+            return poly(c, [mpf(-0.00002), mpf(0.000297), mpf(0.025184), mpf(-0.181133), mpf(0.553040), mpf(-0.861938), mpf(0.677066), mpf(-0.212591)])
+        elif 1800 <= year <= 1899:
+            return poly(c, [mpf(-0.000009), mpf(0.003844), mpf(0.083563), mpf(0.865736), mpf(4.867575), mpf(15.845535), mpf(31.332267), mpf(38.291999), mpf(28.316289), mpf(11.636204), mpf(2.043794)])
+        elif 1700 <= year <= 1799:
+            return 1/86400 * poly(year - 1700, [8.118780842, -0.005092142, 0.003336121, -0.0000266484])
+        elif 1620 <= year <= 1699:
+            return 1/86400 * poly(year - 1600, [mpf(196.58333), mpf(-4.0675), mpf(0.0219167)])
+        else:
+            x = Clock.days_from_hours(mpf(12)) + GregorianDate.date_difference(GregorianDate(1810, JulianMonth.January, 1), GregorianDate(year, JulianMonth.January, 1))
+            return 1/86400 * (((x * x) / mpf(41048480)) - 15)
+
+    @classmethod
+    def universal_from_dynamical(cls, tee):
+        """Return Universal moment from Dynamical time, tee."""
+        return tee - cls.ephemeris_correction(tee)
+
+    @classmethod
+    def dynamical_from_universal(cls, tee):
+        """Return Dynamical time at Universal moment, tee."""
+        return tee + cls.ephemeris_correction(tee)
+
+    @classmethod
+    def julian_centuries(cls, tee):
+        """Return Julian centuries since 2000 at moment tee."""
+        return (cls.dynamical_from_universal(tee) - cls.J2000) / mpf(36525)
+
+    @classmethod
+    def obliquity(cls, tee):
+        """Return (mean) obliquity of ecliptic at moment tee."""
+        c = cls.julian_centuries(tee)
+        return (angle(23, 26, mpf(21.448)) +
+                poly(c, [mpf(0),
+                         angle(0, 0, mpf(-46.8150)),
+                         angle(0, 0, mpf(-0.00059)),
+                         angle(0, 0, mpf(0.001813))]))
+
+    @classmethod
+    def equation_of_time(cls, tee):
+        """Return the equation of time (as fraction of day) for moment, tee.
+        Adapted from "Astronomical Algorithms" by Jean Meeus,
+        Willmann_Bell, Inc., 1991."""
+        c = cls.julian_centuries(tee)
+        lamb = poly(c, [mpf(280.46645), mpf(36000.76983), mpf(0.0003032)])
+        anomaly = poly(c, [mpf(357.52910), mpf(35999.05030), mpf(-0.0001559), mpf(-0.00000048)])
+        eccentricity = poly(c, [mpf(0.016708617), mpf(-0.000042037), mpf(-0.0000001236)])
+        varepsilon = cls.obliquity(tee)
+        y = pow(tan_degrees(varepsilon / 2), 2)
+        equation = ((1/2 / pi) *
+                    (y * sin_degrees(2 * lamb) +
+                     -2 * eccentricity * sin_degrees(anomaly) +
+                     (4 * eccentricity * y * sin_degrees(anomaly) *
+                      cos_degrees(2 * lamb)) +
+                     -0.5 * y * y * sin_degrees(4 * lamb) +
+                     -1.25 * eccentricity * eccentricity * sin_degrees(2 * anomaly)))
+        return signum(equation) * min(abs(equation), Clock.days_from_hours(mpf(12)))
+
     @classmethod
     def precise_obliquity(cls, tee):
         """Return precise (mean) obliquity of ecliptic at moment tee."""
@@ -314,25 +374,6 @@ class Location(object):
         latitude 'lam' and longitude 'beta'."""
         varepsilon = cls.obliquity(tee)
         return arctan_degrees((sin_degrees(lam) * cos_degrees(varepsilon)) - (tan_degrees(beta) * sin_degrees(varepsilon)), cos_degrees(lam))
-
-    def standard_from_sundial(self, tee):
-        """Return standard time of temporal moment, tee, at location, location."""
-        date = Clock.fixed_from_moment(tee)
-        hour = 24 * mod(tee, 1)
-        if 6 <= hour <= 18:
-            h = self.daytime_temporal_hour(date)
-        elif (hour < 6):
-            h = self.nighttime_temporal_hour(date - 1)
-        else:
-            h = self.nighttime_temporal_hour(date)
-    
-        # return
-        if 6 <= hour <= 18:
-            return self.sunrise(date) + ((hour - 6) * h)
-        elif hour < 6:
-            return self.sunset(date - 1) + ((hour + 6) * h)
-        else:
-            return self.sunset(date) + ((hour - 18) * h)
 
     @classmethod
     def sidereal_from_moment(cls, tee):
@@ -795,15 +836,6 @@ class Location(object):
         return ((self.NEW < phase < self.FIRST_QUARTER) and
                 (mpf(10.6) <= arc_of_light <= 90) and
                 (altitude > mpf(4.1)))
-    
-    def phasis_on_or_before(self, date):
-        """Return the closest fixed date on or before date 'date', when crescent
-        moon first became visible at location 'location'."""
-        mean = date - ifloor(self.lunar_phase(date + 1) / 360.0 * self.MEAN_SYNODIC_MONTH)
-        tau = ((mean - 30)
-               if (((date - mean) <= 3) and (not self.visible_crescent(date)))
-               else (mean - 2))
-        return  next_int(tau, lambda d: self.visible_crescent(d))
 
     @classmethod
     def lunar_phase_at_or_after(cls, phi, tee):
@@ -816,22 +848,6 @@ class Location(object):
         a = max(tee, tau - 2)
         b = tau + 2
         return invert_angular(cls.lunar_phase, phi, a, b)
-
-    def lunar_altitude(self, tee):
-        """Return the geocentric altitude of moon at moment, tee,
-        at location, location, as a small positive/negative angle in degrees,
-        ignoring parallax and refraction.  Adapted from 'Astronomical
-        Algorithms' by Jean Meeus, Willmann_Bell, Inc., 1998."""
-        lamb = self.lunar_longitude(tee)
-        beta = self.lunar_latitude(tee)
-        alpha = self.right_ascension(tee, beta, lamb)
-        delta = self.declination(tee, beta, lamb)
-        theta0 = self.sidereal_from_moment(tee)
-        cap_H = mod(theta0 + self.longitude - alpha, 360)
-        altitude = arcsin_degrees(
-            (sin_degrees(self.latitude) * sin_degrees(delta)) +
-            (cos_degrees(self.latitude) * cos_degrees(delta) * cos_degrees(cap_H)))
-        return mod(altitude + 180, 360) - 180
      
     @classmethod
     def lunar_distance(cls, tee):
@@ -890,22 +906,6 @@ class Location(object):
         Adapted from "Astronomical Algorithms" by Jean Meeus,
         Willmann_Bell, Inc., 2nd ed."""
         return (cls.lunar_latitude(tee), cls.lunar_longitude(tee), cls.lunar_distance(tee))
-    
-    def lunar_parallax(self, tee):
-        """Return the parallax of moon at moment, tee, at location, location.
-        Adapted from "Astronomical Algorithms" by Jean Meeus,
-        Willmann_Bell, Inc., 1998."""
-        geo = self.lunar_altitude(tee)
-        Delta = self.lunar_distance(tee)
-        alt = 6378140 / Delta
-        arg = alt * cos_degrees(geo)
-        return arcsin_degrees(arg)
-    
-    def topocentric_lunar_altitude(self, tee):
-        """Return the topocentric altitude of moon at moment, tee,
-        at location, location, as a small positive/negative angle in degrees,
-        ignoring refraction."""
-        return self.lunar_altitude(tee) - self.lunar_parallax(tee)
     
     @classmethod
     def lunar_diameter(cls, tee):
