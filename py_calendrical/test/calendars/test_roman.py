@@ -3,7 +3,6 @@ import unittest
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.calendars.gregorian import JulianMonth
 from py_calendrical.calendars.roman import RomanDate, Event
-from py_calendrical.utils import reduce_cond
 
 class RomanSmokeTestCase(unittest.TestCase):
     def setUp(self):

@@ -5,6 +5,7 @@ from py_calendrical.triganometry import sin_degrees, cos_degrees, normalized_deg
 from py_calendrical.py_cal_cal import iround, poly, sigma, invert_angular
 from py_calendrical.utils import next_int, final_int
 from py_calendrical.astro import Astro
+from py_calendrical.solar import Solar
 
 class Lunar(Astro):
     
@@ -60,7 +61,7 @@ class Lunar(Astro):
         c = cls.julian_centuries(tee)
         cap_L_prime = cls.mean_lunar_longitude(c)
         cap_D = cls.lunar_elongation(c)
-        cap_M = cls.solar_anomaly(c)
+        cap_M = Solar.solar_anomaly(c)
         cap_M_prime = cls.lunar_anomaly(c)
         cap_F = cls.moon_node(c)
         # see eq. 47.6 in Meeus
@@ -118,7 +119,7 @@ class Lunar(Astro):
         c = cls.julian_centuries(tee)
         cap_L_prime = cls.mean_lunar_longitude(c)
         cap_D = cls.lunar_elongation(c)
-        cap_M = cls.solar_anomaly(c)
+        cap_M = Solar.solar_anomaly(c)
         cap_M_prime = cls.lunar_anomaly(c)
         cap_F = cls.moon_node(c)
         cap_E = poly(c, [1, mpf(-0.002516), mpf(-0.0000074)])

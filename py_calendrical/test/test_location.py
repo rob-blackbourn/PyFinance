@@ -4,7 +4,6 @@ from mpmath import mpf
 
 from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.time_arithmatic import Clock
-from py_calendrical.location import Location
 from py_calendrical.py_cal_cal import iround
 from py_calendrical.calendars.hebrew import JAFFA
 from py_calendrical.astro import Astro
