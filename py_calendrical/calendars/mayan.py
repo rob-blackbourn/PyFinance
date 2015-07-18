@@ -1,12 +1,12 @@
 from __future__ import division
 from operator import mod
 from py_calendrical.py_cal_cal import quotient, amod
-from py_calendrical.calendars.julian import JD
+from py_calendrical.calendars.julian import JulianDay
 from py_calendrical.utils import reduce_cond
 
 class MayanLongCountDate(object):
 
-    EPOCH = JD(584283).to_fixed()
+    EPOCH = JulianDay(584283).to_fixed()
     
     def __init__(self, baktun, katun, tun, uinal, kin):
         self.baktun = baktun

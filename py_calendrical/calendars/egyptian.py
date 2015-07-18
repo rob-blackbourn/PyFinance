@@ -2,11 +2,11 @@ from __future__ import division
 from operator import mod
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.py_cal_cal import quotient
-from py_calendrical.calendars.julian import JD
+from py_calendrical.calendars.julian import JulianDay
 
 class EgyptianDate(YearMonthDay):
 
-    EPOCH = JD(1448638).to_fixed()    
+    EPOCH = JulianDay(1448638).to_fixed()    
 
     def __init__(self, year, month, day):
         YearMonthDay.__init__(self, year, month, day)

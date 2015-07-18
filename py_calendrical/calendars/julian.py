@@ -7,7 +7,7 @@ from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.utils import list_range
 
-class JD(object):
+class JulianDay(object):
     
     EPOCH = mpf(-1721424.5)
 
@@ -26,9 +26,9 @@ class JD(object):
 
     @classmethod
     def from_moment(cls, tee):
-        return JD(tee - cls.EPOCH)
+        return JulianDay(tee - cls.EPOCH)
 
-class MJD(object):
+class ModifiedJulianDay(object):
     
     EPOCH = 678576
 
@@ -40,7 +40,7 @@ class MJD(object):
 
     @classmethod
     def from_fixed(cls, fixed_date):
-        return MJD(fixed_date - cls.EPOCH)
+        return ModifiedJulianDay(fixed_date - cls.EPOCH)
 
 class JulianDate(YearMonthDay):
     

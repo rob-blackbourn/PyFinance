@@ -1,13 +1,13 @@
 from __future__ import division
 from operator import mod
 from py_calendrical.py_cal_cal import amod, quotient
-from py_calendrical.calendars.julian import JD
+from py_calendrical.calendars.julian import JulianDay
 from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.utils import reduce_cond, even
 
 class BalinesePawukonDate(object):
 
-    EPOCH = JD(146).to_fixed()
+    EPOCH = JulianDay(146).to_fixed()
     
     def __init__(self, luang, dwiwara, triwara, caturwara, pancawara, sadwara, saptawara, asatawara, sangawara, dasawara):
         self.luang = luang
