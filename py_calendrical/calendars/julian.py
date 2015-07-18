@@ -12,7 +12,7 @@ class JulianDay(object):
     EPOCH = mpf(-1721424.5)
 
     def __init__(self, date_from_epoch):
-        self.date_from_epoch = date_from_epoch
+        self.julian_day = date_from_epoch
     
     def to_fixed(self):
         return ifloor(self.to_moment())
@@ -22,7 +22,7 @@ class JulianDay(object):
         return cls.from_moment(fixed_date)
     
     def to_moment(self):
-        return self.date_from_epoch + self.EPOCH
+        return self.julian_day + self.EPOCH
 
     @classmethod
     def from_moment(cls, tee):
@@ -33,10 +33,10 @@ class ModifiedJulianDay(object):
     EPOCH = 678576
 
     def __init__(self, date_from_epoch):
-        self.date_from_epoch = date_from_epoch
+        self.modified_julian_day = date_from_epoch
 
     def to_fixed(self):
-        return self.date_from_epoch + self.EPOCH
+        return self.modified_julian_day + self.EPOCH
 
     @classmethod
     def from_fixed(cls, fixed_date):
