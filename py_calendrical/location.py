@@ -35,33 +35,33 @@ class Location(object):
         else:
             return arctan_degrees(y, x)
 
-    def standard_from_universal(self, tee_rom_u):
-        """Return standard time from tee_rom_u in universal time at location."""
-        return tee_rom_u + self.zone
+    def standard_from_universal(self, universal_time):
+        """Return standard time from universal time at this location."""
+        return universal_time + self.zone
     
-    def universal_from_standard(self, tee_rom_s):
-        """Return universal time from tee_rom_s in standard time at location."""
-        return tee_rom_s - self.zone
+    def universal_from_standard(self, standard_time):
+        """Return universal time from standard time at this location."""
+        return standard_time - self.zone
     
-    def local_from_universal(self, tee_rom_u):
-        """Return local time from universal tee_rom_u at location, location."""
-        return tee_rom_u + Astro.zone_from_longitude(self.longitude)
+    def local_from_universal(self, universal_time):
+        """Return local time from universal time at this location."""
+        return universal_time + Astro.zone_from_longitude(self.longitude)
     
-    def universal_from_local(self, tee_ell):
-        """Return universal time from local tee_ell at location, location."""
-        return tee_ell - Astro.zone_from_longitude(self.longitude)
+    def universal_from_local(self, local_time):
+        """Return universal time from local time at this location."""
+        return local_time - Astro.zone_from_longitude(self.longitude)
     
-    def standard_from_local(self, tee_ell):
-        """Return standard time from local tee_ell at locale, location."""
-        return self.standard_from_universal(self.universal_from_local(tee_ell))
+    def standard_from_local(self, local_time):
+        """Return standard time from local time at this location."""
+        return self.standard_from_universal(self.universal_from_local(local_time))
     
-    def local_from_standard(self, tee_rom_s):
-        """Return local time from standard tee_rom_s at location, location."""
-        return self.local_from_universal(self.universal_from_standard(tee_rom_s))
+    def local_from_standard(self, standard_time):
+        """Return local time from standard time at this location."""
+        return self.local_from_universal(self.universal_from_standard(standard_time))
 
-    def apparent_from_local(self, tee):
-        """Return sundial time at local time tee at location, location."""
-        return tee + Astro.equation_of_time(self.universal_from_local(tee))
+    def apparent_from_local(self, local_time):
+        """Return sundial time from local time at this location."""
+        return local_time + Astro.equation_of_time(self.universal_from_local(local_time))
     
     def local_from_apparent(self, tee):
         """Return local time from sundial time tee at location, location."""
@@ -77,12 +77,12 @@ class Location(object):
         at location, location."""
         return self.standard_from_local(self.local_from_apparent(date + Clock.days_from_hours(mpf(12))))
 
-    def sine_offset(self, tee, alpha):
+    def sine_offset(self, local_time, alpha):
         """Return sine of angle between position of sun at 
         local time tee and when its depression is alpha at location, location.
         Out of range when it does not occur."""
         phi = self.latitude
-        tee_prime = self.universal_from_local(tee)
+        tee_prime = self.universal_from_local(local_time)
         delta = Astro.declination(tee_prime, mpf(0), Solar.solar_longitude(tee_prime))
         return ((tan_degrees(phi) * tan_degrees(delta)) +
                 (sin_degrees(alpha) / (cos_degrees(delta) *
