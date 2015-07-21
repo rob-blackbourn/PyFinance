@@ -19,6 +19,47 @@ class TestJulianDate(unittest.TestCase):
         self.assertTrue(JulianDate.is_leap_year(2000))
         self.assertTrue(JulianDate.is_leap_year(1900))
 
+    def testKnownDates(self):
+        knownDates = {
+            -214193: JulianDate(-587, 7, 30),
+            -61387: JulianDate(-169, 12, 8),
+            25469: JulianDate(70, 9, 26),
+            49217: JulianDate(135, 10, 3),
+            171307: JulianDate(470, 1, 7),
+            210155: JulianDate(576, 5, 18),
+            253427: JulianDate(694, 11, 7),
+            369740: JulianDate(1013, 4, 19),
+            400085: JulianDate(1096, 5, 18),
+            434355: JulianDate(1190, 3, 16),
+            452605: JulianDate(1240, 3, 3),
+            470160: JulianDate(1288, 3, 26),
+            473837: JulianDate(1298, 4, 20),
+            507850: JulianDate(1391, 6, 4),
+            524156: JulianDate(1436, 1, 25),
+            544676: JulianDate(1492, 3, 31),
+            567118: JulianDate(1553, 9, 9),
+            569477: JulianDate(1560, 2, 24),
+            601716: JulianDate(1648, 5, 31),
+            613424: JulianDate(1680, 6, 20),
+            626596: JulianDate(1716, 7, 13),
+            645554: JulianDate(1768, 6, 8),
+            664224: JulianDate(1819, 7, 21),
+            671401: JulianDate(1839, 3, 15),
+            694799: JulianDate(1903, 4, 6),
+            704424: JulianDate(1929, 8, 12),
+            708842: JulianDate(1941, 9, 16),
+            709409: JulianDate(1943, 4, 6),
+            709580: JulianDate(1943, 9, 24),
+            727274: JulianDate(1992, 3, 4),
+            728714: JulianDate(1996, 2, 12),
+            744313: JulianDate(2038, 10, 28),
+            764652: JulianDate(2094, 7, 5)
+        }
+        
+        for (fixed_date, julian_date) in knownDates.iteritems():
+            self.assertEqual(fixed_date, julian_date.to_fixed(), "Convert to fixed")
+            self.assertEqual(JulianDate.from_fixed(fixed_date), julian_date, "Convert from fixed")
+
 class TestJulianDay(unittest.TestCase):
     
     def testKnownDates(self):
