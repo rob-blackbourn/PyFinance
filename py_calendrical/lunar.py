@@ -302,7 +302,7 @@ class Lunar(Astro):
         An angle of 0 means a new moon, 90 degrees means the
         first quarter, 180 means a full moon, and 270 degrees
         means the last quarter."""
-        phi = mod(cls.lunar_longitude(tee) - cls.solar_longitude(tee), 360)
+        phi = mod(cls.lunar_longitude(tee) - Solar.solar_longitude(tee), 360)
         t0 = cls.nth_new_moon(0)
         n = iround((tee - t0) / cls.MEAN_SYNODIC_MONTH)
         phi_prime = (360 *

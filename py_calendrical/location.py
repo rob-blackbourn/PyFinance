@@ -255,15 +255,14 @@ class Location(object):
             (cos_degrees(self.latitude) * cos_degrees(delta) * cos_degrees(cap_H)))
         return mod(altitude + 180, 360) - 180
 
-    @classmethod
     def visible_crescent(self, date):
         """Return S. K. Shaukat's criterion for likely
         visibility of crescent moon on eve of date 'date',
         at location 'location'."""
         tee = self.universal_from_standard(self.dusk(date - 1, mpf(4.5)))
-        phase = self.lunar_phase(tee)
+        phase = Lunar.lunar_phase(tee)
         altitude = self.lunar_altitude(tee)
-        arc_of_light = arccos_degrees(cos_degrees(self.lunar_latitude(tee)) * cos_degrees(phase))
+        arc_of_light = arccos_degrees(cos_degrees(Lunar.lunar_latitude(tee)) * cos_degrees(phase))
         return ((Lunar.NEW < phase < Lunar.FIRST_QUARTER) and
                 (mpf(10.6) <= arc_of_light <= 90) and
                 (altitude > mpf(4.1)))
