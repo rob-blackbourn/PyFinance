@@ -27,9 +27,7 @@ class MayanSmokeTestCase(unittest.TestCase):
             rd(0),
             fixed_from_mayan_long_count(
                 mayan_long_count_date(7, 17, 18, 13, 2)))
-        self.assertEqual(
-            mayan_haab_on_or_before(mayan_haab_date(11, 7), self.testvalue),
-            self.testvalue)
+        self.assertEqual(mayan_haab_on_or_before(mayan_haab_date(11, 7), self.testvalue), self.testvalue)
         self.assertEqual(
             mayan_tzolkin_on_or_before(
                 mayan_tzolkin_date(11, 9), self.testvalue),

@@ -42,16 +42,10 @@ class HebrewDate(YearMonthDay):
     def to_fixed(self):
         """Return fixed date of Hebrew date h_date."""
         if self.month < HebrewMonth.TISHRI:
-            tmp = (summa(lambda m: self.last_day_of_month(m, self.year),
-                         HebrewMonth.TISHRI,
-                         lambda m: m <= self.last_month_of_year(self.year)) +
-                   summa(lambda m: self.last_day_of_month(m, self.year),
-                         HebrewMonth.NISAN,
-                         lambda m: m < self.month))
+            tmp = (summa(lambda m: self.last_day_of_month(m, self.year), HebrewMonth.TISHRI, lambda m: m <= self.last_month_of_year(self.year)) +
+                   summa(lambda m: self.last_day_of_month(m, self.year), HebrewMonth.NISAN, lambda m: m < self.month))
         else:
-            tmp = summa(lambda m: self.last_day_of_month(m, self.year),
-                        HebrewMonth.TISHRI,
-                        lambda m: m < self.month)
+            tmp = summa(lambda m: self.last_day_of_month(m, self.year), HebrewMonth.TISHRI, lambda m: m < self.month)
     
         return self.new_year(self.year) + self.day - 1 + tmp
 
@@ -193,10 +187,7 @@ class HebrewDate(YearMonthDay):
         """Return the list of fixed date of Birkath ha_Hama occurring in
         Gregorian year 'gregorian_year', if it occurs."""
         dates = CopticDate.in_gregorian(7, 30, gregorian_year)
-        return (dates
-                if ((not (dates == [])) and
-                    (mod(CopticDate.from_fixed(dates[0]).year, 28) == 17))
-                else [])
+        return dates if not (dates == []) and mod(CopticDate.from_fixed(dates[0]).year, 28) == 17 else []
     
     @classmethod
     def sh_ela(cls, gregorian_year):
@@ -309,13 +300,13 @@ class HebrewDate(YearMonthDay):
     
         if month == HebrewMonth.MARHESHVAN and day == 30:
             extra = []
-        elif (month == HebrewMonth.KISLEV) and (day < 30):
+        elif month == HebrewMonth.KISLEV and day < 30:
             extra = [DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday]
-        elif (month == HebrewMonth.KISLEV) and (day == 30):
+        elif month == HebrewMonth.KISLEV and day == 30:
             extra = [DayOfWeek.Monday]
         elif month in [HebrewMonth.TEVET, HebrewMonth.SHEVAT]:
             extra = [DayOfWeek.Sunday, DayOfWeek.Monday]
-        elif (month == HebrewMonth.ADAR) and (day < 30):
+        elif month == HebrewMonth.ADAR and day < 30:
             extra = [DayOfWeek.Sunday, DayOfWeek.Monday]
         else:
             extra = [DayOfWeek.Sunday]
@@ -323,54 +314,54 @@ class HebrewDate(YearMonthDay):
         basic.extend(extra)
         return map(lambda x: DayOfWeek.from_fixed(x + n), basic)
 
-# see lines 5940-5955 in calendrica-3.0.cl
-def observational_hebrew_new_year(g_year):
-    """Return fixed date of Observational (classical)
-    Nisan 1 occurring in Gregorian year, g_year."""
-    jan1 = GregorianDate.new_year(g_year)
-    equinox = Solar.solar_longitude_after(Astro.SPRING, jan1)
-    sset = JAFFA.universal_from_standard(JAFFA.sunset(ifloor(equinox)))
-    return phasis_on_or_after(ifloor(equinox) - (14 if (equinox < sset) else 13), JAFFA)
-
-# see lines 5957-5973 in calendrica-3.0.cl
-def fixed_from_observational_hebrew(h_date):
-    """Return fixed date equivalent to Observational Hebrew date."""
-    year1 = (h_date.year - 1) if (h_date.month >= HebrewMonth.TISHRI) else h_date.year
-    start = HebrewDate(year1, HebrewMonth.NISAN, 1).to_fixed()
-    g_year = GregorianDate.to_year(start + 60)
-    new_year = observational_hebrew_new_year(g_year)
-    midmonth = new_year + iround(29.5 * (h_date.month - 1)) + 15
-    return JAFFA.phasis_on_or_before(midmonth) + h_date.day - 1
-
-# see lines 5975-5991 in calendrica-3.0.cl
-def observational_hebrew_from_fixed(date):
-    """Return Observational Hebrew date (year month day)
-    corresponding to fixed date, date."""
-    crescent = JAFFA.phasis_on_or_before(date)
-    g_year = GregorianDate.to_year(date)
-    ny = observational_hebrew_new_year(g_year)
-    new_year = observational_hebrew_new_year(g_year - 1) if (date < ny) else ny
-    month = iround((crescent - new_year) / 29.5) + 1
-    year = (HebrewDate.from_fixed(new_year).year +
-            (1 if (month >= HebrewMonth.TISHRI) else 0))
-    day = date - crescent + 1
-    return HebrewDate(year, month, day)
-
-# see lines 5993-5997 in calendrica-3.0.cl
-def classical_passover_eve(g_year):
-    """Return fixed date of Classical (observational) Passover Eve
-    (Nisan 14) occurring in Gregorian year, g_year."""
-    return observational_hebrew_new_year(g_year) + 13
-
-# see lines 5920-5923 in calendrica-3.0.cl
 JAFFA = Location(angle(32, 1, 60), angle(34, 45, 0), 0, Clock.days_from_hours(2))
 
-# see lines 5925-5938 in calendrica-3.0.cl
-def phasis_on_or_after(date, location):
-    """Return closest fixed date on or after date, date, on the eve
-    of which crescent moon first became visible at location, location."""
-    mean = date - ifloor(Lunar.lunar_phase(date + 1) / mpf(360) * Lunar.MEAN_SYNODIC_MONTH)
-    tau = (date if (((date - mean) <= 3) and
-                    (not location.visible_crescent(date - 1)))
-           else (mean + 29))
-    return next_int(tau, lambda d: location.visible_crescent(d))
+class HebrewObservationalDate(YearMonthDay):
+
+    def __init__(self, year, month, day):
+        YearMonthDay.__init__(self, year, month, day)
+
+    def to_fixed(self):
+        """Return fixed date equivalent to Observational Hebrew date."""
+        year1 = self.year - 1 if self.month >= HebrewMonth.TISHRI else self.year
+        start = HebrewDate(year1, HebrewMonth.NISAN, 1).to_fixed()
+        g_year = GregorianDate.to_year(start + 60)
+        new_year = self.new_year(g_year)
+        midmonth = new_year + iround(29.5 * (self.month - 1)) + 15
+        return JAFFA.phasis_on_or_before(midmonth) + self.day - 1
+
+    @classmethod
+    def new_year(cls, gregorian_year):
+        """Return fixed date of Observational (classical)
+        Nisan 1 occurring in Gregorian year, 'gregorian_year'."""
+        jan1 = GregorianDate.new_year(gregorian_year)
+        equinox = Solar.solar_longitude_after(Astro.SPRING, jan1)
+        sset = JAFFA.universal_from_standard(JAFFA.sunset(ifloor(equinox)))
+        return cls.phasis_on_or_after(ifloor(equinox) - (14 if (equinox < sset) else 13), JAFFA)
+    
+    @classmethod
+    def from_fixed(cls, fixed_date):
+        """Return Observational Hebrew date (year month day)
+        corresponding to fixed date, 'fixed_date'."""
+        crescent = JAFFA.phasis_on_or_before(fixed_date)
+        g_year = GregorianDate.to_year(fixed_date)
+        ny = cls.new_year(g_year)
+        new_year = cls.new_year(g_year - 1) if (fixed_date < ny) else ny
+        month = iround((crescent - new_year) / 29.5) + 1
+        year = HebrewDate.from_fixed(new_year).year + (1 if month >= HebrewMonth.TISHRI else 0)
+        day = fixed_date - crescent + 1
+        return HebrewObservationalDate(year, month, day)
+    
+    @classmethod
+    def classical_passover_eve(cls, gregorian_year):
+        """Return fixed date of Classical (observational) Passover Eve
+        (Nisan 14) occurring in Gregorian year, 'gregorian_year'."""
+        return cls.new_year(gregorian_year) + 13
+
+    @classmethod
+    def phasis_on_or_after(cls, fixed_date, location):
+        """Return closest fixed date on or after date, date, on the eve
+        of which crescent moon first became visible at location, location."""
+        mean = fixed_date - ifloor(Lunar.lunar_phase(fixed_date + 1) / mpf(360) * Lunar.MEAN_SYNODIC_MONTH)
+        tau = fixed_date if fixed_date - mean <= 3 and not location.visible_crescent(fixed_date - 1) else mean + 29
+        return next_int(tau, lambda d: location.visible_crescent(d))
