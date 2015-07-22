@@ -2,8 +2,8 @@ from __future__ import division
 from enum import IntEnum
 from py_calendrical.py_cal_cal import amod
 from py_calendrical.calendars.julian import JulianDate
-from py_calendrical.calendars.gregorian import JulianMonth
 from py_calendrical.utils import reduce_cond
+from py_calendrical.month_of_year import MonthOfYear
 
 class Event(IntEnum):
     Kalends = 1
@@ -29,7 +29,7 @@ class RomanDate(object):
                  }[self.event] -
                 self.count +
                 (0 if (JulianDate.is_leap_year(self.year) and
-                       (self.month == JulianMonth.March) and
+                       (self.month == MonthOfYear.March) and
                        (self.event == Event.Kalends) and
                        (16 >= self.count >= 6))
                  else 1) +
@@ -58,21 +58,21 @@ class RomanDate(object):
                              Event.Ides,
                              cls.ides_of_month(julian_date.month) - julian_date.day + 1,
                              False)
-        elif (julian_date.month != JulianMonth.February) or not julian_date.is_leap_year(julian_date.year):
+        elif (julian_date.month != MonthOfYear.February) or not julian_date.is_leap_year(julian_date.year):
             return RomanDate(year_prime,
                              month_prime,
                              Event.Kalends,
                              kalends1 - fixed_date + 1,
                              False)
         elif julian_date.day < 25:
-            return RomanDate(julian_date.year, JulianMonth.March, Event.Kalends, 30 - julian_date.day, False)
+            return RomanDate(julian_date.year, MonthOfYear.March, Event.Kalends, 30 - julian_date.day, False)
         else:
-            return RomanDate(julian_date.year, JulianMonth.March, Event.Kalends, 31 - julian_date.day, julian_date.day == 25)
+            return RomanDate(julian_date.year, MonthOfYear.March, Event.Kalends, 31 - julian_date.day, julian_date.day == 25)
 
     @classmethod
     def ides_of_month(cls, month):
         """Return the date of the Ides in Roman month 'month'."""
-        return 15 if month in [JulianMonth.March, JulianMonth.May, JulianMonth.July, JulianMonth.October] else 13
+        return 15 if month in [MonthOfYear.March, MonthOfYear.May, MonthOfYear.July, MonthOfYear.October] else 13
 
     @classmethod
     def nones_of_month(cls, month):

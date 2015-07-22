@@ -4,14 +4,15 @@ from mpmath import mpf
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.py_cal_cal import quotient, ifloor, iround
 from py_calendrical.location import Location
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.utils import reduce_cond, next_int
 from py_calendrical.solar import Solar
 from py_calendrical.astro import Astro
+from py_calendrical.month_of_year import MonthOfYear
 
 class BahaiDate(object):
 
-    EPOCH = GregorianDate(1844, JulianMonth.March, 21).to_fixed()
+    EPOCH = GregorianDate(1844, MonthOfYear.March, 21).to_fixed()
     HAIFA = Location(mpf(32.82), 35, 0, Clock.days_from_hours(2))
     AYYAM_I_HA = 0
     
@@ -35,7 +36,7 @@ class BahaiDate(object):
     @classmethod    
     def new_year(cls, gregorian_year):
         """Return fixed date of Bahai New Year in Gregorian year, 'gregorian_year'."""
-        return GregorianDate(gregorian_year, JulianMonth.March, 21).to_fixed()
+        return GregorianDate(gregorian_year, MonthOfYear.March, 21).to_fixed()
     
 
     @classmethod    
@@ -83,7 +84,7 @@ class WesternBahaiDate(BahaiDate):
         else:
             elapsed_months = 19 * (self.month - 1)
     
-        return GregorianDate(g_year, JulianMonth.March, 20).to_fixed() + elapsed_months + self.day
+        return GregorianDate(g_year, MonthOfYear.March, 20).to_fixed() + elapsed_months + self.day
 
     @classmethod
     def from_fixed(cls, fixed_date):
@@ -93,7 +94,7 @@ class WesternBahaiDate(BahaiDate):
         start  = GregorianDate.to_year(cls.EPOCH)
         years  = (g_year - start -
                   (1 if (fixed_date <= 
-                      GregorianDate(g_year, JulianMonth.March, 20).to_fixed()) else 0))
+                      GregorianDate(g_year, MonthOfYear.March, 20).to_fixed()) else 0))
         major  = 1 + quotient(years, 361)
         cycle  = 1 + quotient(mod(years, 361), 19)
         year   = 1 + mod(years, 19)

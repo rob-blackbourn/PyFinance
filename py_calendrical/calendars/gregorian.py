@@ -1,25 +1,11 @@
 from __future__ import division
 from operator import mod
-from enum import IntEnum
 import datetime
 from py_calendrical.py_cal_cal import quotient, amod
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.year_month_day import YearMonthDay
 from fractions import Fraction
-
-class JulianMonth(IntEnum):
-    January = 1
-    February = 2
-    March = 3
-    April = 4
-    May = 5
-    June = 6
-    July = 7
-    August = 8
-    September = 9
-    October = 10
-    November = 11
-    December = 12
+from py_calendrical.month_of_year import MonthOfYear
 
 class GregorianDate(YearMonthDay):    
 
@@ -44,7 +30,7 @@ class GregorianDate(YearMonthDay):
         year = cls.to_year(fixed_date)
         prior_days = fixed_date - cls.new_year(year)
         correction = (0
-                      if (fixed_date < GregorianDate(year, JulianMonth.March, 1).to_fixed())
+                      if (fixed_date < GregorianDate(year, MonthOfYear.March, 1).to_fixed())
                       else (1 if cls.is_leap_year(year) else 2))
         month = quotient((12 * (prior_days + correction)) + 373, 367)
         day = 1 + (fixed_date - GregorianDate(year, month, 1).to_fixed())
@@ -79,12 +65,12 @@ class GregorianDate(YearMonthDay):
     @classmethod
     def new_year(cls, year):
         """Return the fixed date of January 1 in the year 'year'."""
-        return GregorianDate(year, JulianMonth.January, 1).to_fixed()
+        return GregorianDate(year, MonthOfYear.January, 1).to_fixed()
 
     @classmethod
     def year_end(cls, year):
         """Return the fixed date of December 31 in the year 'year'."""
-        return GregorianDate(year, JulianMonth.December, 31).to_fixed()
+        return GregorianDate(year, MonthOfYear.December, 31).to_fixed()
 
     @classmethod    
     def year_range(cls, year):
@@ -99,11 +85,11 @@ class GregorianDate(YearMonthDay):
     
     def day_number(self):
         """Return the day number in the year."""
-        return self.date_difference(GregorianDate(self.year - 1, JulianMonth.December, 31), self)
+        return self.date_difference(GregorianDate(self.year - 1, MonthOfYear.December, 31), self)
     
     def days_remaining(self):
         """Return the days remaining in the year."""
-        return self.date_difference(self, GregorianDate(self.year, JulianMonth.December, 31))
+        return self.date_difference(self, GregorianDate(self.year, MonthOfYear.December, 31))
     
     def to_fixed_alt(self):
         """Return the fixed date equivalent.
@@ -125,7 +111,7 @@ class GregorianDate(YearMonthDay):
         """Return the date corresponding to fixed date 'fixed_date'.
         Alternative calculation."""
         y = cls.to_year(cls.EPOCH - 1 + fixed_date + 306)
-        prior_days = fixed_date - GregorianDate(y - 1, JulianMonth.March, 1).to_fixed()
+        prior_days = fixed_date - GregorianDate(y - 1, MonthOfYear.March, 1).to_fixed()
         month = amod(quotient(5 * prior_days + 2, 153) + 3, 12)
         year  = y - quotient(month + 9, 12)
         day   = fixed_date - GregorianDate(year, month, 1).to_fixed() + 1
@@ -164,6 +150,16 @@ class GregorianDate(YearMonthDay):
         """Return the fixed date of last day of week on or before this date."""
         return self.nth_day_of_week(-1, day_of_week)
 
+    @classmethod
+    def easter(cls, year):
+        """Return fixed date of Easter in Gregorian year 'year'."""
+        century = quotient(year, 100) + 1
+        shifted_epact = mod(14 + 11 * mod(year, 19) - quotient(3 * century, 4) + quotient(5 + (8 * century), 25), 30)
+        adjusted_epact = shifted_epact + 1 if shifted_epact == 0 or (shifted_epact == 1 and 10 < mod(year, 19)) else shifted_epact
+        apr19 = GregorianDate(year, MonthOfYear.April, 19)
+        paschal_moon = apr19.to_fixed() - adjusted_epact
+        return DayOfWeek.Sunday.after(paschal_moon)
+
 def alt_orthodox_easter(year):
     """Return fixed date of Orthodox Easter in Gregorian year g_year.
     Alternative calculation."""
@@ -175,64 +171,53 @@ def alt_orthodox_easter(year):
                     GregorianDate.EPOCH)
     return DayOfWeek.Sunday.after(paschal_moon)
 
-def easter(year):
-    """Return fixed date of Easter in Gregorian year g_year."""
-    century = quotient(year, 100) + 1
-    shifted_epact = mod(14 +
-                        11 * mod(year, 19) -
-                        quotient(3 * century, 4) +
-                        quotient(5 + (8 * century), 25), 30)
-    adjusted_epact = shifted_epact + 1 if shifted_epact == 0 or (shifted_epact == 1 and 10 < mod(year, 19)) else shifted_epact
-    paschal_moon = GregorianDate(year, JulianMonth.April, 19).to_fixed() - adjusted_epact
-    return DayOfWeek.Sunday.after(paschal_moon)
-
 def pentecost(year):
     """Return fixed date of Pentecost in Gregorian year g_year."""
-    return easter(year) + 49
+    return GregorianDate.easter(year) + 49
 
 def labor_day(year):
     """Return the fixed date of United States Labor Day in Gregorian
     year 'g_year' (the first Monday in September)."""
-    return GregorianDate(year, JulianMonth.September, 1).first_day_of_week(DayOfWeek.Monday)
+    return GregorianDate(year, MonthOfYear.September, 1).first_day_of_week(DayOfWeek.Monday)
 
 def memorial_day(year):
     """Return the fixed date of United States' Memorial Day in Gregorian
     year 'year' (the last Monday in May)."""
-    return GregorianDate(year, JulianMonth.May, 31).last_day_of_week(DayOfWeek.Monday)
+    return GregorianDate(year, MonthOfYear.May, 31).last_day_of_week(DayOfWeek.Monday)
 
 def election_day(year):
     """Return the fixed date of United States' Election Day in Gregorian
     year 'year' (the Tuesday after the first Monday in November)."""
-    return GregorianDate(year, JulianMonth.November, 2).first_day_of_week(DayOfWeek.Tuesday)
+    return GregorianDate(year, MonthOfYear.November, 2).first_day_of_week(DayOfWeek.Tuesday)
 
 def daylight_saving_start(year):
     """Return the fixed date of the start of United States daylight
     saving time in Gregorian year 'year' (the second Sunday in March)."""
-    return GregorianDate(year, JulianMonth.March, 1).nth_day_of_week(2, DayOfWeek.Sunday)
+    return GregorianDate(year, MonthOfYear.March, 1).nth_day_of_week(2, DayOfWeek.Sunday)
 
 def daylight_saving_end(year):
     """Return the fixed date of the end of United States daylight saving
     time in Gregorian year 'year' (the first Sunday in November)."""
-    return GregorianDate(year, JulianMonth.November, 1).first_day_of_week(DayOfWeek.Sunday)
+    return GregorianDate(year, MonthOfYear.November, 1).first_day_of_week(DayOfWeek.Sunday)
 
 def christmas(year):
     """Return the fixed date of Christmas in Gregorian year 'year'."""
-    return GregorianDate(year, JulianMonth.December, 25).to_fixed()
+    return GregorianDate(year, MonthOfYear.December, 25).to_fixed()
 
 @classmethod    
 def advent(year):
     """Return the fixed date of Advent in Gregorian year 'year'
     (the Sunday closest to November 30)."""
-    return DayOfWeek.Sunday.nearest(GregorianDate(year, JulianMonth.November, 30).to_fixed())
+    return DayOfWeek.Sunday.nearest(GregorianDate(year, MonthOfYear.November, 30).to_fixed())
 
 def epiphany(year):
     """Return the fixed date of Epiphany in U.S. in Gregorian year 'year'
     (the first Sunday after January 1)."""
-    return GregorianDate(year, JulianMonth.January, 2).first_day_of_week(DayOfWeek.Sunday)
+    return GregorianDate(year, MonthOfYear.January, 2).first_day_of_week(DayOfWeek.Sunday)
 
 def epiphany_it(year):
     """Return fixed date of Epiphany in Italy in Gregorian year 'year'."""
-    return GregorianDate(year, JulianMonth.January, 6)
+    return GregorianDate(year, MonthOfYear.January, 6)
 
 def unlucky_fridays_in_range(first_fixed_date, last_fixed_date):
     """Return the list of Fridays within range 'range' of fixed dates that

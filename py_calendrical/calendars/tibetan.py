@@ -1,12 +1,13 @@
 from __future__ import division
 from operator import mod
 from py_calendrical.py_cal_cal import iceiling, ifloor, amod
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.utils import reduce_cond, list_range, final_int
+from py_calendrical.month_of_year import MonthOfYear
 
 class TibetanDate(object):
     
-    EPOCH = GregorianDate(-127, JulianMonth.December, 7).to_fixed()
+    EPOCH = GregorianDate(-127, MonthOfYear.December, 7).to_fixed()
 
     def __init__(self, year, month, leap_month, day, leap_day):
         self.year = year

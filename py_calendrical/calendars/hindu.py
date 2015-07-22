@@ -7,12 +7,13 @@ from py_calendrical.triganometry import angle, sin_degrees
 from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.location import Location
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.utils import reduce_cond, next_int, is_in_range, list_range
 from py_calendrical.solar import Solar
 from py_calendrical.astro import Astro
 from py_calendrical.lunar import Lunar
+from py_calendrical.month_of_year import MonthOfYear
 
 
 class OldHindu(object):
@@ -20,7 +21,7 @@ class OldHindu(object):
     ARYA_SOLAR_YEAR = 1577917500/4320000
     ARYA_SOLAR_MONTH = ARYA_SOLAR_YEAR / 12
 
-    EPOCH = JulianDate(JulianDate.bce(3102), JulianMonth.February, 18).to_fixed()
+    EPOCH = JulianDate(JulianDate.bce(3102), MonthOfYear.February, 18).to_fixed()
     ARYA_JOVIAN_PERIOD =  1577917500/364224
 
     @classmethod    

@@ -1,12 +1,12 @@
 from __future__ import division
-from py_calendrical.calendars.gregorian import JulianMonth 
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.calendars.coptic import CopticDate
 from py_calendrical.year_month_day import YearMonthDay
+from py_calendrical.month_of_year import MonthOfYear
 
 class EthiopicDate(YearMonthDay):
     
-    EPOCH = JulianDate(JulianDate.ce(8), JulianMonth.August, 29).to_fixed()
+    EPOCH = JulianDate(JulianDate.ce(8), MonthOfYear.August, 29).to_fixed()
 
     def __init__(self, year, month, day):
         YearMonthDay.__init__(self, year, month, day)

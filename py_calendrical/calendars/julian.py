@@ -3,9 +3,10 @@ from operator import mod
 from mpmath import mpf
 from py_calendrical.py_cal_cal import quotient, ifloor
 from py_calendrical.day_arithmatic import DayOfWeek
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.utils import list_range
+from py_calendrical.month_of_year import MonthOfYear
 
 class JulianDay(object):
     
@@ -44,7 +45,7 @@ class ModifiedJulianDay(object):
 
 class JulianDate(YearMonthDay):
     
-    EPOCH = GregorianDate(0, JulianMonth.December, 30).to_fixed()
+    EPOCH = GregorianDate(0, MonthOfYear.December, 30).to_fixed()
     
     def __init__(self, year, month, day):
         YearMonthDay.__init__(self, year, month, day)
@@ -64,8 +65,8 @@ class JulianDate(YearMonthDay):
         """Return the Julian fixed_date corresponding to fixed fixed_date 'fixed_date'."""
         approx     = quotient(((4 * (fixed_date - cls.EPOCH))) + 1464, 1461)
         year       = approx - 1 if approx <= 0 else approx
-        prior_days = fixed_date - JulianDate(year, JulianMonth.January, 1).to_fixed()
-        correction = (0 if fixed_date < JulianDate(year, JulianMonth.March, 1).to_fixed()
+        prior_days = fixed_date - JulianDate(year, MonthOfYear.January, 1).to_fixed()
+        correction = (0 if fixed_date < JulianDate(year, MonthOfYear.March, 1).to_fixed()
                       else (1 if cls.is_leap_year(year) else 2))
         month      = quotient(12*(prior_days + correction) + 373, 367)
         day        = 1 + (fixed_date - JulianDate(year, month, 1).to_fixed())
@@ -117,7 +118,7 @@ class JulianDate(YearMonthDay):
     def eastern_orthodox_christmas(cls, g_year):
         """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
         in Gregorian year 'g_year'."""
-        return cls.julian_in_gregorian(JulianMonth.December, 25, g_year)
+        return cls.julian_in_gregorian(MonthOfYear.December, 25, g_year)
 
 #######################################
 # ecclesiastical calendars algorithms #
@@ -126,7 +127,7 @@ def orthodox_easter(g_year):
     """Return fixed date of Orthodox Easter in Gregorian year g_year."""
     shifted_epact = mod(14 + 11 * mod(g_year, 19), 30)
     j_year        = g_year if g_year > 0 else g_year - 1
-    paschal_moon  = JulianDate(j_year, JulianMonth.April, 19).to_fixed() - shifted_epact
+    paschal_moon  = JulianDate(j_year, MonthOfYear.April, 19).to_fixed() - shifted_epact
     return DayOfWeek.Sunday.after(paschal_moon)
 
 def alt_orthodox_easter(g_year):
@@ -140,21 +141,6 @@ def alt_orthodox_easter(g_year):
                     GregorianDate.EPOCH)
     return DayOfWeek.Sunday.after(paschal_moon)
 
-# see lines 1401-1426 in calendrica-3.0.cl
-def easter(g_year):
-    """Return fixed date of Easter in Gregorian year g_year."""
-    century = quotient(g_year, 100) + 1
-    shifted_epact = mod(14 +
-                        11 * mod(g_year, 19) -
-                        quotient(3 * century, 4) +
-                        quotient(5 + (8 * century), 25), 30)
-    adjusted_epact = ((shifted_epact + 1)
-                      if ((shifted_epact == 0) or ((shifted_epact == 1) and
-                                                  (10 < mod(g_year, 19))))
-                      else  shifted_epact)
-    paschal_moon = GregorianDate(g_year, JulianMonth.April, 19).to_fixed() - adjusted_epact
-    return DayOfWeek.Sunday.after(paschal_moon)
-
 # see lines 1429-1431 in calendrica-3.0.cl
 def pentecost(g_year):
     """Return fixed date of Pentecost in Gregorian year g_year."""
@@ -163,4 +149,4 @@ def pentecost(g_year):
 def eastern_orthodox_christmas(year):
     """Return the list of zero or one fixed dates of Eastern Orthodox Christmas
     in Gregorian year 'year'."""
-    return JulianDate.julian_in_gregorian(JulianMonth.December, 25, year)
+    return JulianDate.julian_in_gregorian(MonthOfYear.December, 25, year)

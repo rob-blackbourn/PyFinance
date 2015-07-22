@@ -1,8 +1,9 @@
 from __future__ import division
 from py_calendrical.py_cal_cal import amod, quotient, rd
 from py_calendrical.day_arithmatic import DayOfWeek
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.utils import reduce_cond
+from py_calendrical.month_of_year import MonthOfYear
 
 class IsoDate(object):
     
@@ -13,7 +14,7 @@ class IsoDate(object):
         
     def to_fixed(self):
         """Return the fixed date equivalent to ISO date 'i_date'."""
-        return GregorianDate(self.year - 1, JulianMonth.December, 28).nth_day_of_week(self.week, DayOfWeek.Sunday) + self.day
+        return GregorianDate(self.year - 1, MonthOfYear.December, 28).nth_day_of_week(self.week, DayOfWeek.Sunday) + self.day
     
     @classmethod
     def from_fixed(cls, date):

@@ -5,15 +5,16 @@ from py_calendrical.py_cal_cal import ifloor, iceiling, iround, quotient
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.location import Location
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.utils import next_int
 from py_calendrical.solar import Solar
 from py_calendrical.astro import Astro
+from py_calendrical.month_of_year import MonthOfYear
 
 class PersianDate(YearMonthDay):
 
-    EPOCH = JulianDate(JulianDate.ce(622), JulianMonth.March, 19).to_fixed()
+    EPOCH = JulianDate(JulianDate.ce(622), MonthOfYear.March, 19).to_fixed()
     TEHRAN = Location(mpf(35.68), mpf(51.42), 1100, Clock.days_from_hours(3 + 1/2))
     
     def __init__(self, year, month, day):

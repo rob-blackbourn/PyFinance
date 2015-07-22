@@ -1,14 +1,15 @@
 from __future__ import division
 from operator import mod
 from py_calendrical.py_cal_cal import quotient
-from py_calendrical.calendars.gregorian import JulianMonth, GregorianDate
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.utils import list_range
+from py_calendrical.month_of_year import MonthOfYear
 
 class CopticDate(YearMonthDay):
 
-    EPOCH = JulianDate(JulianDate.ce(284), JulianMonth.August, 29).to_fixed()
+    EPOCH = JulianDate(JulianDate.ce(284), MonthOfYear.August, 29).to_fixed()
     
     def __init__(self, year, month, day):
         YearMonthDay.__init__(self, year, month, day)

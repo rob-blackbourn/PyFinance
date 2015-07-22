@@ -1,7 +1,7 @@
 from __future__ import division
 from operator import mod
 from mpmath import mpf
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.py_cal_cal import ifloor, amod, quotient, iround, iceiling, rd
 from py_calendrical.triganometry import angle
 from py_calendrical.location import Location
@@ -10,10 +10,11 @@ from py_calendrical.utils import next_int
 from py_calendrical.solar import Solar
 from py_calendrical.astro import Astro
 from py_calendrical.lunar import Lunar
+from py_calendrical.month_of_year import MonthOfYear
 
 class ChineseDate(object):
 
-    EPOCH = GregorianDate(-2636, JulianMonth.February, 15).to_fixed()
+    EPOCH = GregorianDate(-2636, MonthOfYear.February, 15).to_fixed()
     
     def __init__(self, cycle, year, month, leap, day):
         self.cycle = cycle
@@ -160,7 +161,7 @@ class ChineseDate(object):
     @classmethod    
     def new_year(cls, gregorian_year):
         """Return fixed date of Chinese New Year in Gregorian year, 'gregorian_year'."""
-        return cls.new_year_on_or_before(GregorianDate(gregorian_year, JulianMonth.July, 1).to_fixed())
+        return cls.new_year_on_or_before(GregorianDate(gregorian_year, MonthOfYear.July, 1).to_fixed())
 
     @classmethod
     def is_prior_leap_month(cls, m_prime, m):
@@ -184,7 +185,7 @@ class ChineseDate(object):
     def qing_ming(cls, gregorian_year):
         """Return fixed date of Qingming occurring in Gregorian year, 'gregorian_year'."""
         return ifloor(cls.minor_solar_term_on_or_after(
-            GregorianDate(gregorian_year, JulianMonth.March, 30).to_fixed()))
+            GregorianDate(gregorian_year, MonthOfYear.March, 30).to_fixed()))
 
     def age(self, fixed_date):
         """Return the age at fixed date, date, given Chinese birthdate, birthdate,
@@ -279,14 +280,14 @@ def japanese_location(tee):
 def korean_location(tee):
     """Return the location for Korean calendar; varies with moment, tee."""
     # Seoul city hall at a varying time zone.
-    if (tee < GregorianDate(1908, JulianMonth.April, 1).to_fixed()):
+    if (tee < GregorianDate(1908, MonthOfYear.April, 1).to_fixed()):
         #local mean time for longitude 126 deg 58 min
         z = 3809/450
-    elif (tee < GregorianDate(1912, JulianMonth.January, 1).to_fixed()):
+    elif (tee < GregorianDate(1912, MonthOfYear.January, 1).to_fixed()):
         z = 8.5
-    elif (tee < GregorianDate(1954, JulianMonth.March, 21).to_fixed()):
+    elif (tee < GregorianDate(1954, MonthOfYear.March, 21).to_fixed()):
         z = 9
-    elif (tee < GregorianDate(1961, JulianMonth.August, 10).to_fixed()):
+    elif (tee < GregorianDate(1961, MonthOfYear.August, 10).to_fixed()):
         z = 8.5
     else:
         z = 9

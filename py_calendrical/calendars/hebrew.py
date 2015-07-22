@@ -9,13 +9,14 @@ from py_calendrical.day_arithmatic import DayOfWeek
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.calendars.coptic import CopticDate
 from py_calendrical.location import Location
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.utils import next_int, final_int, list_range
 from py_calendrical.lunar import Lunar
 from py_calendrical.astro import Astro
 from py_calendrical.solar import Solar
+from py_calendrical.month_of_year import MonthOfYear
 
 class HebrewMonth(IntEnum):
     NISAN = 1
@@ -34,7 +35,7 @@ class HebrewMonth(IntEnum):
     
 class HebrewDate(YearMonthDay):
 
-    EPOCH = JulianDate(JulianDate.bce(3761),  JulianMonth.October, 7).to_fixed()
+    EPOCH = JulianDate(JulianDate.bce(3761),  MonthOfYear.October, 7).to_fixed()
     
     def __init__(self, year, month, day):
         YearMonthDay.__init__(self, year, month, day)

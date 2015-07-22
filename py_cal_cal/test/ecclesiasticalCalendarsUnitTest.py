@@ -10,10 +10,7 @@ class EasterAppendixCTestCase(AppendixCTable3TestCaseBase,
                                unittest.TestCase):
     def testEaster(self):
         for i in range(len(self.rd)):
-            self.assertEqual(
-                 gregorian_from_fixed(orthodox_easter(
-                       gregorian_year_from_fixed(self.rd[i]))),
-                 self.je[i])
+            self.assertEqual(gregorian_from_fixed(orthodox_easter(gregorian_year_from_fixed(self.rd[i]))), self.je[i])
             self.assertEqual(
                  gregorian_from_fixed(alt_orthodox_easter(
                        gregorian_year_from_fixed(self.rd[i]))),

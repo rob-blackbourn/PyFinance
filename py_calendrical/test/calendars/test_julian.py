@@ -2,7 +2,8 @@ import unittest
 
 from py_calendrical.calendars.julian import JulianDate, JulianDay,\
     ModifiedJulianDay
-from py_calendrical.calendars.gregorian import JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
+from py_calendrical.month_of_year import MonthOfYear
 
 class TestJulianDate(unittest.TestCase):
     
@@ -10,10 +11,10 @@ class TestJulianDate(unittest.TestCase):
         self.testvalue = 710347
 
     def testConversionFromFixed(self):
-        self.assertEqual(JulianDate.from_fixed(self.testvalue), JulianDate(1945, JulianMonth.October, 30))
+        self.assertEqual(JulianDate.from_fixed(self.testvalue), JulianDate(1945, MonthOfYear.October, 30))
 
     def testConversionToFixed(self):
-        self.assertEqual(self.testvalue, JulianDate(1945, JulianMonth.October, 30).to_fixed())
+        self.assertEqual(self.testvalue, JulianDate(1945, MonthOfYear.October, 30).to_fixed())
 
     def testLeapYear(self):
         self.assertTrue(JulianDate.is_leap_year(2000))
@@ -60,6 +61,48 @@ class TestJulianDate(unittest.TestCase):
             self.assertEqual(fixed_date, julian_date.to_fixed(), "Convert to fixed")
             self.assertEqual(JulianDate.from_fixed(fixed_date), julian_date, "Convert from fixed")
 
+    def testEaster(self):
+        knownDates = {
+            -214193: JulianDate(-586, 4, 3),
+            -61387: JulianDate(-168, 4, 1),
+            25469: JulianDate(70, 4, 13),
+            49217: JulianDate(135, 4, 17),
+            171307: JulianDate(470, 4, 6),
+            210155: JulianDate(576, 4, 7),
+            253427: JulianDate(694, 4, 22),
+            369740: JulianDate(1013, 4, 11),
+            400085: JulianDate(1096, 4, 19),
+            434355: JulianDate(1190, 4, 1),
+            452605: JulianDate(1240, 4, 22),
+            470160: JulianDate(1288, 4, 4),
+            473837: JulianDate(1298, 4, 13),
+            507850: JulianDate(1391, 4, 3),
+            524156: JulianDate(1436, 4, 17),
+            544676: JulianDate(1492, 5, 1),
+            567118: JulianDate(1553, 4, 12),
+            569477: JulianDate(1560, 4, 24),
+            601716: JulianDate(1648, 4, 12),
+            613424: JulianDate(1680, 4, 21),
+            626596: JulianDate(1716, 4, 12),
+            645554: JulianDate(1768, 4, 10),
+            664224: JulianDate(1819, 4, 18),
+            671401: JulianDate(1839, 4, 7),
+            694799: JulianDate(1903, 4, 19),
+            704424: JulianDate(1929, 5, 5),
+            708842: JulianDate(1941, 4, 20),
+            709409: JulianDate(1943, 4, 25),
+            709580: JulianDate(1943, 4, 25),
+            727274: JulianDate(1992, 4, 26),
+            728714: JulianDate(1996, 4, 14),
+            744313: JulianDate(2038, 4, 25),
+            764652: JulianDate(2094, 4, 11)
+        }
+        
+        for (fixed_date, julian_date) in knownDates.iteritems():
+            GregorianDate.from_fixed(fixed_date)
+            self.assertEqual(fixed_date, julian_date.to_fixed(), "Convert to fixed")
+            self.assertEqual(JulianDate.from_fixed(fixed_date), julian_date, "Convert from fixed")
+        
 class TestJulianDay(unittest.TestCase):
     
     def testKnownDates(self):

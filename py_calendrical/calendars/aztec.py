@@ -1,11 +1,11 @@
 from __future__ import division
 from operator import mod
 from py_calendrical.py_cal_cal import quotient, amod
-from py_calendrical.calendars.gregorian import JulianMonth
 from py_calendrical.calendars.julian import JulianDate
 from py_calendrical.utils import reduce_cond
+from py_calendrical.month_of_year import MonthOfYear
 
-AZTEC_CORRELATION = JulianDate(1521, JulianMonth.August, 13).to_fixed()
+AZTEC_CORRELATION = JulianDate(1521, MonthOfYear.August, 13).to_fixed()
 
 class AztecXihuitlOrdinal(object):
 

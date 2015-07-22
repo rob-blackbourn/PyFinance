@@ -1,14 +1,15 @@
 import unittest
 
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth
+from py_calendrical.calendars.gregorian import GregorianDate
+from py_calendrical.month_of_year import MonthOfYear
 
 class TestGregorianCalendar(unittest.TestCase):
 
     def setUp(self):
         self.testvalue = 710347
-        self.aDate = GregorianDate(1945, JulianMonth.November, 12)
-        self.myDate = GregorianDate(1967, JulianMonth.January, 30)
-        self.aLeapDate = GregorianDate(1900, JulianMonth.March, 1)
+        self.aDate = GregorianDate(1945, MonthOfYear.November, 12)
+        self.myDate = GregorianDate(1967, MonthOfYear.January, 30)
+        self.aLeapDate = GregorianDate(1900, MonthOfYear.March, 1)
 
     def testConversionFromFixed(self):
         self.assertEqual(GregorianDate.from_fixed(self.testvalue), self.aDate)

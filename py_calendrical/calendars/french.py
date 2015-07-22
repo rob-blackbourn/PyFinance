@@ -3,17 +3,18 @@ from operator import mod
 from py_calendrical.triganometry import angle
 from py_calendrical.py_cal_cal import ifloor, iround, quotient
 from py_calendrical.location import Location
-from py_calendrical.calendars.gregorian import GregorianDate, JulianMonth 
+from py_calendrical.calendars.gregorian import GregorianDate
 from py_calendrical.time_arithmatic import Clock
 from py_calendrical.year_month_day import YearMonthDay
 from py_calendrical.utils import next_int
 from py_calendrical.solar import Solar
 from py_calendrical.astro import Astro
+from py_calendrical.month_of_year import MonthOfYear
 
 class FrenchDate(YearMonthDay):
 
     #"""Fixed date of start of the French Revolutionary calendar."""
-    EPOCH = GregorianDate(1792, JulianMonth.September, 22).to_fixed()
+    EPOCH = GregorianDate(1792, MonthOfYear.September, 22).to_fixed()
     PARIS = Location(angle(48, 50, 11), angle(2, 20, 15), 27, Clock.days_from_hours(1))
     
     def __init__(self, year, month, day):
